@@ -27,28 +27,30 @@ export default async function EditDraftPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-      <div className="flex justify-between items-end border-b-4 border-black pb-4">
+      <div className="flex justify-between items-end border-b border-tech-main/30 pb-4 relative">
+        <div className="absolute -bottom-[5px] left-0 w-2 h-2 border border-tech-main/50 bg-tech-main/20"></div>
         <div className="flex items-center space-x-6">
           <Link href="/draft">
             <BrutalButton variant="ghost" size="sm">
-              ← BACK
+              {"<"} BACK
             </BrutalButton>
           </Link>
-          <h1 className="text-4xl font-black uppercase tracking-tighter decoration-hot-pink decoration-8 underline underline-offset-4">
-            EDIT SUBMISSION
+          <h1 className="text-3xl font-mono uppercase tracking-[0.2em] text-tech-main">
+            EDIT_SUBMISSION
           </h1>
         </div>
-        <div className="text-sm font-bold bg-black text-white px-3 py-1">
-          STATUS: {draft.status}
+        <div className="text-xs font-mono border border-tech-main/50 bg-tech-main/10 text-tech-main px-3 py-1 uppercase tracking-widest">
+          STATUS: [{draft.status}]
         </div>
       </div>
 
-      <div className="bg-[#f4f4f0] border-4 border-black p-6 shadow-brutal mx-auto">
+      <div className="bg-tech-main/5 border border-tech-main/30 p-6 mx-auto relative backdrop-blur-sm">
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-tech-main/50"></div>
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-tech-main/50"></div>
+        
         {draft.status === "PENDING" || draft.status === "APPROVED" ? (
-           <div className="mb-4 bg-yellow-200 border-2 border-black p-4 font-bold text-sm">
-             Note: This revision is currently in {draft.status} state. Submitting changes will create or update it as a DRAFT.
-           </div>
-        ) : null}
+           <div className="mb-4 bg-tech-main/20 border border-tech-main/50 p-4 font-mono text-sm text-tech-main-dark">
+             // CAUTION: This revision is currently in [{draft.status}] state. Submitting changes will update it as a DRAFT.
         
         <BrutalEditor 
           initialData={{ 

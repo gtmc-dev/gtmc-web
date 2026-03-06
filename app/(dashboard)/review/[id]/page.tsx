@@ -34,21 +34,22 @@ export default async function ReviewDetailPage({
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8 pb-32">
       <Link href="/review">
         <BrutalButton variant="ghost" size="sm">
-          ← BACK TO HUB
+          {"<"} BACK_TO_HUB
         </BrutalButton>
       </Link>
 
-      <div className="flex flex-col md:flex-row justify-between items-end border-b-8 border-black pb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-end border-b border-tech-main/30 pb-8 gap-4 relative">
+        <div className="absolute -bottom-[5px] left-0 w-2 h-2 border border-tech-main/50 bg-tech-main/20"></div>
         <div>
-          <h1 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter mb-4 break-words leading-tight">
+          <h1 className="text-3xl lg:text-4xl font-mono uppercase tracking-[0.1em] mb-4 break-words leading-tight text-tech-main-dark">
             {revision.title}
           </h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm font-bold bg-black text-white p-3 inline-flex border-2 border-black">
-            <span className="text-electric-blue">AUTHOR:</span>
-            <span className="uppercase">{revision.author?.name || "UNKNOWN REBEL"}</span>
-            <span className="text-hot-pink px-2 opacity-50">/{'/'}/</span>
-            <span className="text-neon-green">TARGET FILE:</span>
-            <span>{revision.filePath || "NEW ARTICLE"}</span>
+          <div className="flex flex-wrap items-center gap-4 text-xs font-mono bg-tech-main/10 text-tech-main-dark p-3 inline-flex border border-tech-main/30">
+            <span className="text-tech-main">AUTHOR:</span>
+            <span className="uppercase">{revision.author?.name || "UNKNOWN_USER"}</span>
+            <span className="text-tech-main/50 px-2">{'//'}</span>
+            <span className="text-tech-main">TARGET_FILE:</span>
+            <span>{revision.filePath || "NEW_ARTICLE"}</span>
           </div>
         </div>
 
@@ -57,13 +58,13 @@ export default async function ReviewDetailPage({
             <form action={rejectRevisionAction}>
               <input type="hidden" name="revisionId" value={revision.id} />
               <BrutalButton type="submit" variant="secondary" className="w-full text-red-600 border-red-600 hover:bg-red-600 hover:text-white">
-                REJECT
+                DENY
               </BrutalButton>
             </form>
             <form action={approveRevisionAction}>
               <input type="hidden" name="revisionId" value={revision.id} />
               <BrutalButton type="submit" variant="primary" className="w-full">
-                APPROVE & MERGE
+                APPROVE_&_MERGE
               </BrutalButton>
             </form>
           </div>
@@ -71,16 +72,18 @@ export default async function ReviewDetailPage({
       </div>
 
       <div>
-         <h2 className="text-2xl font-black uppercase border-b-4 border-black inline-block mb-4">CONTENT PREVIEW</h2>
+         <h2 className="text-xl font-mono uppercase border-b border-tech-main/50 inline-block mb-4 tracking-widest text-tech-main">CONTENT_PREVIEW</h2>
       </div>
 
-      <BrutalCard className="p-8">
-        <div className="prose prose-lg prose-invert max-w-none text-black selection:bg-neon-green selection:text-black">
+      <div className="bg-tech-main/5 border border-tech-main/30 p-8 mx-auto relative backdrop-blur-sm">
+        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-tech-main/50"></div>
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-tech-main/50"></div>
+        <div className="prose prose-tech max-w-none text-tech-main-dark selection:bg-tech-main/20 selection:text-tech-main-dark">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {revision.content}
           </ReactMarkdown>
         </div>
-      </BrutalCard>
+      </div>
     </div>
   );
 }
