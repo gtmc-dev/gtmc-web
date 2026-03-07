@@ -15,7 +15,7 @@ export async function ProfileButton() {
   }
 
   return (
-    <Link href="/profile" className="block w-8 h-8 md:w-10 md:h-10 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+    <Link href="/profile" className="block w-8 h-8 md:w-10 md:h-10 hover:scale-110 transition-transform">
       <BrutalAvatar src={session.user.image} alt={session.user.name} />
     </Link>
   );
