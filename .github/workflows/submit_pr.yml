@@ -73,3 +73,4 @@ jobs:
             Please review the changes and merge them to update the database.
           branch: "update-content-${{ github.event.inputs.submitterName }}-${{ github.run_id }}"
           base: main
+          delete-branch: true
