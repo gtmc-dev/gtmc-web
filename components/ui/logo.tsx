@@ -7,17 +7,10 @@ interface LogoProps {
 
 export function Logo({ className = "", size = "md" }: LogoProps) {
   const sizeClasses = {
-    sm: "text-sm px-3 py-1",
-    md: "text-xl px-5 py-1.5",
-    lg: "text-3xl px-8 py-2.5",
-    xl: "text-5xl md:text-6xl px-12 py-4",
-  };
-
-  const textClasses = {
-    sm: "text-xs",
-    md: "text-lg",
-    lg: "text-2xl",
-    xl: "text-4xl md:text-5xl",
+    sm: "text-sm",
+    md: "text-xl",
+    lg: "text-3xl",
+    xl: "text-5xl md:text-6xl",
   };
   
   const slashClasses = {
@@ -30,12 +23,10 @@ export function Logo({ className = "", size = "md" }: LogoProps) {
   return (
     <Link 
       href="/" 
-      className={`inline-flex items-center justify-center bg-[#3c4a63] text-white font-black italic transform -skew-x-12 hover:bg-[#2c384e] transition-colors ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center font-sans tracking-widest transition-opacity hover:opacity-80 ${sizeClasses[size]} ${className}`}
     >
-      <span className={`transform skew-x-12 flex items-center tracking-widest ${textClasses[size]}`}>
-        <span className={`opacity-50 font-normal mr-2 ${slashClasses[size]}`}>{"//"}</span>
-        GTMC
-      </span>
+      <span className={`opacity-40 font-light mr-1 text-tech-main ${slashClasses[size]}`}>{"//"}</span>
+      <span className="font-bold text-tech-main-dark">GTMC</span>
     </Link>
   );
 }
