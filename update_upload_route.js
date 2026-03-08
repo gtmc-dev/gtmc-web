@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+const fs = require('fs');
+const content = \import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import COS from "cos-nodejs-sdk-v5";
 import path from "path";
@@ -22,8 +23,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const documentPath = formData.get("filePath") as string;
+    const file = formData.get("file");
+    const documentPath = formData.get("filePath");
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -38,24 +39,23 @@ export async function POST(req: NextRequest) {
     // Construct local path simulation
     // assets/SlimeTech/Molforte/timestamp-random.png
     const parsedPath = { dir: "" };
-    if (documentPath) {
+    if (documentPath && typeof documentPath === 'string') {
         const p = path.parse(documentPath);
         parsedPath.dir = p.dir;
     }
-    // Normalize path to forward slashes and remove leading/trailing slashes
-    const safeDir = (parsedPath.dir || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+    const safeDir = (parsedPath.dir || "").replace(/\\\\/g, "/").replace(/^\\/+|\\/+$/g, "");
     
     const ext = file.name.split('.').pop() || "bin";
-    const filename = `${Date.now()}-${Math.round(Math.random() * 1000)}.${ext}`;
+    const filename = \\-\.\\;
     
     // COS Key
-    const key = `assets/${safeDir ? safeDir + "/" : ""}asset/${filename}`;
+    const key = \ssets/\asset/\\;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     // Upload to Tencent Cloud COS
-    const data: any = await new Promise((resolve, reject) => {
+    const data = await new Promise((resolve, reject) => {
         cos.putObject({
             Bucket: BUCKET,
             Region: REGION,
@@ -73,13 +73,10 @@ export async function POST(req: NextRequest) {
     // Build Public URL
     let fileUrl = "";
     if (DOMAIN) {
-        const domainPrefix = DOMAIN.startsWith("http") ? DOMAIN : `https://${DOMAIN}`;
-        // Ensure no double slashes
-        const cleanDomain = domainPrefix.replace(/\/+$/, "");
-        fileUrl = `${cleanDomain}/${key}`;
+        const domainPrefix = DOMAIN.startsWith("http") ? DOMAIN : \https://\\;
+        fileUrl = \\/\\;
     } else {
-        // Use Location returned by COS (usually no protocol)
-        fileUrl = `https://${data.Location}`; 
+        fileUrl = \https://\\; 
     }
 
     if (!fileUrl.startsWith("http")) {
@@ -91,8 +88,12 @@ export async function POST(req: NextRequest) {
       url: fileUrl
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Upload failed: " + (error.message || String(error)) }, { status: 500 });
   }
 }
+\;
+
+fs.writeFileSync('app/api/upload/route.ts', content);
+console.log('Updated app/api/upload/route.ts');
