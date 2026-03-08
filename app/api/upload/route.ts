@@ -70,21 +70,9 @@ export async function POST(req: NextRequest) {
         });
     });
 
-    // Build Public URL
-    let fileUrl = "";
-    if (DOMAIN) {
-        const domainPrefix = DOMAIN.startsWith("http") ? DOMAIN : `https://${DOMAIN}`;
-        // Ensure no double slashes
-        const cleanDomain = domainPrefix.replace(/\/+$/, "");
-        fileUrl = `${cleanDomain}/${key}`;
-    } else {
-        // Use Location returned by COS (usually no protocol)
-        fileUrl = `https://${data.Location}`; 
-    }
-
-    if (!fileUrl.startsWith("http")) {
-       fileUrl = "https://" + fileUrl;
-    }
+    // Build Public URL for Vercel Proxy
+    // We rewrite /cos-assets/* to the actual COS bucket URL
+    const fileUrl = `/cos-assets/${key}`;
 
     return NextResponse.json({
       success: true,

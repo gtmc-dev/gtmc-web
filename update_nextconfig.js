@@ -1,4 +1,5 @@
-import type { NextConfig } from "next";
+const fs = require('fs');
+const content = \import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma"],
@@ -18,11 +19,13 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/cos-assets/:path*",
-        destination: `https://${process.env.COS_BUCKET}.cos.${process.env.COS_REGION}.myqcloud.com/:path*`,
+        destination: \https://\.cos.\.myqcloud.com/:path*\,
       },
     ];
   },
 };
 
-export default nextConfig;
+export default nextConfig;\;
 
+fs.writeFileSync('next.config.ts', content);
+console.log('Updated next.config.ts with rewrites');
