@@ -196,10 +196,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
         </div>
 
         {/* 編輯區 */}
-        <div className="relative flex-grow flex flex-col">
+        <div className="relative flex-grow flex flex-col bg-white">
           <textarea
             ref={textareaRef}
-            className={`w-full flex-grow p-6 font-mono text-sm leading-relaxed text-tech-main placeholder-tech-main/40 border-none outline-none resize-none ${isReadOnly ? 'bg-gray-50 text-gray-700 cursor-not-allowed' : 'bg-transparent'}`}
+            className={`w-full flex-grow p-6 font-mono text-sm leading-relaxed text-black placeholder-zinc-500 border-none outline-none resize-none ${isReadOnly ? 'bg-gray-50 cursor-not-allowed' : 'bg-transparent'}`}
             placeholder="ENTER FEATURE DESCRIPTION... (Use Markdown)"
             value={content}
             onChange={(e) => setContent(e.target.value)}

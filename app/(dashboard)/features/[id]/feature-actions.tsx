@@ -28,8 +28,11 @@ export function FeatureActions({ featureId, status, isAssignee, isAdmin, hasAssi
   }
 
   const handleResolve = () => {
+    const comment = window.prompt("Resolution comment (optional):")
+    if (comment === null) return // cancelled
+    
     startTransition(async () => {
-      await resolveFeature(featureId)
+      await resolveFeature(featureId, comment)
     })
   }
 

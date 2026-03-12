@@ -4,6 +4,8 @@ import { FeatureEditor } from "@/components/editor/feature-editor"
 import { notFound } from "next/navigation"
 import { BrutalCard } from "@/components/ui/brutal-card"
 import { FeatureActions } from "./feature-actions"
+import { FeatureComments } from "./feature-comments"
+import { FeatureExplanation } from "./feature-explanation"
 
 export default async function FeatureDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -17,6 +19,14 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
       },
       assignee: {
         select: { name: true, image: true, email: true }
+      },
+      comments: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          author: {
+            select: { name: true, image: true, email: true }
+          }
+        }
       }
     }
   })
@@ -69,10 +79,17 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
           </div>
           <div className="flex gap-2">
             <span className="font-bold text-zinc-500 w-24">CREATED:</span>
-            <span>{new Date(feature.createdAt).toLocaleString()}</span>
+            <span suppressHydrationWarning>{new Date(feature.createdAt).toLocaleString()}</span>
           </div>
         </div>
       </BrutalCard>
+
+      <FeatureExplanation 
+        featureId={feature.id} 
+        initialExplanation={feature.explanation} 
+        isAssignee={isAssignee} 
+        isAdmin={isAdmin} 
+      />
 
       <div className="pt-4">
         {canEdit ? (
@@ -92,20 +109,22 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
             {feature.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6">
                 {feature.tags.map(tag => (
-                  <span key={tag} className="text-xs bg-zinc-800 text-white px-2 py-1 font-mono">
+                  <span key={tag} className="text-xs font-mono uppercase border border-tech-main text-tech-main bg-tech-accent/10 px-2 py-1">
                     {tag}
                   </span>
                 ))}
               </div>
             )}
             
-            <div className="prose prose-zinc max-w-none mt-8 border-t border-dashed border-zinc-300 pt-6">
+            <div className="prose prose-zinc max-w-none mt-8 border-t border-dashed border-tech-main/30 pt-6">
               {/* Very simple non-editable view, actual MD rendering could be added here */}
               <div className="whitespace-pre-wrap font-mono text-sm">{feature.content}</div>
             </div>
           </BrutalCard>
         )}
       </div>
+      
+      <FeatureComments featureId={feature.id} initialComments={feature.comments} userId={session?.user?.id} />
     </div>
   )
 }
