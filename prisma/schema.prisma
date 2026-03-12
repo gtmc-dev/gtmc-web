@@ -27,6 +27,8 @@ model User {
   articles      Article[]  @relation("ArticleAuthor")
   revisions     Revision[] @relation("RevisionAuthor")
   reviews       Revision[] @relation("RevisionReviewer")
+  features         Feature[] @relation("FeatureAuthor")
+  assignedFeatures Feature[] @relation("FeatureAssignee")
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -100,6 +102,27 @@ model Revision {
 
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+}
+
+// ==========================================
+// 4. Feature Report
+// ==========================================
+
+model Feature {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  tags        String[]
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED
+  
+  authorId    String
+  author      User     @relation("FeatureAuthor", fields: [authorId], references: [id])
+  
+  assigneeId  String?
+  assignee    User?    @relation("FeatureAssignee", fields: [assigneeId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 
