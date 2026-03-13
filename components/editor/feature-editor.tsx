@@ -102,9 +102,11 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
         alert(data.error || "Upload failed");
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Upload error";
       setContent((prev) =>
-        prev.replace(placeholder, `<!-- Upload error -->\n`),
+        prev.replace(placeholder, `<!-- Upload failed: ${message} -->\n`),
       );
+      alert(message);
       console.error(error);
     } finally {
       setIsUploading(false);
