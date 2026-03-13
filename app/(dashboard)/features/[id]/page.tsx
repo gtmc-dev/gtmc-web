@@ -36,6 +36,8 @@ export default async function FeatureDetailPage({
     notFound();
   }
 
+  const isClosed = issue.state === "closed";
+
   const parsedIssue = parseIssueBody(issue.body);
   const rawComments = await listIssueComments(issue.number);
 
@@ -102,7 +104,7 @@ export default async function FeatureDetailPage({
         </div>
 
         {/* Status Actions for logged in users */}
-        {session?.user && (
+        {session?.user && !isClosed && (
           <FeatureActions
             featureId={feature.id}
             status={feature.status}
@@ -112,6 +114,15 @@ export default async function FeatureDetailPage({
           />
         )}
       </div>
+
+      {isClosed && (
+        <div className="border-2 border-red-500 bg-red-50 p-4 font-mono text-sm text-red-800 uppercase tracking-wider mb-8 shadow-[4px_4px_0px_rgba(239,68,68,1)]">
+          <span className="font-bold">⚠ FEATURE DELETED (READ-ONLY)</span>
+          <p className="mt-1 text-xs text-red-600 normal-case tracking-normal">
+            This feature has been closed/deleted. The content is preserved for historical reference. No changes can be made.
+          </p>
+        </div>
+      )}
 
       <BrutalCard className="mb-8">
         <div className="flex flex-col gap-2 font-mono text-sm">
@@ -147,10 +158,11 @@ export default async function FeatureDetailPage({
         initialExplanation={feature.explanation}
         isAssignee={isAssignee}
         isAdmin={isAdmin}
+        isClosed={isClosed}
       />
 
       <div className="pt-4">
-        {canEdit ? (
+        {!isClosed && canEdit ? (
           <FeatureEditor
             initialData={{
               id: feature.id,
@@ -191,6 +203,7 @@ export default async function FeatureDetailPage({
         featureId={feature.id}
         initialComments={feature.comments}
         userId={session?.user?.id}
+        isClosed={isClosed}
       />
     </div>
   );
