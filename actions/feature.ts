@@ -3,6 +3,14 @@
 import { prisma as db } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import {
+  listAllIssues,
+  addIssueComment,
+  updateIssue,
+  parseIssueBody,
+  serializeIssueBody,
+  serializeCommentBody,
+} from "@/lib/github-features";
 
 const QQ_BOT_WEBHOOK = process.env.QQ_BOT_WEBHOOK || "";
 
@@ -22,6 +30,27 @@ async function sendQQBotNotification(payload: any) {
   } catch (error) {
     console.error("Failed to send QQ Bot Notification:", error);
   }
+}
+
+async function getIssueNumberByIndex(localIndex: number): Promise<number> {
+  const allIssues = await listAllIssues("all");
+  allIssues.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+  const issue = allIssues[localIndex];
+  if (!issue) throw new Error("Not found");
+  return issue.number;
+}
+
+async function getFeatureByIndex(localIndex: number) {
+  const allIssues = await listAllIssues("all");
+  allIssues.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+  const issue = allIssues[localIndex];
+  if (!issue) return null;
+  const parsed = parseIssueBody(issue.body);
+  return { issue, parsed };
 }
 
 export async function createFeature(data: {
@@ -97,21 +126,29 @@ export async function updateFeatureExplanation(
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const feature = await db.feature.findUnique({ where: { id } });
+  const localIndex = parseInt(id, 10);
+  if (isNaN(localIndex)) throw new Error("Invalid feature ID");
+
+  const feature = await getFeatureByIndex(localIndex);
   if (!feature) throw new Error("Not found");
 
-  // Assignee or Admin can update explanation
-  if (feature.assigneeId !== session.user.id && session.user.role !== "ADMIN") {
-    throw new Error("Forbidden");
-  }
+  const { issue, parsed } = feature;
 
-  const updated = await db.feature.update({
-    where: { id },
-    data: { explanation },
-  });
+  const isAdmin = session.user.role === "ADMIN";
+  const isAssignee =
+    (parsed.metadata as any)?.assigneeId === session.user.id;
+  if (!isAssignee && !isAdmin) throw new Error("Forbidden");
+
+  const newBody = serializeIssueBody(
+    parsed.userContent,
+    parsed.metadata ?? { appUserId: "", authorName: null, authorEmail: null },
+    explanation || undefined,
+  );
+
+  await updateIssue(issue.number, { body: newBody });
 
   revalidatePath(`/features/${id}`);
-  return { success: true, feature: updated };
+  return { success: true };
 }
 
 export async function assignFeature(id: string) {
@@ -180,20 +217,33 @@ export async function addFeatureComment(id: string, content: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const feature = await db.feature.findUnique({ where: { id } });
+  const localIndex = parseInt(id, 10);
+  if (isNaN(localIndex)) throw new Error("Invalid feature ID");
+
+  const feature = await getFeatureByIndex(localIndex);
   if (!feature) throw new Error("Not found");
 
-  const comment = await db.featureComment.create({
-    data: {
-      content,
-      featureId: id,
-      authorId: session.user.id,
-    },
-    include: {
-      author: true,
-    },
+  const commentBody = serializeCommentBody(content, {
+    appUserId: session.user.id,
+    authorName: session.user.name ?? null,
+    authorEmail: session.user.email ?? null,
   });
 
+  const ghComment = await addIssueComment(feature.issue.number, commentBody);
+
   revalidatePath(`/features/${id}`);
-  return { success: true, comment };
+
+  return {
+    success: true,
+    comment: {
+      id: String(ghComment.id),
+      content,
+      createdAt: new Date(ghComment.createdAt),
+      author: {
+        name: session.user.name ?? null,
+        email: session.user.email ?? null,
+        image: (session.user as any).image ?? null,
+      },
+    },
+  };
 }
