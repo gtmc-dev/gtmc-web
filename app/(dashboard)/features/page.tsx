@@ -8,11 +8,18 @@ import {
 import Link from "next/link";
 import { BrutalButton } from "@/components/ui/brutal-button";
 import { FeatureList } from "./feature-list";
+import { PendingCreationBanner } from "./pending-creation-banner";
 
 export const revalidate = 60;
 
-export default async function FeaturesPage() {
+export default async function FeaturesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await auth();
+  const params = await searchParams;
+  const isCreated = params?.created === "true";
 
   const allIssues = await listAllIssues();
   allIssues.sort(
@@ -62,6 +69,8 @@ export default async function FeaturesPage() {
           </Link>
         )}
       </div>
+
+      {isCreated && <PendingCreationBanner />}
 
       <div className="mt-8 pt-4">
         <FeatureList features={features} />
