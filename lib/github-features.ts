@@ -89,13 +89,13 @@ const GITHUB_ACCEPT_HEADER = "application/vnd.github.v3+json";
 function getGithubRepoConfig(): GithubRepoConfig {
   const owner = process.env.GITHUB_REPO_OWNER;
   const repo = process.env.GITHUB_REPO_NAME;
-  const token = process.env.GITHUB_SYSTEM_PAT;
+  const token = process.env.GITHUB_FEATURES_ISSUES_PAT;
 
   if (!owner || !repo || !token) {
     throw new GithubFeaturesError({
       code: "CONFIG_MISSING",
       message:
-        "Missing GitHub configuration. Required env vars: GITHUB_REPO_OWNER, GITHUB_REPO_NAME, GITHUB_SYSTEM_PAT.",
+        "Missing GitHub configuration. Required env vars: GITHUB_REPO_OWNER, GITHUB_REPO_NAME, GITHUB_FEATURES_ISSUES_PAT.",
     });
   }
 
