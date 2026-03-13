@@ -102,6 +102,18 @@ function getGithubRepoConfig(): GithubRepoConfig {
   return { owner, repo, token };
 }
 
+function getGithubWriteToken(): string {
+  const token = process.env.GITHUB_FEATURES_WRITE_PAT;
+  if (!token) {
+    throw new GithubFeaturesError({
+      code: "CONFIG_MISSING",
+      message:
+        "Missing GitHub write configuration. Required env var: GITHUB_FEATURES_WRITE_PAT.",
+    });
+  }
+  return token;
+}
+
 function getRepoIssuesBaseUrl(config: GithubRepoConfig): string {
   return `${GITHUB_API_BASE}/repos/${config.owner}/${config.repo}/issues`;
 }
