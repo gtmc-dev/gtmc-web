@@ -121,7 +121,7 @@ export async function createFeature(data: {
 
 export async function updateFeature(
   id: string,
-  data: { title: string; content: string; tags: string[] },
+  data: { title: string; content: string; tags: string[]; },
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");

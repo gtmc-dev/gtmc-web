@@ -14,7 +14,7 @@ export const revalidate = 60;
 export default async function FeaturesPage() {
   const session = await auth();
 
-  const allIssues = await listAllIssues("all");
+  const allIssues = await listAllIssues();
   allIssues.sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
@@ -36,10 +36,10 @@ export default async function FeaturesPage() {
       },
       assignee: assigneeId
         ? {
-            name: parsed.metadata?.assigneeName ?? null,
-            email: parsed.metadata?.assigneeEmail ?? null,
-            image: null,
-          }
+          name: parsed.metadata?.assigneeName ?? null,
+          email: parsed.metadata?.assigneeEmail ?? null,
+          image: null,
+        }
         : null,
     };
   });
