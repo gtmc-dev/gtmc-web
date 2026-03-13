@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
-  listAllIssues,
   addIssueComment,
   createIssue,
   updateIssue,
@@ -108,49 +107,32 @@ export async function createFeature(data: {
 
   const labels = [...tagsToLabels(data.tags), ...statusToLabels("PENDING")];
 
-  const created = await createIssue(data.title, body, labels);
+   const created = await createIssue(data.title, body, labels);
 
-  // Resolve local index with retry/backoff (GitHub eventual consistency)
-  const retryDelays = [500, 1000, 2000, 4000, 8000];
-  let localIndex = -1;
-  for (let attempt = 0; attempt <= retryDelays.length && localIndex === -1; attempt++) {
-    if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt - 1]));
-    }
-    const allIssues = await listAllIssues("all");
-    allIssues.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
-    localIndex = allIssues.findIndex((i) => i.number === created.number);
-  }
-  if (localIndex === -1) {
-    throw new Error("Feature created but index could not be resolved after retries");
-  }
+   // Send structured payload for AstrBot
+   await sendQQBotNotification({
+     type: "new_feature",
+     text: `New feature report from [${session.user.name || session.user.email}]: ${data.title}\nID: ${created.number}`,
+     data: {
+       id: String(created.number),
+       title: data.title,
+       author: session.user.name || session.user.email,
+       tags: data.tags,
+       url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/features/${created.number}`,
+     },
+   });
 
-  // Send structured payload for AstrBot
-  await sendQQBotNotification({
-    type: "new_feature",
-    text: `New feature report from [${session.user.name || session.user.email}]: ${data.title}\nID: ${localIndex}`,
-    data: {
-      id: String(localIndex),
-      title: data.title,
-      author: session.user.name || session.user.email,
-      tags: data.tags,
-      url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/features/${localIndex}`,
-    },
-  });
-
-  revalidatePath("/features");
-  return {
-    success: true,
-    feature: {
-      id: String(localIndex),
-      title: data.title,
-      content: data.content,
-      tags: data.tags,
-    },
-  };
-}
+   revalidatePath("/features");
+   return {
+     success: true,
+     feature: {
+       id: String(created.number),
+       title: data.title,
+       content: data.content,
+       tags: data.tags,
+     },
+   };
+ }
 
 export async function updateFeature(
   id: string,
