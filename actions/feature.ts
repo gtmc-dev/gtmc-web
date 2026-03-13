@@ -1,6 +1,5 @@
 "use server";
 
-import { prisma as db } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import {
@@ -8,6 +7,9 @@ import {
   addIssueComment,
   createIssue,
   updateIssue,
+  setIssueLabels,
+  setIssueState,
+  setIssueAssignees,
   parseIssueBody,
   serializeIssueBody,
   serializeCommentBody,
@@ -15,6 +17,7 @@ import {
   tagsToLabels,
   statusToLabels,
   labelsToStatus,
+  labelsToTags,
   type IssueMetadata,
 } from "@/lib/github-features";
 
@@ -211,62 +214,123 @@ export async function assignFeature(id: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const feature = await db.feature.update({
-    where: { id },
-    data: {
-      status: "IN_PROGRESS",
+  const localIndex = parseInt(id, 10);
+  if (isNaN(localIndex)) throw new Error("Invalid feature ID");
+
+  const feature = await getFeatureByIndex(localIndex);
+  if (!feature) throw new Error("Not found");
+
+  const { issue, parsed } = feature;
+
+  const newBodyWithAssignee = serializeIssueBody(
+    parsed.userContent,
+    {
+      appUserId: parsed.metadata?.appUserId ?? "",
+      authorName: parsed.metadata?.authorName ?? null,
+      authorEmail: parsed.metadata?.authorEmail ?? null,
       assigneeId: session.user.id,
+      assigneeName: session.user.name ?? null,
+      assigneeEmail: session.user.email ?? null,
     },
-  });
+    parsed.explanation ?? undefined,
+  );
+
+  const tags = labelsToTags(issue.labels);
+  const newLabels = [...tagsToLabels(tags), ...statusToLabels("IN_PROGRESS")];
+
+  await Promise.all([
+    setIssueLabels(issue.number, newLabels),
+    updateIssue(issue.number, { body: newBodyWithAssignee }),
+  ]);
+
+  if (session.user.name) {
+    try {
+      await setIssueAssignees(issue.number, [session.user.name]);
+    } catch (error) {
+      console.warn("Failed to sync GitHub assignee:", error);
+    }
+  }
 
   revalidatePath("/features");
   revalidatePath(`/features/${id}`);
-  return { success: true, feature };
+  return { success: true, feature: { id } };
 }
 
 export async function unassignFeature(id: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const feature = await db.feature.update({
-    where: { id },
-    data: {
-      status: "PENDING",
-      assigneeId: null,
+  const localIndex = parseInt(id, 10);
+  if (isNaN(localIndex)) throw new Error("Invalid feature ID");
+
+  const feature = await getFeatureByIndex(localIndex);
+  if (!feature) throw new Error("Not found");
+
+  const { issue, parsed } = feature;
+
+  const newBody = serializeIssueBody(
+    parsed.userContent,
+    {
+      appUserId: parsed.metadata?.appUserId ?? "",
+      authorName: parsed.metadata?.authorName ?? null,
+      authorEmail: parsed.metadata?.authorEmail ?? null,
     },
-  });
+    parsed.explanation ?? undefined,
+  );
+
+  const tags = labelsToTags(issue.labels);
+  const newLabels = [...tagsToLabels(tags), ...statusToLabels("PENDING")];
+
+  await Promise.all([
+    setIssueLabels(issue.number, newLabels),
+    updateIssue(issue.number, { body: newBody }),
+  ]);
+
+  try {
+    await setIssueAssignees(issue.number, []);
+  } catch (error) {
+    console.warn("Failed to clear GitHub assignees:", error);
+  }
 
   revalidatePath("/features");
   revalidatePath(`/features/${id}`);
-  return { success: true, feature };
+  return { success: true, feature: { id } };
 }
 
 export async function resolveFeature(id: string, resolutionComment?: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  const localIndex = parseInt(id, 10);
+  if (isNaN(localIndex)) throw new Error("Invalid feature ID");
+
   if (session.user.role !== "ADMIN") throw new Error("Admin only");
 
-  const feature = await db.feature.update({
-    where: { id },
-    data: {
-      status: "RESOLVED",
-    },
-  });
+  const feature = await getFeatureByIndex(localIndex);
+  if (!feature) throw new Error("Not found");
+
+  const { issue } = feature;
+
+  const tags = labelsToTags(issue.labels);
+  const newLabels = [...tagsToLabels(tags), ...statusToLabels("RESOLVED")];
+
+  await setIssueLabels(issue.number, newLabels);
+  await setIssueState(issue.number, "closed");
 
   if (resolutionComment) {
-    await db.featureComment.create({
-      data: {
-        content: `[Resolution]: ${resolutionComment}`,
-        featureId: id,
-        authorId: session.user.id,
-      },
-    });
+    await addIssueComment(
+      issue.number,
+      serializeCommentBody(`[Resolution]: ${resolutionComment}`, {
+        appUserId: session.user.id,
+        authorName: session.user.name ?? null,
+        authorEmail: session.user.email ?? null,
+      }),
+    );
   }
 
   revalidatePath("/features");
   revalidatePath(`/features/${id}`);
-  return { success: true, feature };
+  return { success: true, feature: { id } };
 }
 
 export async function addFeatureComment(id: string, content: string) {
