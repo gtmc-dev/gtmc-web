@@ -68,8 +68,8 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
       let data;
       try {
         data = await res.json();
-      } catch (e) {
-        throw new Error("HTTP " + res.status + " : " + (await res.text()));
+      } catch {
+        throw new Error(`HTTP ${res.status}`);
       }
 
       if (res.ok && data.url) {
