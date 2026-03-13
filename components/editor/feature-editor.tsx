@@ -5,6 +5,7 @@ import { BrutalButton } from "../ui/brutal-button";
 import { BrutalInput } from "../ui/brutal-input";
 import { useRouter } from "next/navigation";
 import { updateFeature } from "@/actions/feature";
+import { compressImageForUpload } from "@/lib/image-compression";
 
 interface FeatureEditorProps {
   initialData?: {
@@ -23,6 +24,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
   const [tags, setTags] = React.useState(initialData?.tags?.join(", ") || "");
   const [isSaving, setIsSaving] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [isCompressing, setIsCompressing] = React.useState(false);
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -53,17 +55,34 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
     }
 
     setIsUploading(true);
+    setIsCompressing(true);
     const placeholder = `![Uploading ${file.name}...]()\n`;
     insertTextAtCursor(placeholder);
 
     try {
+      const result = await compressImageForUpload(file);
+      setIsCompressing(false);
+
+      if (result.error) {
+        setContent((prev) =>
+          prev.replace(placeholder, `<!-- Upload failed: ${result.error} -->\n`),
+        );
+        alert(result.error);
+        setIsUploading(false);
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", result.file);
 
       const res = await fetch("/api/upload/feature", {
         method: "POST",
         body: formData,
       });
+
+      if (res.status === 413) {
+        throw new Error("Image is too large to upload. Please use a smaller image.");
+      }
 
       let data;
       try {
@@ -89,6 +108,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
       console.error(error);
     } finally {
       setIsUploading(false);
+      setIsCompressing(false);
     }
   };
 
@@ -265,7 +285,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
             disabled={isReadOnly || isUploading}
             className="hover:bg-tech-accent/20 px-3 py-1.5 transition-colors border border-transparent hover:border-white/20 select-none"
           >
-            {isUploading ? "[ UPLOADING... ]" : "[ UPLOAD_IMG ]"}
+            {isCompressing ? "[ COMPRESSING... ]" : isUploading ? "[ UPLOADING... ]" : "[ UPLOAD_IMG ]"}
           </button>
           <input
             ref={fileInputRef}
@@ -303,7 +323,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
           {isUploading && (
             <div className="absolute top-4 right-4 bg-tech-main text-tech-accent text-xs font-mono px-3 py-1.5 border border-tech-accent shadow-sm shadow-tech-accent/20 z-20 flex items-center gap-2 backdrop-blur-sm">
               <span className="inline-block w-2 h-2 bg-tech-accent animate-pulse"></span>
-              UPLOADING_IMAGE...
+              {isCompressing ? "COMPRESSING_IMAGE..." : "UPLOADING_IMAGE..."}
             </div>
           )}
         </div>
