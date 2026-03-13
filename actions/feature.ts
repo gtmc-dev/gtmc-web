@@ -83,6 +83,21 @@ async function resolveMentionToken(
   return displayName ?? displayEmail ?? appUserId;
 }
 
+function getMetadataForWrite(
+  metadata: IssueMetadata | null,
+  fallbackAppUserId: string,
+): IssueMetadata {
+  if (metadata) {
+    return metadata;
+  }
+
+  return {
+    appUserId: fallbackAppUserId,
+    authorName: null,
+    authorEmail: null,
+  };
+}
+
 export async function createFeature(data: {
   title: string;
   content: string;
@@ -244,13 +259,17 @@ export async function assignFeature(id: string) {
   if (!feature) throw new Error("Not found");
 
   const { issue, parsed } = feature;
+  const metadataForWrite = getMetadataForWrite(
+    parsed.metadata,
+    `legacy-issue-${issue.number}`,
+  );
 
   const newBodyWithAssignee = serializeIssueBody(
     parsed.userContent,
     {
-      appUserId: parsed.metadata?.appUserId ?? "",
-      authorName: parsed.metadata?.authorName ?? null,
-      authorEmail: parsed.metadata?.authorEmail ?? null,
+      appUserId: metadataForWrite.appUserId,
+      authorName: metadataForWrite.authorName,
+      authorEmail: metadataForWrite.authorEmail,
       assigneeId: session.user.id,
       assigneeName: session.user.name ?? null,
       assigneeEmail: session.user.email ?? null,
@@ -301,13 +320,21 @@ export async function unassignFeature(id: string) {
   if (!feature) throw new Error("Not found");
 
   const { issue, parsed } = feature;
+  const isAdmin = session.user.role === "ADMIN";
+  const isAssignee = parsed.metadata?.assigneeId === session.user.id;
+  if (!isAssignee && !isAdmin) throw new Error("Forbidden");
+
+  const metadataForWrite = getMetadataForWrite(
+    parsed.metadata,
+    `legacy-issue-${issue.number}`,
+  );
 
   const newBody = serializeIssueBody(
     parsed.userContent,
     {
-      appUserId: parsed.metadata?.appUserId ?? "",
-      authorName: parsed.metadata?.authorName ?? null,
-      authorEmail: parsed.metadata?.authorEmail ?? null,
+      appUserId: metadataForWrite.appUserId,
+      authorName: metadataForWrite.authorName,
+      authorEmail: metadataForWrite.authorEmail,
     },
     parsed.explanation ?? undefined,
   );
