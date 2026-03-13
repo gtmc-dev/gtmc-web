@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
 import {
   listAllIssues,
   addIssueComment,
@@ -9,10 +10,11 @@ import {
   updateIssue,
   setIssueLabels,
   setIssueState,
-  setIssueAssignees,
   parseIssueBody,
   serializeIssueBody,
   serializeCommentBody,
+  serializeSystemComment,
+  getGithubLoginByAccountId,
   ensureLabel,
   tagsToLabels,
   statusToLabels,
@@ -60,6 +62,25 @@ async function getFeatureByIndex(localIndex: number) {
   if (!issue) return null;
   const parsed = parseIssueBody(issue.body);
   return { issue, parsed };
+}
+
+async function resolveMentionToken(
+  appUserId: string,
+  displayName: string | null,
+  displayEmail: string | null,
+): Promise<string> {
+  try {
+    const account = await prisma.account.findFirst({
+      where: { provider: "github", userId: appUserId },
+    });
+    if (account) {
+      const login = await getGithubLoginByAccountId(account.providerAccountId);
+      if (login) return `@${login}`;
+    }
+  } catch {
+    // fallthrough to plain text
+  }
+  return displayName ?? displayEmail ?? appUserId;
 }
 
 export async function createFeature(data: {
@@ -245,12 +266,23 @@ export async function assignFeature(id: string) {
     updateIssue(issue.number, { body: newBodyWithAssignee }),
   ]);
 
-  if (session.user.name) {
-    try {
-      await setIssueAssignees(issue.number, [session.user.name]);
-    } catch (error) {
-      console.warn("Failed to sync GitHub assignee:", error);
-    }
+  // Post claim bot comment (best-effort, does not fail the action)
+  try {
+    const mentionToken = await resolveMentionToken(
+      session.user.id,
+      session.user.name ?? null,
+      session.user.email ?? null,
+    );
+    const payload = `[Assignment Notice]
+Action: CLAIMED
+Assignee: ${mentionToken}
+AssigneeId: ${session.user.id}
+AssigneeEmail: ${session.user.email ?? "N/A"}
+By: ${mentionToken}
+At: ${new Date().toISOString()}`;
+    await addIssueComment(issue.number, serializeSystemComment(payload));
+  } catch (error) {
+    console.warn("Failed to post claim bot comment:", error);
   }
 
   revalidatePath("/features");
@@ -288,10 +320,30 @@ export async function unassignFeature(id: string) {
     updateIssue(issue.number, { body: newBody }),
   ]);
 
+  // Post drop bot comment (best-effort, does not fail the action)
   try {
-    await setIssueAssignees(issue.number, []);
+    const mentionToken = await resolveMentionToken(
+      session.user.id,
+      session.user.name ?? null,
+      session.user.email ?? null,
+    );
+    const prevAssigneeId = parsed.metadata?.assigneeId ?? "";
+    const previousMentionToken = prevAssigneeId
+      ? await resolveMentionToken(
+          prevAssigneeId,
+          parsed.metadata?.assigneeName ?? null,
+          parsed.metadata?.assigneeEmail ?? null,
+        )
+      : "N/A";
+    const payload = `[Assignment Notice]
+Action: DROPPED
+PreviousAssignee: ${previousMentionToken}
+PreviousAssigneeId: ${parsed.metadata?.assigneeId ?? "N/A"}
+By: ${mentionToken}
+At: ${new Date().toISOString()}`;
+    await addIssueComment(issue.number, serializeSystemComment(payload));
   } catch (error) {
-    console.warn("Failed to clear GitHub assignees:", error);
+    console.warn("Failed to post drop bot comment:", error);
   }
 
   revalidatePath("/features");
