@@ -785,21 +785,53 @@ export function serializeSystemComment(content: string): string {
 }
 
 export async function getGithubLoginByAccountId(accountId: string): Promise<string | null> {
-  // Guard against non-numeric input
-  if (isNaN(Number(accountId))) {
+  const normalizedAccountId = accountId.trim();
+  if (!normalizedAccountId) {
     return null;
   }
+
+  const endpoint = Number.isNaN(Number(normalizedAccountId))
+    ? `${GITHUB_API_BASE}/users/${encodeURIComponent(normalizedAccountId)}`
+    : `${GITHUB_API_BASE}/user/${normalizedAccountId}`;
 
   try {
     const { data } = await requestGithub<{
       login: string;
       id: number;
       [key: string]: unknown;
-    }>(`https://api.github.com/user/${accountId}`, {
+    }>(endpoint, {
       method: "GET",
     });
 
     if (!data || !data.login) {
+      return null;
+    }
+
+    return data.login;
+  } catch {
+    return null;
+  }
+}
+
+export async function getGithubLoginByToken(token: string): Promise<string | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const { data } = await requestGithub<{
+      login?: string;
+      [key: string]: unknown;
+    }>(
+      `${GITHUB_API_BASE}/user`,
+      {
+        method: "GET",
+      },
+      undefined,
+      token,
+    );
+
+    if (!data || typeof data.login !== "string" || data.login.length === 0) {
       return null;
     }
 

@@ -14,6 +14,7 @@ import {
   serializeCommentBody,
   serializeSystemComment,
   getGithubLoginByAccountId,
+  getGithubLoginByToken,
   ensureLabel,
   tagsToLabels,
   statusToLabels,
@@ -55,14 +56,38 @@ async function getFeatureByIssueNumber(issueNumber: number) {
   return { issue, parsed };
 }
 
+async function resolveGithubLoginFromAccount(
+  account: {
+    providerAccountId: string;
+    access_token: string | null;
+  } | null,
+): Promise<string | null> {
+  if (!account) {
+    return null;
+  }
+
+  const loginByAccountId = await getGithubLoginByAccountId(account.providerAccountId);
+  if (loginByAccountId) {
+    return loginByAccountId;
+  }
+
+  if (!account.access_token) {
+    return null;
+  }
+
+  return getGithubLoginByToken(account.access_token);
+}
+
 async function resolveMentionToken(appUserId: string, displayName: string | null): Promise<string> {
   try {
     const account = await prisma.account.findFirst({
       where: { provider: "github", userId: appUserId },
     });
     if (account) {
-      const login = await getGithubLoginByAccountId(account.providerAccountId);
-      if (login) return `@${login}`;
+      const login = await resolveGithubLoginFromAccount(account);
+      if (login) {
+        return `@${login}`;
+      }
     }
   } catch {
     // fallthrough to plain text
@@ -422,9 +447,7 @@ export async function addFeatureComment(id: string, content: string) {
   const visibility = await getGithubEmailVisibility(account?.access_token || "");
   const isPrivate = visibility === "private";
 
-  const githubLogin = account?.providerAccountId
-    ? await getGithubLoginByAccountId(account.providerAccountId)
-    : null;
+  const githubLogin = await resolveGithubLoginFromAccount(account);
   const fallbackAuthorLabel = session.user.name ?? session.user.email ?? session.user.id;
   const mentionToken = githubLogin ? `@${githubLogin}` : fallbackAuthorLabel;
   const authorLine = githubLogin
