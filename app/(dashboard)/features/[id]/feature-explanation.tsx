@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { BrutalCard } from "@/components/ui/brutal-card";
 import { BrutalButton } from "@/components/ui/brutal-button";
 import { updateFeatureExplanation } from "@/actions/feature";
+import { LoadingIndicator, PENDING_LABELS } from "../loading-indicator";
 
 interface FeatureExplanationProps {
   featureId: string;
@@ -65,7 +66,11 @@ export function FeatureExplanation({
             onClick={handleSave}
             disabled={isPending}
           >
-            {isPending ? "SAVING..." : "SAVE_EXPLANATION"}
+            {isPending ? (
+              <LoadingIndicator label={PENDING_LABELS.SAVING_EXPLANATION} />
+            ) : (
+              "SAVE_EXPLANATION"
+            )}
           </BrutalButton>
         </div>
       </BrutalCard>
