@@ -49,6 +49,7 @@ export function FeatureExplanation({
           onChange={(e) => setExplanation(e.target.value)}
           placeholder="PROVIDE OFFICIAL EXPLANATION / RESOLUTION..."
           disabled={isPending}
+          aria-busy={isPending}
         />
         <div className="flex gap-2 justify-end">
           <BrutalButton
@@ -65,6 +66,7 @@ export function FeatureExplanation({
             className="bg-tech-accent border-tech-accent text-white hover:bg-tech-accent/90"
             onClick={handleSave}
             disabled={isPending}
+            aria-busy={isPending}
           >
             {isPending ? (
               <LoadingIndicator label={PENDING_LABELS.SAVING_EXPLANATION} />

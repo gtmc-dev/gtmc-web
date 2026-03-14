@@ -2,7 +2,7 @@ import { BrutalCard } from "@/components/ui/brutal-card";
 
 export default function FeatureDetailLoading() {
   return (
-    <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-26l">
+    <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-26l" aria-busy="true" aria-label="Loading feature details">
       {/* Title/Action Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>

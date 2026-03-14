@@ -2,7 +2,11 @@ import { BrutalCard } from "@/components/ui/brutal-card";
 
 export default function FeaturesLoading() {
   return (
-    <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-5xl">
+    <div
+      className="container mx-auto p-4 md:p-8 space-y-6 max-w-5xl"
+      aria-busy="true"
+      aria-label="Loading features list"
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="h-10 w-64 bg-tech-accent/20 animate-pulse border-b-2 border-tech-main/30 inline-block"></div>

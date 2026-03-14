@@ -57,6 +57,7 @@ export function FeatureActions({ featureId, status, isAssignee, isAdmin, hasAssi
                 disabled={isPending}
                 variant="secondary"
                 size="sm"
+                aria-busy={pendingAction === "assign"}
               >
                 {pendingAction === "assign" ? (
                   <LoadingIndicator label={PENDING_LABELS.CLAIMING_ISSUE} />
@@ -69,7 +70,13 @@ export function FeatureActions({ featureId, status, isAssignee, isAdmin, hasAssi
 
           {isAssignee && (
             <div>
-              <BrutalButton onClick={handleUnassign} disabled={isPending} variant="ghost" size="sm">
+              <BrutalButton
+                onClick={handleUnassign}
+                disabled={isPending}
+                variant="ghost"
+                size="sm"
+                aria-busy={pendingAction === "unassign"}
+              >
                 {pendingAction === "unassign" ? (
                   <LoadingIndicator label={PENDING_LABELS.DROPPING_ISSUE} />
                 ) : (
@@ -87,6 +94,7 @@ export function FeatureActions({ featureId, status, isAssignee, isAdmin, hasAssi
                 variant="primary"
                 size="sm"
                 className="bg-green-600 hover:bg-green-700 text-white border-green-800"
+                aria-busy={pendingAction === "resolve"}
               >
                 {pendingAction === "resolve" ? (
                   <LoadingIndicator label={PENDING_LABELS.RESOLVING_ISSUE} />
