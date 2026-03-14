@@ -1,13 +1,7 @@
 import * as React from "react";
 
 export interface BrutalCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  color?:
-    | "white"
-    | "electric-blue"
-    | "neon-green"
-    | "hot-pink"
-    | "black"
-    | "sun-yellow";
+  color?: "white" | "electric-blue" | "neon-green" | "hot-pink" | "black" | "sun-yellow";
   pattern?: "none" | "dots" | "grid";
 }
 

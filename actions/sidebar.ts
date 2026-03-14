@@ -17,9 +17,7 @@ function getLocalFiles(dir: string, basePath = ""): any[] {
         item.startsWith(".") ||
         item === "node_modules" ||
         item.toLowerCase() === "readme.md" ||
-        ["img", "oldimg", "image", "images", "source", "asset"].includes(
-          item.toLowerCase(),
-        )
+        ["img", "oldimg", "image", "images", "source", "asset"].includes(item.toLowerCase())
       ) {
         continue;
       }

@@ -18,11 +18,7 @@ import { FeatureExplanation } from "./feature-explanation";
 
 export const revalidate = 60;
 
-export default async function FeatureDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string; }>;
-}) {
+export default async function FeatureDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const issueNumber = Number.parseInt(id, 10);
   if (Number.isNaN(issueNumber) || issueNumber <= 0) {
@@ -44,8 +40,7 @@ export default async function FeatureDetailPage({
   const comments = rawComments
     .filter(
       (comment) =>
-        !comment.body.includes(EXPLANATION_MARKER) &&
-        !comment.body.includes(SYSTEM_COMMENT_MARKER),
+        !comment.body.includes(EXPLANATION_MARKER) && !comment.body.includes(SYSTEM_COMMENT_MARKER),
     )
     .map((comment) => {
       const parsedComment = parseCommentBody(comment.body);
@@ -80,10 +75,10 @@ export default async function FeatureDetailPage({
     },
     assignee: parsedIssue.metadata?.assigneeId
       ? {
-        name: parsedIssue.metadata?.assigneeName ?? null,
-        email: parsedIssue.metadata?.assigneeEmail ?? null,
-        image: null,
-      }
+          name: parsedIssue.metadata?.assigneeName ?? null,
+          email: parsedIssue.metadata?.assigneeEmail ?? null,
+          image: null,
+        }
       : null,
     comments,
   };
@@ -119,8 +114,8 @@ export default async function FeatureDetailPage({
         <div className="border-2 border-red-500 bg-red-50 p-4 font-mono text-sm text-red-800 uppercase tracking-wider mb-8 shadow-[4px_4px_0px_rgba(239,68,68,1)]">
           <span className="font-bold">⚠ FEATURE DELETED (READ-ONLY)</span>
           <p className="mt-1 text-xs text-red-600 normal-case tracking-normal">
-            This feature has been deleted. The content is preserved for
-            historical reference. No changes can be made.
+            This feature has been deleted. The content is preserved for historical reference. No
+            changes can be made.
           </p>
         </div>
       )}
@@ -133,23 +128,17 @@ export default async function FeatureDetailPage({
           </div>
           <div className="flex gap-2">
             <span className="font-bold text-zinc-500 w-24">AUTHOR:</span>
-            <span>
-              {feature.author.name || feature.author.email || "Unknown"}
-            </span>
+            <span>{feature.author.name || feature.author.email || "Unknown"}</span>
           </div>
           <div className="flex gap-2">
             <span className="font-bold text-zinc-500 w-24">ASSIGNEE:</span>
             <span>
-              {feature.assignee
-                ? feature.assignee.name || feature.assignee.email
-                : "Unassigned"}
+              {feature.assignee ? feature.assignee.name || feature.assignee.email : "Unassigned"}
             </span>
           </div>
           <div className="flex gap-2">
             <span className="font-bold text-zinc-500 w-24">CREATED:</span>
-            <span suppressHydrationWarning>
-              {new Date(feature.createdAt).toLocaleString()}
-            </span>
+            <span suppressHydrationWarning>{new Date(feature.createdAt).toLocaleString()}</span>
           </div>
           {feature.issueNumber && feature.htmlUrl && (
             <div className="flex gap-2">
@@ -206,9 +195,7 @@ export default async function FeatureDetailPage({
 
             <div className="prose prose-zinc max-w-26ne mt-8 border-t border-dashed border-tech-main/30 pt-6">
               {/* Very simple non-editable view, actual MD rendering could be added here */}
-              <div className="whitespace-pre-wrap font-mono text-sm">
-                {feature.content}
-              </div>
+              <div className="whitespace-pre-wrap font-mono text-sm">{feature.content}</div>
             </div>
           </BrutalCard>
         )}
@@ -224,7 +211,7 @@ export default async function FeatureDetailPage({
   );
 }
 
-function StatusBadge({ status }: { status: string; }) {
+function StatusBadge({ status }: { status: string }) {
   let styles = "px-2 text-xs font-bold uppercase border";
   let label = status;
 
