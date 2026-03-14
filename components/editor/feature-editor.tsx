@@ -6,6 +6,7 @@ import { BrutalInput } from "../ui/brutal-input";
 import { useRouter } from "next/navigation";
 import { updateFeature } from "@/actions/feature";
 import { compressImageForUpload } from "@/lib/image-compression";
+import { LoadingIndicator, PENDING_LABELS } from "@/app/(dashboard)/features/loading-indicator";
 
 interface FeatureEditorProps {
   initialData?: {
@@ -339,7 +340,13 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
           </BrutalButton>
 
           <BrutalButton type="submit" variant="primary" disabled={isSaving}>
-            {isSaving ? "SAVING..." : "SAVE_FEATURE_"}
+            {isSaving && initialData?.id ? (
+              <LoadingIndicator label={PENDING_LABELS.SAVING_FEATURE} />
+            ) : isSaving ? (
+              "SAVING..."
+            ) : (
+              "SAVE_FEATURE_"
+            )}
           </BrutalButton>
         </div>
       )}
