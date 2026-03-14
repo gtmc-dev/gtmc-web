@@ -4,22 +4,22 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { BrutalCard } from "@/components/ui/brutal-card";
 
-export function StatusBadge({ status }: { status: string }) {
-  let styles = "px-2 py-1 text-xs font-bold uppercase border";
+export function StatusBadge({ status }: { status: string; }) {
+  let styles = "px-2 text-xs font-bold uppercase border";
   let label = status;
 
   switch (status) {
     case "PENDING":
       styles += " bg-yellow-100 border-yellow-400 text-yellow-800";
-      label = "待解决";
+      label = "UNRESOLVED";
       break;
     case "IN_PROGRESS":
       styles += " bg-blue-100 border-blue-400 text-blue-800";
-      label = "解决中";
+      label = "IN_PROGRESS";
       break;
     case "RESOLVED":
       styles += " bg-green-100 border-green-400 text-green-800";
-      label = "已解决";
+      label = "RESOLVED";
       break;
     default:
       styles += " bg-zinc-100 border-zinc-300 text-zinc-600";
@@ -28,7 +28,7 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={styles}>{label}</span>;
 }
 
-export function FeatureList({ features }: { features: any[] }) {
+export function FeatureList({ features }: { features: any[]; }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
@@ -136,11 +136,10 @@ export function FeatureList({ features }: { features: any[] }) {
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`text-xs font-mono px-3 py-1.5 border transition-all ${
-                    statusFilter === status
-                      ? "bg-tech-main text-white border-tech-main"
-                      : "bg-transparent text-tech-main border-tech-main/30 hover:border-tech-main"
-                  }`}
+                  className={`text-xs font-mono px-3 py-1.5 border transition-all ${statusFilter === status
+                    ? "bg-tech-main text-white border-tech-main"
+                    : "bg-transparent text-tech-main border-tech-main/30 hover:border-tech-main"
+                    }`}
                 >
                   {status}
                 </button>
@@ -158,11 +157,10 @@ export function FeatureList({ features }: { features: any[] }) {
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    className={`text-xs font-mono uppercase px-3 py-1.5 border transition-all ${
-                      selectedTags.includes(tag)
-                        ? "bg-tech-accent text-white border-tech-accent"
-                        : "bg-tech-accent/5 text-tech-main border-tech-main/20 hover:border-tech-main/50"
-                    }`}
+                    className={`text-xs font-mono uppercase px-3 py-1.5 border transition-all ${selectedTags.includes(tag)
+                      ? "bg-tech-accent text-white border-tech-accent"
+                      : "bg-tech-accent/5 text-tech-main border-tech-main/20 hover:border-tech-main/50"
+                      }`}
                   >
                     {tag}
                   </button>
