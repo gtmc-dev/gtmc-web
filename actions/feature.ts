@@ -51,11 +51,7 @@ async function getFeatureByIssueNumber(issueNumber: number) {
   return { issue, parsed };
 }
 
-async function resolveMentionToken(
-  appUserId: string,
-  displayName: string | null,
-  displayEmail: string | null,
-): Promise<string> {
+async function resolveMentionToken(appUserId: string, displayName: string | null): Promise<string> {
   try {
     const account = await prisma.account.findFirst({
       where: { provider: "github", userId: appUserId },
@@ -67,7 +63,7 @@ async function resolveMentionToken(
   } catch {
     // fallthrough to plain text
   }
-  return displayName ?? displayEmail ?? appUserId;
+  return displayName ?? appUserId;
 }
 
 function getMetadataForWrite(
@@ -264,11 +260,7 @@ export async function assignFeature(id: string) {
 
   // Post claim bot comment (best-effort, does not fail the action)
   try {
-    const mentionToken = await resolveMentionToken(
-      session.user.id,
-      session.user.name ?? null,
-      session.user.email ?? null,
-    );
+    const mentionToken = await resolveMentionToken(session.user.id, session.user.name ?? null);
     const payload = `[Assignment Notice]
 Action: CLAIMED
 Assignee: ${mentionToken}
@@ -327,18 +319,10 @@ export async function unassignFeature(id: string) {
 
   // Post drop bot comment (best-effort, does not fail the action)
   try {
-    const mentionToken = await resolveMentionToken(
-      session.user.id,
-      session.user.name ?? null,
-      session.user.email ?? null,
-    );
+    const mentionToken = await resolveMentionToken(session.user.id, session.user.name ?? null);
     const prevAssigneeId = parsed.metadata?.assigneeId ?? "";
     const previousMentionToken = prevAssigneeId
-      ? await resolveMentionToken(
-          prevAssigneeId,
-          parsed.metadata?.assigneeName ?? null,
-          parsed.metadata?.assigneeEmail ?? null,
-        )
+      ? await resolveMentionToken(prevAssigneeId, parsed.metadata?.assigneeName ?? null)
       : "N/A";
     const payload = `[Assignment Notice]
 Action: DROPPED
