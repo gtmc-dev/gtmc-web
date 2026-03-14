@@ -26,7 +26,11 @@ import {
 
 const QQ_BOT_WEBHOOK = process.env.QQ_BOT_WEBHOOK || "";
 
-async function sendQQBotNotification(payload: any) {
+async function sendQQBotNotification(payload: {
+  type?: string;
+  text: string;
+  data?: Record<string, unknown>;
+}) {
   if (!QQ_BOT_WEBHOOK) {
     console.log("[Mock QQ Bot] Would send payload to webhook: ", payload.text);
     return;
@@ -441,7 +445,7 @@ export async function addFeatureComment(id: string, content: string) {
       author: {
         name: session.user.name ?? null,
         email: authorEmail,
-        image: (session.user as any).image ?? null,
+        image: (session.user as { image?: string | null }).image ?? null,
       },
       emailRedacted,
     },
