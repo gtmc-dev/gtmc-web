@@ -4,6 +4,7 @@ import * as React from "react";
 import { useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { SidebarClient } from "./sidebar-client";
+import { MobileTreeSheet } from "./mobile-tree-sheet";
 
 interface TreeNode {
   id: string;
@@ -40,22 +41,18 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           className="min-h-[44px] min-w-[44px] flex items-center justify-center px-4 text-tech-main hover:bg-tech-main/5 transition-colors"
           aria-label="Toggle article tree"
           aria-expanded={isOpen}
+          data-testid="mobile-tree-toggle"
         >
           <span className="text-sm font-mono font-bold">{isOpen ? "▼" : "▶"} TREE</span>
         </button>
       </div>
 
-      {/* Mobile collapsible drawer */}
-      <aside
-        className="md:hidden overflow-hidden transition-all duration-300 ease-out"
-        style={{ maxHeight: isOpen ? "100vh" : "0px" }}
-      >
-        <div className="bg-white/50 backdrop-blur-sm border-b border-tech-main/20 p-4">
-          <div className="prose prose-base text-[15px] prose-tech font-mono w-full overflow-hidden wrap-break-word [&>ul]:pl-0 [&_ul]:list-none [&_li]:mt-1.5 [&_ul_ul]:pl-3 [&_ul_ul]:border-l [&_ul_ul]:border-tech-main/20 [&_ul_ul]:mt-1.5 [&_ul_ul]:mb-3 pb-4">
-            <SidebarClient tree={tree} />
-          </div>
+      {/* Mobile tree sheet */}
+      <MobileTreeSheet isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="prose prose-base text-[15px] prose-tech font-mono w-full overflow-hidden wrap-break-word [&>ul]:pl-0 [&_ul]:list-none [&_li]:mt-1.5 [&_ul_ul]:pl-3 [&_ul_ul]:border-l [&_ul_ul]:border-tech-main/20 [&_ul_ul]:mt-1.5 [&_ul_ul]:mb-3 pb-4">
+          <SidebarClient tree={tree} />
         </div>
-      </aside>
+      </MobileTreeSheet>
 
       {/* Desktop sidebar */}
       <aside className="hidden md:block w-64 lg:w-75 shrink-0 border-r border-tech-main/20">
