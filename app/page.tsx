@@ -35,9 +35,7 @@ const HEX_VALUES = [
 
 export default function Home() {
   const motionDriver = useHomepageMotion();
-  const bgTransform = motionDriver.getDepthTransform('background');
-  const mgTransform = motionDriver.getDepthTransform('midground');
-  const fgTransform = motionDriver.getDepthTransform('foreground');
+  const { background: bgTransform, midground: mgTransform, foreground: fgTransform } = motionDriver;
 
   return (
     <div className="flex min-h-screen w-full relative overflow-y-auto overflow-x-hidden text-tech-main font-sans selection:bg-tech-main/20 selection:text-tech-main-dark">

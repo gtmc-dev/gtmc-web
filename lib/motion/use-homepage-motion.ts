@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useMotionValue,
   useSpring,
@@ -17,12 +17,22 @@ export interface HomepageMotionValues {
   scrollProgress: MotionValue<number>;
   isReducedMotion: boolean;
   isMobile: boolean;
-  getDepthTransform: (layer: 'foreground' | 'midground' | 'background') => {
+  foreground: {
     x: MotionValue<number>;
     y: MotionValue<number>;
     blur: MotionValue<number>;
-    rotateX?: MotionValue<number>;
-    rotateY?: MotionValue<number>;
+    rotateX: MotionValue<number>;
+    rotateY: MotionValue<number>;
+  };
+  midground: {
+    x: MotionValue<number>;
+    y: MotionValue<number>;
+    blur: MotionValue<number>;
+  };
+  background: {
+    x: MotionValue<number>;
+    y: MotionValue<number>;
+    blur: MotionValue<number>;
   };
 }
 
@@ -31,11 +41,11 @@ export function useHomepageMotion(): HomepageMotionValues {
   const pointerY = useMotionValue(0);
   const scrollProgress = useMotionValue(0);
   const reducedMotionQuery = useReducedMotion();
-  const isMobileRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      isMobileRef.current = window.innerWidth < 768;
+      setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -51,7 +61,7 @@ export function useHomepageMotion(): HomepageMotionValues {
   }, [scrollY, scrollProgress]);
 
   useEffect(() => {
-    if (isMobileRef.current || reducedMotionQuery) return;
+    if (isMobile || reducedMotionQuery) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const centerX = window.innerWidth / 2;
@@ -66,39 +76,33 @@ export function useHomepageMotion(): HomepageMotionValues {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [pointerX, pointerY, reducedMotionQuery]);
 
-  const getDepthTransform = (layer: 'foreground' | 'midground' | 'background') => {
-    const config = reducedMotionQuery
-      ? HOMEPAGE_MOTION.reducedMotion
-      : isMobileRef.current
-        ? HOMEPAGE_MOTION.mobile
-        : HOMEPAGE_MOTION.desktop;
+  const smoothX = useSpring(pointerX, { damping: 20, stiffness: 300 });
+  const smoothY = useSpring(pointerY, { damping: 20, stiffness: 300 });
 
-    const layerWeight = HOMEPAGE_MOTION.layers[layer];
+  const config = reducedMotionQuery
+    ? HOMEPAGE_MOTION.reducedMotion
+    : isMobile
+      ? HOMEPAGE_MOTION.mobile
+      : HOMEPAGE_MOTION.desktop;
 
-    const smoothX = useSpring(pointerX, { damping: 20, stiffness: 300 });
-    const smoothY = useSpring(pointerY, { damping: 20, stiffness: 300 });
+  const foreground = {
+    x: useTransform(smoothX, (v) => v * config.pointerAmplitude * HOMEPAGE_MOTION.layers.foreground * 20),
+    y: useTransform(smoothY, (v) => v * config.pointerAmplitude * HOMEPAGE_MOTION.layers.foreground * 20),
+    blur: useTransform(scrollProgress, (v) => v * config.scrollAmplitude * HOMEPAGE_MOTION.layers.foreground * config.blurRange.max),
+    rotateX: useTransform(smoothY, (v) => v * -2),
+    rotateY: useTransform(smoothX, (v) => v * 2),
+  };
 
-    const x = useTransform(
-      smoothX,
-      (v) => v * config.pointerAmplitude * layerWeight * 20
-    );
-    const y = useTransform(
-      smoothY,
-      (v) => v * config.pointerAmplitude * layerWeight * 20
-    );
+  const midground = {
+    x: useTransform(smoothX, (v) => v * config.pointerAmplitude * HOMEPAGE_MOTION.layers.midground * 20),
+    y: useTransform(smoothY, (v) => v * config.pointerAmplitude * HOMEPAGE_MOTION.layers.midground * 20),
+    blur: useTransform(scrollProgress, (v) => v * config.scrollAmplitude * HOMEPAGE_MOTION.layers.midground * config.blurRange.max),
+  };
 
-    const blur = useTransform(
-      scrollProgress,
-      (v) => v * config.scrollAmplitude * layerWeight * config.blurRange.max
-    );
-
-    if (layer === 'foreground') {
-      const rotateY = useTransform(smoothX, (v) => v * 2);
-      const rotateX = useTransform(smoothY, (v) => v * -2);
-      return { x, y, blur, rotateX, rotateY };
-    }
-
-    return { x, y, blur };
+  const background = {
+    x: useTransform(smoothX, (v) => v * config.pointerAmplitude * HOMEPAGE_MOTION.layers.background * 20),
+    y: useTransform(smoothY, (v) => v * config.pointerAmplitude * HOMEPAGE_MOTION.layers.background * 20),
+    blur: useTransform(scrollProgress, (v) => v * config.scrollAmplitude * HOMEPAGE_MOTION.layers.background * config.blurRange.max),
   };
 
   return {
@@ -106,7 +110,9 @@ export function useHomepageMotion(): HomepageMotionValues {
     pointerY,
     scrollProgress,
     isReducedMotion: reducedMotionQuery ?? false,
-    isMobile: isMobileRef.current,
-    getDepthTransform,
+    isMobile,
+    foreground,
+    midground,
+    background,
   };
 }
