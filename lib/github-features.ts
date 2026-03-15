@@ -753,7 +753,7 @@ export function parseCommentBody(body: string): {
   const content = rest.replace(/^\n/, "");
   const contentWithoutAuthorMarker = content.replace(/^<!-- GTMC_COMMENT_AUTHOR_LINE -->\n/, "");
   const contentWithoutAttribution = contentWithoutAuthorMarker.replace(
-    /^(?:\[By\]:|By:|\*\*By:\*\*|\> \*\*\[BY\]\*\* :)[^\n]*\n\n/,
+    /^(?:\[By\]:|By:|\*\*By:\*\*|\> \*\*\[BY\]\*\*(?:\s*:)?)[^\n]*\n\n/,
     "",
   );
 
