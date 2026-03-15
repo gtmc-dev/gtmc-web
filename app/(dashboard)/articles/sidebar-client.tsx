@@ -68,9 +68,9 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
     retryWithRAF();
   }, [pathname]);
 
-  // 当路径改变时，默认折叠当前文章的目录
+  // 当路径改变时，默认展开当前文章的目录
   useEffect(() => {
-    setIsFileExpanded(false);
+    setIsFileExpanded(true);
   }, [pathname]);
 
   const toggleFileExp = (e: React.MouseEvent) => {
@@ -78,33 +78,49 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
     setIsFileExpanded((prev) => !prev);
   };
 
-  const [explicitlyExpanded, setExplicitlyExpanded] = useState<Set<string>>(new Set());
-  const [explicitlyCollapsed, setExplicitlyCollapsed] = useState<Set<string>>(new Set());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
 
-  const isFolderExpanded = useCallback((id: string, level: number) => {
-    if (explicitlyCollapsed.has(id)) return false;
-    if (explicitlyExpanded.has(id)) return true;
-    return level === 0;
-  }, [explicitlyCollapsed, explicitlyExpanded]);
-
-  const toggleFolder = (id: string, level: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    const currentlyExpanded = isFolderExpanded(id, level);
-    if (currentlyExpanded) {
-      setExplicitlyCollapsed((prev) => new Set(prev).add(id));
-      setExplicitlyExpanded((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    } else {
-      setExplicitlyExpanded((prev) => new Set(prev).add(id));
-      setExplicitlyCollapsed((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("gtmc_sidebar_expanded");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setExpandedFolders(new Set(parsed));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load sidebar state", e);
     }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("gtmc_sidebar_expanded", JSON.stringify(Array.from(expandedFolders)));
+    }
+  }, [expandedFolders, mounted]);
+
+  const isFolderExpanded = useCallback(
+    (id: string) => {
+      if (!mounted) return false; // 服务器渲染和初次加载时默认全部闭合
+      return expandedFolders.has(id);
+    },
+    [expandedFolders, mounted]
+  );
+
+  const toggleFolder = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -135,13 +151,13 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
             !item.isFolder &&
             (decodedPathname === decodedRoute || decodedPathname === `${decodedRoute}/`);
 
-          const folderExpanded = item.isFolder ? isFolderExpanded(item.id, level) : false;
+          const folderExpanded = item.isFolder ? isFolderExpanded(item.id) : false;
 
           return (
             <li key={item.id} className="my-1.5 text-[15px] md:text-base font-mono list-none">
               {item.isFolder ? (
                 <button
-                  onClick={(e) => toggleFolder(item.id, level, e)}
+                  onClick={(e) => toggleFolder(item.id, e)}
                   className="w-full text-left flex items-center text-tech-main/80 font-bold opacity-80 uppercase mt-3 mb-1 hover:text-tech-main transition-colors focus:outline-none"
                 >
                   <span className="w-4 inline-block text-xs text-tech-main/50">
@@ -169,7 +185,13 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
                     )}
                     <Link
                       href={fileRoute}
-                      className={`block w-full border-b pb-px pl-1 ${isActive ? "border-tech-main/50" : "border-transparent group-hover:border-tech-main/30"}`}
+                      onClick={(e) => {
+                        if (isActive) {
+                          e.preventDefault();
+                          setIsFileExpanded((prev) => !prev);
+                        }
+                      }}
+                      className={`block w-full border-b pb-px pl-1 ${isActive ? "border-tech-main/50 cursor-pointer" : "border-transparent group-hover:border-tech-main/30"}`}
                     >
                       {item.title}
                     </Link>
