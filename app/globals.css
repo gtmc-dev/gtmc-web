@@ -167,6 +167,28 @@ body {
   .text-balance-mobile {
     @apply text-xs sm:text-sm md:text-base;
   }
+
+  /* Shared decorative motifs */
+  .corner-bracket {
+    @apply border-2 border-tech-main/40;
+  }
+
+  .guide-line {
+    @apply border-tech-main/20;
+  }
+
+  .hud-block {
+    @apply font-mono text-[10px] opacity-40 hidden sm:block;
+  }
+
+  /* Standard motion transitions */
+  .transition-standard {
+    @apply transition-colors duration-300;
+  }
+
+  .transition-transform {
+    @apply transition-transform duration-500;
+  }
 }
 
 @keyframes page-transit {

@@ -356,7 +356,7 @@ export default function Home() {
           <Link href="/articles" className="w-full sm:w-auto">
             <BrutalButton
               variant="primary"
-              className="uppercase text-sm tracking-[0.1em] px-8 py-3 w-full sm:w-auto h-12 flex items-center justify-center hover:scale-105 transition-transform active:scale-95 duration-200 shadow-md"
+              className="uppercase text-sm tracking-[0.1em] px-8 py-3 w-full sm:w-auto h-12 flex items-center justify-center hover:scale-105 transition-transform active:scale-95 duration-300 shadow-md"
             >
               ACCESS DATABASE →
             </BrutalButton>
