@@ -33,18 +33,34 @@ export function calculateReadingMetrics(content: string) {
 
 export function getMarkdownComponents(rawPath: string) {
   return {
-    wtucolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "red" }} {...props} />,
-    ttcolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "#ff7300" }} {...props} />,
-    ctcolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "#ffae00" }} {...props} />,
-    becolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "green" }} {...props} />,
-    eucolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "blue" }} {...props} />,
-    tecolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "blueviolet" }} {...props} />,
-    atcolor: ({ ...props }: MarkdownComponentProps) => <span style={{ color: "purple" }} {...props} />,
+    wtucolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "red" }} {...props} />
+    ),
+    ttcolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "#ff7300" }} {...props} />
+    ),
+    ctcolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "#ffae00" }} {...props} />
+    ),
+    becolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "green" }} {...props} />
+    ),
+    eucolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "blue" }} {...props} />
+    ),
+    tecolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "blueviolet" }} {...props} />
+    ),
+    atcolor: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ color: "purple" }} {...props} />
+    ),
     heightlightnormal: ({ ...props }: MarkdownComponentProps) => (
       <span style={{ color: "chartreuse" }} {...props} />
     ),
     nc: ({ ...props }: MarkdownComponentProps) => <span {...props} />,
-    hidden: ({ ...props }: MarkdownComponentProps) => <span style={{ display: "none" }} {...props} />,
+    hidden: ({ ...props }: MarkdownComponentProps) => (
+      <span style={{ display: "none" }} {...props} />
+    ),
     heightlightwarning: ({ ...props }: MarkdownComponentProps) => (
       <span style={{ color: "crimson" }} {...props} />
     ),
@@ -227,8 +243,14 @@ export function getMarkdownComponents(rawPath: string) {
 }
 
 export function getPluginsForContent(content: string) {
-  const remarkPlugins: Array<typeof remarkGfm | typeof remarkMath | typeof remarkBreaks> = [remarkGfm, remarkBreaks];
-  const rehypePlugins: Array<typeof rehypeRaw | typeof rehypeKatex | typeof rehypeSlug> = [rehypeRaw, rehypeSlug];
+  const remarkPlugins: Array<typeof remarkGfm | typeof remarkMath | typeof remarkBreaks> = [
+    remarkGfm,
+    remarkBreaks,
+  ];
+  const rehypePlugins: Array<typeof rehypeRaw | typeof rehypeKatex | typeof rehypeSlug> = [
+    rehypeRaw,
+    rehypeSlug,
+  ];
 
   if (content.includes("$") || content.includes("\\(") || content.includes("\\[")) {
     remarkPlugins.push(remarkMath);

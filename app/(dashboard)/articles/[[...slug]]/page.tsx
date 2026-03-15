@@ -80,15 +80,15 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       } else {
         content = fs.readFileSync(fullPath, "utf-8");
       }
-       // ONLY re-assign editPath on success!
-       editPath = path.relative(path.join(process.cwd(), "assets"), fullPath).replace(/\\/g, "/");
-     } catch {
-       if (rawPath.includes("404")) {
-         content = "# 404 Not Found\n\nThe requested article is not available yet.";
-       } else {
-         notFound();
-       }
-     }
+      // ONLY re-assign editPath on success!
+      editPath = path.relative(path.join(process.cwd(), "assets"), fullPath).replace(/\\/g, "/");
+    } catch {
+      if (rawPath.includes("404")) {
+        content = "# 404 Not Found\n\nThe requested article is not available yet.";
+      } else {
+        notFound();
+      }
+    }
   }
 
   const { wordCount, readingTime } = calculateReadingMetrics(content);

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BrutalCard } from "@/components/ui/brutal-card";
 import { RevealSection } from "./reveal-helpers";
 
-export function StatusBadge({ status }: { status: string; }) {
+export function StatusBadge({ status }: { status: string }) {
   let styles = "px-2 text-xs font-bold uppercase border";
   let label = status;
 
@@ -34,12 +34,12 @@ interface Feature {
   title: string;
   status: "PENDING" | "IN_PROGRESS" | "RESOLVED";
   tags?: string[];
-  author?: { name?: string; };
-  assignee?: { name?: string; };
+  author?: { name?: string };
+  assignee?: { name?: string };
   createdAt: string | Date;
 }
 
-export function FeatureList({ features }: { features: Feature[]; }) {
+export function FeatureList({ features }: { features: Feature[] }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
@@ -175,10 +175,11 @@ export function FeatureList({ features }: { features: Feature[]; }) {
                   <button
                     key={status}
                     onClick={() => setStatusFilter(status)}
-                    className={`text-xs font-mono px-3 py-2 border transition-all min-h-8 flex items-center justify-center ${statusFilter === status
-                      ? "bg-tech-main text-white border-tech-main"
-                      : "bg-transparent text-tech-main border-tech-main/40 hover:border-tech-main/60"
-                      }`}
+                    className={`text-xs font-mono px-3 py-2 border transition-all min-h-8 flex items-center justify-center ${
+                      statusFilter === status
+                        ? "bg-tech-main text-white border-tech-main"
+                        : "bg-transparent text-tech-main border-tech-main/40 hover:border-tech-main/60"
+                    }`}
                   >
                     {status}
                   </button>
@@ -196,10 +197,11 @@ export function FeatureList({ features }: { features: Feature[]; }) {
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
-                      className={`text-xs font-mono uppercase px-3 py-2 border transition-all min-h-8 flex items-center justify-center ${selectedTags.includes(tag)
-                        ? "bg-tech-accent text-white border-tech-accent"
-                        : "bg-tech-accent/5 text-tech-main border-tech-main/40 hover:border-tech-main/60"
-                        }`}
+                      className={`text-xs font-mono uppercase px-3 py-2 border transition-all min-h-8 flex items-center justify-center ${
+                        selectedTags.includes(tag)
+                          ? "bg-tech-accent text-white border-tech-accent"
+                          : "bg-tech-accent/5 text-tech-main border-tech-main/40 hover:border-tech-main/60"
+                      }`}
                     >
                       {tag}
                     </button>
