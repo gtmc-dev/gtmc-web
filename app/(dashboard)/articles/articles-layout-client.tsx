@@ -50,7 +50,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
       {/* Mobile tree sheet */}
       <MobileTreeSheet isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="prose prose-base text-[15px] prose-tech font-mono w-full overflow-hidden wrap-break-word [&>ul]:pl-0 [&_ul]:list-none [&_li]:mt-1.5 [&_ul_ul]:pl-3 [&_ul_ul]:border-l [&_ul_ul]:border-tech-main/20 [&_ul_ul]:mt-1.5 [&_ul_ul]:mb-3 pb-4">
-          <SidebarClient tree={tree} />
+          <SidebarClient tree={tree} onNavigate={handleNavigate} />
         </div>
       </MobileTreeSheet>
 
