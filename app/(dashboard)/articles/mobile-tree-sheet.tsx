@@ -45,10 +45,14 @@ export function MobileTreeSheet({ isOpen, onClose, children }: MobileTreeSheetPr
       {/* Panel */}
       <div className="absolute inset-0 bg-white/95 backdrop-blur-md border-b border-tech-main/40 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-tech-main/40 px-4 py-3 flex-shrink-0">
-          <span className="font-mono text-xs tracking-[0.15em] text-tech-main font-bold uppercase">
+        <div
+          className="flex items-center justify-between border-b border-tech-main/40 px-4 py-3 flex-shrink-0"
+          data-testid="mobile-tree-panel-header"
+        >
+          <div className="text-xs font-mono uppercase tracking-[0.2em] text-tech-main/60 font-bold flex items-center">
+            <span className="w-1.5 h-1.5 bg-tech-main/60 inline-block mr-2 animate-pulse"></span>
             SYS.DIR_TREE
-          </span>
+          </div>
           <button
             onClick={onClose}
             className="font-mono text-xs tracking-[0.15em] text-tech-main hover:bg-tech-main/10 px-3 py-2 transition-colors font-bold uppercase"
@@ -60,7 +64,7 @@ export function MobileTreeSheet({ isOpen, onClose, children }: MobileTreeSheetPr
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
       </div>
     </div>
   );
