@@ -76,11 +76,19 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           <span className="text-sm font-mono font-bold">{isOpen ? "▼" : "▶"}</span>
         </button>
 
-        {!isFloating && isOpen ? (
-          <div className="max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain border-t border-tech-main/20 px-4 pb-4 pt-3">
-            {treeContent}
+        {!isFloating && (
+          <div
+            className={`grid transition-all duration-300 ease-out ${
+              isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain border-t border-tech-main/20 px-4 pb-4 pt-3">
+                {treeContent}
+              </div>
+            </div>
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* Mobile floating trigger (appears after scroll) */}
