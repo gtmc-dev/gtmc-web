@@ -330,7 +330,7 @@ export default function Home() {
               </h2>
             </div>
 
-            <h1 className="flex items-center text-6xl md:text-7xl font-bold tracking-tight text-tech-main-dark mb-6 relative overflow-hidden">
+            <h1 className="flex items-center text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-tech-main-dark mb-6 relative overflow-hidden">
               <span className="inline-block animate-tech-slide-in [animation-delay:0.5s] opacity-0 [animation-fill-mode:forwards] mr-6">
                 <Logo size="2xl" showSlash={false} className="pointer-events-none" />
               </span>
