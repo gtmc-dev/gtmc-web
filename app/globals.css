@@ -19,10 +19,10 @@
   --color-tech-line: #cbd5e1; /* 更柔和的淡色点阵 */
 
   --animate-fade-in: fade-in 0.8s ease-out forwards;
+  --animate-fade-out: fade-out 0.3s ease-out forwards;
   --animate-slide-up-fade: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-tech-pop-in: tech-pop-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   --animate-tech-slide-in: tech-slide-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  --animate-resolved-handoff: resolved-handoff 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-tech-glitch: tech-glitch 2s infinite;
   --animate-target-blink: target-blink 1.2s ease-out forwards;
   --animate-blueprint-sweep: shimmer 2s ease-out infinite;
@@ -33,6 +33,15 @@
     }
     100% {
       opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
     }
   }
 
