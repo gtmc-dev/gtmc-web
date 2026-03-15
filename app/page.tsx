@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { BrutalButton } from "@/components/ui/brutal-button";
 import { Logo } from "@/components/ui/logo";
+import { useHomepageMotion } from "@/lib/motion/use-homepage-motion";
 
 const HEX_VALUES = [
   "a1b2",
@@ -32,6 +33,8 @@ const HEX_VALUES = [
 ];
 
 export default function Home() {
+  const motion = useHomepageMotion();
+
   return (
     <div className="flex min-h-screen w-full relative overflow-y-auto overflow-x-hidden text-tech-main font-sans selection:bg-tech-main/20 selection:text-tech-main-dark">
       {/* ======================================================== */}
