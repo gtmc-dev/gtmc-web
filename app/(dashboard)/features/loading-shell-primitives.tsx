@@ -12,15 +12,15 @@ export const SectionFrame = React.forwardRef<
 >(({ className = "", showBrackets = true, children, ...props }, ref) => (
   <div
     ref={ref}
-    className={`relative border border-tech-main bg-white/80 backdrop-blur-sm p-4 sm:p-6 ${className}`}
+    className={`relative border border-tech-main/40 bg-white/80 backdrop-blur-sm p-6 sm:p-8 ${className}`}
     {...props}
   >
     {showBrackets && (
       <>
-        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-tech-main -translate-x-[1px] -translate-y-[1px] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-tech-main translate-x-[1px] -translate-y-[1px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-tech-main -translate-x-[1px] translate-y-[1px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-tech-main translate-x-[1px] translate-y-[1px] pointer-events-none" />
+        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-tech-main/60 -translate-x-[1px] -translate-y-[1px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-tech-main/60 translate-x-[1px] -translate-y-[1px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-tech-main/60 -translate-x-[1px] translate-y-[1px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-tech-main/60 translate-x-[1px] translate-y-[1px] pointer-events-none" />
       </>
     )}
     {children}
