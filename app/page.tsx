@@ -42,7 +42,7 @@ export default function Home() {
       {/* Background Layer - Furthest depth, slowest motion */}
       <motion.div 
         className="homepage-decor-background absolute inset-0 z-0"
-        style={{ x: bgTransform.x, y: bgTransform.y, filter: `blur(${bgTransform.blur}px)` }}
+        style={{ x: bgTransform.x, y: bgTransform.y, filter: bgTransform.filter }}
       >
         {/* 巨型背景水印 */}
         <div className="absolute top-1/3 -right-20 text-[10rem] font-black text-tech-main opacity-[0.05] rotate-90 select-none pointer-events-none whitespace-nowrap hidden lg:block tracking-tighter mix-blend-multiply decor-desktop-only">
@@ -211,7 +211,7 @@ export default function Home() {
       {/* Midground Layer - Medium depth, moderate motion */}
       <motion.div 
         className="homepage-decor-midground absolute inset-0 z-[1]"
-        style={{ x: mgTransform.x, y: mgTransform.y, filter: `blur(${mgTransform.blur}px)` }}
+        style={{ x: mgTransform.x, y: mgTransform.y, filter: mgTransform.filter }}
       >
         {/* 左上角系统序列号 */}
         <div className="absolute top-8 left-8 flex flex-col space-y-1 hidden md:flex">
