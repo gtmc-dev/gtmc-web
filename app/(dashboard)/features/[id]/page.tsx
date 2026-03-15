@@ -121,7 +121,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
           <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-red-500/50 translate-x-[1px] -translate-y-[1px] pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-red-500/50 -translate-x-[1px] translate-y-[1px] pointer-events-none"></div>
           <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-red-500/50 translate-x-[1px] translate-y-[1px] pointer-events-none"></div>
-          
+
           <span className="font-bold flex items-center gap-2">
             <span className="text-red-500">⚠</span> FEATURE DELETED (READ-ONLY)
           </span>
@@ -133,11 +133,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
       )}
 
       <RevealSection delay={100}>
-<<<<<<< HEAD
         <BrutalCard className="mb-8 p-4 sm:p-6">
-=======
-        <BrutalCard>
->>>>>>> 070f86d (refactor(style): 修复风格不对齐的问题)
           <div className="flex flex-col gap-2 font-mono text-xs sm:text-sm">
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
               <span className="font-bold text-zinc-500 sm:w-24">STATUS:</span>
