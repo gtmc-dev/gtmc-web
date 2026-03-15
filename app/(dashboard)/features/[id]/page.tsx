@@ -20,7 +20,7 @@ import { RevealSection } from "@/app/(dashboard)/features/reveal-helpers";
 
 export const revalidate = 60;
 
-export default async function FeatureDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FeatureDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
   const { id } = await params;
   const issueNumber = Number.parseInt(id, 10);
   if (Number.isNaN(issueNumber) || issueNumber <= 0) {
@@ -78,10 +78,10 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
     },
     assignee: parsedIssue.metadata?.assigneeId
       ? {
-          name: parsedIssue.metadata?.assigneeName ?? null,
-          email: parsedIssue.metadata?.assigneeEmail ?? null,
-          image: null,
-        }
+        name: parsedIssue.metadata?.assigneeName ?? null,
+        email: parsedIssue.metadata?.assigneeEmail ?? null,
+        image: null,
+      }
       : null,
     comments,
   };
@@ -93,7 +93,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
   const canEdit = isAuthor || isAdmin;
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 md:p-8 space-y-6 max-w-26l">
+    <div className="container mx-auto p-4 sm:p-6 md:p-8 space-y-6 max-w-4xl">
       <RevealSection delay={0}>
         <div className="flex flex-col gap-4">
           <div>
@@ -116,9 +116,9 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
       </RevealSection>
 
       {isClosed && (
-        <div className="border-2 border-red-500 bg-red-50 p-4 sm:p-6 font-mono text-xs sm:text-sm text-red-800 uppercase tracking-wider mb-8 shadow-[4px_4px_0px_rgba(239,68,68,1)]">
+        <div className="border-[3px] border-tech-main bg-tech-main/10 p-4 sm:p-6 font-mono text-xs sm:text-sm text-tech-main uppercase tracking-wider shadow-[4px_4px_0px] shadow-tech-main">
           <span className="font-bold">⚠ FEATURE DELETED (READ-ONLY)</span>
-          <p className="mt-1 text-xs text-red-600 normal-case tracking-normal">
+          <p className="mt-1 text-xs normal-case tracking-normal opacity-80">
             This feature has been deleted. The content is preserved for historical reference. No
             changes can be made.
           </p>
@@ -126,7 +126,11 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
       )}
 
       <RevealSection delay={100}>
+<<<<<<< HEAD
         <BrutalCard className="mb-8 p-4 sm:p-6">
+=======
+        <BrutalCard>
+>>>>>>> 070f86d (refactor(style): 修复风格不对齐的问题)
           <div className="flex flex-col gap-2 font-mono text-xs sm:text-sm">
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
               <span className="font-bold text-zinc-500 sm:w-24">STATUS:</span>
@@ -179,7 +183,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
       </RevealSection>
 
       <RevealSection delay={300}>
-        <div className="pt-4">
+        <div>
           {!isClosed && canEdit ? (
             <FeatureEditor
               initialData={{
@@ -207,7 +211,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
 
-              <div className="prose prose-zinc max-w-26ne mt-8 border-t border-dashed border-tech-main/30 pt-6">
+              <div className="prose prose-zinc max-w-none mt-8 border-t border-dashed border-tech-main/30 pt-6">
                 {/* Very simple non-editable view, actual MD rendering could be added here */}
                 <div className="whitespace-pre-wrap font-mono text-sm">{feature.content}</div>
               </div>
