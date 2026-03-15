@@ -4,18 +4,20 @@ import { SectionRail, SegmentedBar, ScanConfirmOverlay } from "./loading-shell-p
 export default function FeaturesLoading() {
   return (
     <div
-      className="container mx-auto p-4 md:p-8 space-y-6 max-w-5xl"
+      className="max-w-6xl mx-auto space-y-8 px-6 pb-12"
       aria-busy="true"
       aria-label="Loading features list"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-tech-slide-in relative">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-tech-main/40 pb-6 relative gap-4 mt-8 animate-tech-slide-in">
         <ScanConfirmOverlay />
-        <div>
+        <div className="w-full md:w-auto">
           <SectionRail label="FEATURE_HEADER" />
           <SegmentedBar opacity="high" className="w-64 h-10 mt-2 border-b border-tech-main/40" />
           <SegmentedBar opacity="low" className="w-80 h-4 mt-2" />
         </div>
-        <SegmentedBar opacity="high" className="w-48 h-10 border border-tech-main/40" />
+        <div className="w-full md:w-auto">
+          <SegmentedBar opacity="high" className="w-full md:w-48 h-10 border border-tech-main/40" />
+        </div>
       </div>
 
       <div className="mt-8 pt-4 space-y-6">
