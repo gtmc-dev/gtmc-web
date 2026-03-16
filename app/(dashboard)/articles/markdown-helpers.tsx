@@ -139,7 +139,7 @@ export function getMarkdownComponents(rawPath: string) {
       </h3>
     ),
     p: ({ ...props }: MarkdownComponentProps) => (
-      <p className="mb-6 font-mono text-base leading-relaxed text-slate-800" {...props} />
+      <p className="font-mono text-base leading-relaxed mb-4 text-slate-800" {...props} />
     ),
     a: ({ href: initialHref, ...props }: MarkdownComponentProps) => {
       let href = (initialHref as string) || "";
@@ -166,7 +166,7 @@ export function getMarkdownComponents(rawPath: string) {
     },
     ul: ({ ...props }: MarkdownComponentProps) => (
       <ul
-        className="border-tech-main/30 mb-6 list-none space-y-2 border-l pl-6 font-mono text-slate-800"
+        className="border-tech-main/30 mb-6 list-none space-y-2 border-l-[1.5] pl-8 font-mono text-slate-800 text-[0.9em]"
         {...props}
       />
     ),
