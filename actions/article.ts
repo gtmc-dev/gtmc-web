@@ -121,8 +121,8 @@ export async function submitForReviewAction(revisionId: string) {
     revalidatePath("/draft");
     revalidatePath("/review");
     return { success: true };
-  } catch (error: any) {
-    throw new Error(`Failed to create PR: ${error.message}`);
+  } catch (error) {
+    throw new Error(`Failed to create PR: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 

@@ -13,7 +13,7 @@ export async function mergePRAction(prNumber: number) {
     throw new Error("Unauthorized");
   }
 
-  const token = (session.user as any).githubPat || process.env.GITHUB_TOKEN;
+  const token = (session.user as { githubPat?: string }).githubPat || process.env.GITHUB_TOKEN;
   const octokit = getOctokit(token);
 
   try {
@@ -24,8 +24,8 @@ export async function mergePRAction(prNumber: number) {
     });
     revalidatePath("/review");
     return { success: true };
-  } catch (error: any) {
-    throw new Error(`Merge failed: ${error.message}`);
+  } catch (error) {
+    throw new Error(`Merge failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
@@ -35,7 +35,7 @@ export async function resolveConflictAction(prNumber: number, formData: FormData
     throw new Error("Unauthorized");
   }
 
-  const token = (session.user as any).githubPat || process.env.GITHUB_TOKEN;
+  const token = (session.user as { githubPat?: string }).githubPat || process.env.GITHUB_TOKEN;
   const octokit = getOctokit(token);
 
   const filePath = formData.get("filePath") as string;
@@ -60,7 +60,7 @@ export async function resolveConflictAction(prNumber: number, formData: FormData
       if (!Array.isArray(file) && file.type === "file") {
         sha = file.sha;
       }
-    } catch (e) {
+    } catch {
       // Ignored
     }
 
@@ -75,8 +75,8 @@ export async function resolveConflictAction(prNumber: number, formData: FormData
     });
 
     return { success: true };
-  } catch (error: any) {
-    throw new Error(`Conflict resolution failed: ${error.message}`);
+  } catch (error) {
+    throw new Error(`Conflict resolution failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
@@ -86,7 +86,7 @@ export async function closePRAction(prNumber: number) {
     throw new Error("Unauthorized");
   }
   
-  const token = (session.user as any).githubPat || process.env.GITHUB_TOKEN;
+  const token = (session.user as { githubPat?: string }).githubPat || process.env.GITHUB_TOKEN;
   const octokit = getOctokit(token);
 
   try {
@@ -98,7 +98,7 @@ export async function closePRAction(prNumber: number) {
     });
     revalidatePath("/review");
     return { success: true };
-  } catch (error: any) {
-    throw new Error(`Close failed: ${error.message}`);
+  } catch (error) {
+    throw new Error(`Close failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }

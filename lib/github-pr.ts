@@ -50,7 +50,7 @@ export async function createPR({
     if (!Array.isArray(file) && file.type === "file") {
       sha = file.sha
     }
-  } catch(e) {}
+  } catch {}
 
   await octokit.repos.createOrUpdateFileContents({
     owner,
@@ -125,7 +125,7 @@ export async function resolveConflictAndMerge(
     if (!Array.isArray(file) && file.type === "file") {
       sha = file.sha
     }
-  } catch(e) {}
+  } catch {}
 
   // 2. Commit the resolved content to the branch
   await octokit.repos.createOrUpdateFileContents({

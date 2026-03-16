@@ -29,13 +29,13 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const token = (session.user as any).githubPat || process.env.GITHUB_TOKEN;
+  const token = (session.user as { githubPat?: string }).githubPat || process.env.GITHUB_TOKEN;
   const octokit = getOctokit(token);
 
   let pr;
   try {
     pr = (await octokit.pulls.get({ owner, repo, pull_number: prNumber })).data;
-  } catch (error) {
+  } catch {
     notFound();
   }
 

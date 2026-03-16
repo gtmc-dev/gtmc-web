@@ -22,10 +22,18 @@ export default async function ReviewHubPage() {
   }
 
   // Fetch PRs from GitHub using admin's PAT or default SERVER TOKEN
-  const token = (session.user as any).githubPat || process.env.GITHUB_TOKEN;
-  let openPRs: any[] = [];
+  const token = (session.user as { githubPat?: string }).githubPat || process.env.GITHUB_TOKEN;
+  let openPRs: Array<{
+    id: number;
+    number: number;
+    created_at: string;
+    title: string;
+    user: { login: string } | null;
+    head: { ref: string };
+  }> = [];
   try {
-    openPRs = await getOpenPRs(token);
+    const prs = await getOpenPRs(token);
+    openPRs = prs as unknown as typeof openPRs;
   } catch (error) {
     console.error("Failed to fetch PRs:", error);
   }
@@ -53,7 +61,7 @@ export default async function ReviewHubPage() {
             </h2>
           </div>
         ) : (
-          openPRs.map((pr: any) => (
+          openPRs.map((pr) => (
             <BrutalCard
               key={pr.id}
               className="border-tech-main/40 group relative flex flex-col items-start justify-between space-y-4 border bg-white/80 p-6 backdrop-blur-sm md:flex-row md:items-center md:space-y-0"
