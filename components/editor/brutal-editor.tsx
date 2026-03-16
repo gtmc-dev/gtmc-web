@@ -208,7 +208,7 @@ export function BrutalEditor({ initialData }: BrutalEditorProps) {
       {/* 标题区 */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col space-y-2">
-          <label className="text-tech-main border-tech-main/30 mb-2 inline-block border-b pb-1 font-mono text-sm tracking-[0.2em] uppercase">
+          <label className="section-label">
             TITLE_
           </label>
           <BrutalInput
@@ -222,7 +222,7 @@ export function BrutalEditor({ initialData }: BrutalEditorProps) {
         </div>
 
         <div className="flex flex-col space-y-2">
-          <label className="text-tech-main border-tech-main/30 mb-2 inline-block border-b pb-1 font-mono text-sm tracking-[0.2em] uppercase">
+          <label className="section-label">
             FILE_PATH (e.g. Folder/My-Article.md)_
           </label>
           <BrutalInput
@@ -238,7 +238,7 @@ export function BrutalEditor({ initialData }: BrutalEditorProps) {
       {/* 编辑器主区域 (双栏布局或单栏) */}
       <div className="flex grow flex-col space-y-2">
         <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-0">
-          <label className="text-tech-main border-tech-main/30 inline-block border-b pb-1 font-mono text-sm tracking-[0.2em] uppercase">
+          <label className="text-tech-main border-tech-main/30 inline-block border-b pb-1 font-mono text-sm tracking-tech-wide uppercase">
             CONTENT (MARKDOWN)_
           </label>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

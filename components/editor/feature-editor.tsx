@@ -194,7 +194,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
 
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col space-y-2">
-          <label className="text-tech-main border-tech-main/30 mb-2 inline-block border-b pb-1 font-mono text-sm tracking-[0.2em] uppercase">
+          <label className="section-label">
             TITLE_
           </label>
           <BrutalInput
@@ -209,7 +209,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
         </div>
 
         <div className="flex flex-col space-y-2">
-          <label className="text-tech-main border-tech-main/30 mb-2 inline-block border-b pb-1 font-mono text-sm tracking-[0.2em] uppercase">
+          <label className="section-label">
             TAGS_ (comma separated)
           </label>
           <BrutalInput
