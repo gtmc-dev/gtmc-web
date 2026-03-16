@@ -181,7 +181,7 @@ export function getMarkdownComponents(rawPath: string) {
     ),
     blockquote: ({ ...props }: MarkdownComponentProps) => (
       <blockquote
-        className="border-tech-main bg-tech-main/5 mb-6 border-l-2 p-4 font-mono text-slate-700 italic"
+        className="border-tech-main bg-tech-main/5 mb-6 border-l-2 p-4 pb-[0.01] font-mono text-slate-700 italic"
         {...props}
       />
     ),
