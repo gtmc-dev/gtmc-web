@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest"
 
-const owner = process.env.GITHUB_REPO_OWNER || "gtmc-dev"
-const repo = process.env.GITHUB_REPO_NAME || "Articles"
+export const ARTICLES_REPO_OWNER = process.env.GITHUB_ARTICLES_REPO_OWNER || process.env.GITHUB_REPO_OWNER || "gtmc-dev"
+export const ARTICLES_REPO_NAME = process.env.GITHUB_ARTICLES_REPO_NAME || "Articles"
 
 export const getOctokit = (token?: string) => {
   return new Octokit({ auth: token || process.env.GITHUB_TOKEN })
@@ -26,8 +26,8 @@ export async function createPR({
   
   // 1. Get default branch sha
   const { data: ref } = await octokit.git.getRef({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     ref: "heads/main",
   })
   const baseSha = ref.object.sha
@@ -35,8 +35,8 @@ export async function createPR({
   // 2. Create new branch
   const branchName = `submission-${Date.now()}`
   await octokit.git.createRef({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     ref: `refs/heads/${branchName}`,
     sha: baseSha,
   })
@@ -45,7 +45,7 @@ export async function createPR({
   let sha: string | undefined
   try {
     const { data: file } = await octokit.repos.getContent({
-      owner, repo, path: filePath, ref: branchName
+      owner: ARTICLES_REPO_OWNER, repo: ARTICLES_REPO_NAME, path: filePath, ref: branchName
     })
     if (!Array.isArray(file) && file.type === "file") {
       sha = file.sha
@@ -53,8 +53,8 @@ export async function createPR({
   } catch {}
 
   await octokit.repos.createOrUpdateFileContents({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     path: filePath,
     message: `docs: ${title}`,
     content: Buffer.from(content).toString("base64"),
@@ -65,8 +65,8 @@ export async function createPR({
   
   // 4. Create PR
   const { data: pr } = await octokit.pulls.create({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     title,
     head: branchName,
     base: "main",
@@ -79,8 +79,8 @@ export async function createPR({
 export async function getOpenPRs(token?: string) {
   const octokit = getOctokit(token)
   const { data } = await octokit.pulls.list({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     state: "open"
   })
   return data
@@ -89,8 +89,8 @@ export async function getOpenPRs(token?: string) {
 export async function getPR(prNumber: number, token?: string) {
   const octokit = getOctokit(token)
   const { data } = await octokit.pulls.get({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     pull_number: prNumber
   })
   return data
@@ -114,11 +114,11 @@ export interface RepoTreeNode {
 export async function getRepoContentTree(): Promise<RepoTreeNode[]> {
   const octokit = getOctokit(process.env.GITHUB_TOKEN)
 
-  const { data: ref } = await octokit.git.getRef({ owner, repo, ref: "heads/main" })
+  const { data: ref } = await octokit.git.getRef({ owner: ARTICLES_REPO_OWNER, repo: ARTICLES_REPO_NAME, ref: "heads/main" })
 
   const { data: treeData } = await octokit.git.getTree({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     tree_sha: ref.object.sha,
     recursive: "1"
   })
@@ -195,7 +195,7 @@ export async function getRepoContentTree(): Promise<RepoTreeNode[]> {
 export async function getRepoFileContent(filePath: string): Promise<string | null> {
   const octokit = getOctokit(process.env.GITHUB_TOKEN)
   try {
-    const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
+    const { data } = await octokit.repos.getContent({ owner: ARTICLES_REPO_OWNER, repo: ARTICLES_REPO_NAME, path: filePath })
     if (!Array.isArray(data) && data.type === "file") {
       return Buffer.from(data.content, "base64").toString("utf-8")
     }
@@ -217,8 +217,8 @@ export async function getRepoTranslations(): Promise<Record<string, string>> {
 export async function getPRFiles(prNumber: number, token?: string) {
   const octokit = getOctokit(token)
   const { data } = await octokit.pulls.listFiles({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     pull_number: prNumber
   })
   return data
@@ -238,7 +238,7 @@ export async function resolveConflictAndMerge(
   let sha: string | undefined
   try {
     const { data: file } = await octokit.repos.getContent({
-      owner, repo, path: filePath, ref: branchName
+      owner: ARTICLES_REPO_OWNER, repo: ARTICLES_REPO_NAME, path: filePath, ref: branchName
     })
     if (!Array.isArray(file) && file.type === "file") {
       sha = file.sha
@@ -247,8 +247,8 @@ export async function resolveConflictAndMerge(
 
   // 2. Commit the resolved content to the branch
   await octokit.repos.createOrUpdateFileContents({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     path: filePath,
     message: `Resolve merge conflicts for ${filePath}`,
     content: Buffer.from(resolvedContent).toString("base64"),
@@ -258,17 +258,18 @@ export async function resolveConflictAndMerge(
 
   // 3. Attempt to merge again
   const { data } = await octokit.pulls.merge({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     pull_number: prNumber
   })
   return data
 }
 
-export async function mergePR(prNumber: number, token?: string) {  const octokit = getOctokit(token)
+export async function mergePR(prNumber: number, token?: string) {
+  const octokit = getOctokit(token)
   const { data } = await octokit.pulls.merge({
-    owner,
-    repo,
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
     pull_number: prNumber
   })
   return data

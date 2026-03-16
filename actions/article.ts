@@ -146,8 +146,8 @@ export async function deleteDraftAction(revisionId: string) {
     throw new Error("Unauthorized to delete this draft");
   }
 
-  if (existing.status === "PENDING" || existing.status === "APPROVED") {
-    throw new Error("Cannot delete a pending or approved draft");
+  if (existing.status === "SUBMITTED") {
+    throw new Error("Cannot delete a submitted draft");
   }
 
   await prisma.revision.delete({
