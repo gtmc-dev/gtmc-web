@@ -175,7 +175,7 @@ export function getMarkdownComponents(rawPath: string) {
     ),
     li: ({ ...props }: MarkdownComponentProps) => (
       <li
-        className="before:text-tech-main/50 relative text-slate-800 before:absolute before:-left-6 before:content-['>']"
+        className="before:text-tech-main/50 relative text-slate-800 before:absolute before:-left-4 before:content-['>']"
         {...props}
       />
     ),
@@ -213,7 +213,7 @@ export function getMarkdownComponents(rawPath: string) {
             <span>{match[1]}</span>
             <span className="opacity-50">{"//"} EXECUTABLE_BLOCK</span>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-scroll px-4 sm:px-6">
             <div className="px-6 sm:px-8">
               <SyntaxHighlighter
                 style={vscDarkPlus as Record<string, Record<string, string>>}
@@ -233,7 +233,7 @@ export function getMarkdownComponents(rawPath: string) {
         </div>
       ) : (
         <code
-          className="bg-tech-main/10 text-tech-main border-tech-main/30 rounded-none border px-1 py-0.5 font-mono text-[13px]"
+          className="bg-tech-main/10 text-tech-main border-tech-main/30 rounded-none border px-1 py-[0.05rem] mx-1 font-mono text-[0.8em]"
           {...props}
         >
           {children}
