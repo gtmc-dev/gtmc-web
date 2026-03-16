@@ -19,7 +19,7 @@ interface ArticlePageProps {
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params;
 
-  const filePathArray = slug || ["README.md"];
+  const filePathArray = slug || ["Preface.md"];
 
   let rawPath = filePathArray.map(decodeURIComponent).join("/");
 
@@ -46,8 +46,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   } else {
     const normalizedPath = rawPath.replace(/^\/+/, "");
     const pathsToTry = normalizedPath.endsWith(".md")
-      ? [normalizedPath, normalizedPath.replace(/\.md$/, ""), `${normalizedPath.replace(/\.md$/, "")}/README.md`]
-      : [normalizedPath, `${normalizedPath}.md`, `${normalizedPath}/README.md`];
+      ? [normalizedPath, normalizedPath.replace(/\.md$/, ""), `${normalizedPath.replace(/\.md$/, "")}/Preface.md`]
+      : [normalizedPath, `${normalizedPath}.md`, `${normalizedPath}/Preface.md`];
 
     for (const tryPath of pathsToTry) {
       const githubContent = await getRepoFileContent(tryPath);
