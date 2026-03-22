@@ -59,30 +59,93 @@ export async function resolveConflictAction(
       await octokit.pulls.get({ owner, repo, pull_number: prNumber })
     ).data
     const branchName = pr.head.ref
+    const prHeadSha = pr.head.sha
 
-    let sha: string | undefined
-    try {
-      const { data: file } = await octokit.repos.getContent({
-        owner,
-        repo,
-        path: filePath,
-        ref: branchName,
-      })
-      if (!Array.isArray(file) && file.type === "file") {
-        sha = file.sha
-      }
-    } catch {
-      // Ignored
-    }
-
-    await octokit.repos.createOrUpdateFileContents({
+    const { data: mainRef } = await octokit.git.getRef({
       owner,
       repo,
-      path: filePath,
-      message: `Resolve conflicts for ${filePath}`,
-      content: Buffer.from(content).toString("base64"),
-      branch: branchName,
-      sha,
+      ref: "heads/main",
+    })
+    const mainSha = mainRef.object.sha
+
+    const { data: commitInfo } = await octokit.repos.getCommit({
+      owner,
+      repo,
+      ref: prHeadSha,
+    })
+    const originalAuthor = commitInfo.commit.author
+    const originalMessage = commitInfo.commit.message
+
+    const { data: files } = await octokit.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: prNumber,
+    })
+
+    const treeEntries: any[] = []
+    let resolvedFileAdded = false
+
+    for (const f of files) {
+      if (f.filename === filePath) {
+        resolvedFileAdded = true
+        treeEntries.push({
+          path: f.filename,
+          mode: "100644",
+          type: "blob",
+          content: content,
+        })
+      } else if (f.status === "removed") {
+        treeEntries.push({
+          path: f.filename,
+          mode: "100644",
+          type: "blob",
+          sha: null,
+        })
+      } else {
+        treeEntries.push({
+          path: f.filename,
+          mode: "100644",
+          type: "blob",
+          sha: f.sha,
+        })
+      }
+    }
+
+    if (!resolvedFileAdded) {
+      treeEntries.push({
+        path: filePath,
+        mode: "100644",
+        type: "blob",
+        content: content,
+      })
+    }
+
+    const { data: tree } = await octokit.git.createTree({
+      owner,
+      repo,
+      base_tree: mainSha,
+      tree: treeEntries as any,
+    })
+
+    const { data: newCommit } = await octokit.git.createCommit({
+      owner,
+      repo,
+      message: `Resolve conflicts for ${filePath}\n\nOriginal message:\n${originalMessage}`,
+      tree: tree.sha,
+      parents: [mainSha],
+      author: {
+        name: originalAuthor?.name || "GTMC Bot",
+        email: originalAuthor?.email || "bot@gtmc.dev",
+        date: originalAuthor?.date,
+      },
+    })
+
+    await octokit.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${branchName}`,
+      sha: newCommit.sha,
+      force: true,
     })
 
     return { success: true }
