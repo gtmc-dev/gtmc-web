@@ -52,16 +52,56 @@ function parseConflicts(text: string): TokenBlock[] {
     } else if (line.startsWith(">>>>>>> ")) {
       if (currentBlockType === "incoming") {
          incomingName = line.substring(8)
-         blocks.push({
-           id: generateId(),
-           type: "conflict",
-           current: currentChange.join("\n"),
-           incoming: incomingChange.join("\n"),
-           currentName,
-           incomingName,
-           resolvedMode: null,
-           resolvedContent: ""
-         })
+         
+         // Shrink conflict block to the minimal changed lines
+         let start = 0
+         while(
+           start < currentChange.length && 
+           start < incomingChange.length && 
+           currentChange[start] === incomingChange[start]
+         ) {
+           start++
+         }
+         
+         let endC = currentChange.length - 1
+         let endI = incomingChange.length - 1
+         while(
+           endC >= start && 
+           endI >= start && 
+           currentChange[endC] === incomingChange[endI]
+         ) {
+           endC--
+           endI--
+         }
+         
+         // Push common start to text
+         if (start > 0) {
+           blocks.push({ 
+             id: generateId(), 
+             type: "text", 
+             content: currentChange.slice(0, start).join("\n") 
+           })
+         }
+         
+         // Push actual differences
+         if (start <= endC || start <= endI) {
+           blocks.push({
+             id: generateId(),
+             type: "conflict",
+             current: currentChange.slice(start, endC + 1).join("\n"),
+             incoming: incomingChange.slice(start, endI + 1).join("\n"),
+             currentName,
+             incomingName,
+             resolvedMode: null,
+             resolvedContent: ""
+           })
+         }
+         
+         // Store common end in buffer to merge with subsequent text
+         if (endC < currentChange.length - 1) {
+           buffer.push(...currentChange.slice(endC + 1))
+         }
+
          currentChange = []
          incomingChange = []
          currentBlockType = "text"

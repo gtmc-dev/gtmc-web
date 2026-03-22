@@ -20,7 +20,7 @@ export function InlineDiff({
           if (part.added) {
             return (
               <span key={index} className="
-                bg-blue-300/40 font-medium text-blue-900
+                bg-blue-300/80 font-bold text-blue-950 px-0.5 rounded-xs border-b border-blue-400
               ">
                 {part.value}
               </span>
@@ -36,7 +36,7 @@ export function InlineDiff({
           if (part.removed) {
             return (
               <span key={index} className="
-                bg-green-400/40 font-medium text-green-900
+                bg-green-400/80 font-bold text-green-950 px-0.5 rounded-xs border-b border-green-500
               ">
                 {part.value}
               </span>
