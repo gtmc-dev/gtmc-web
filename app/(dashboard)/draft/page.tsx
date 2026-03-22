@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { deleteDraftAction } from "@/actions/article"
 import { getPR } from "@/lib/github-pr"
 import { PageHeader } from "@/components/ui/page-header"
+import { EmptyState } from "@/components/ui/empty-state"
 
 export default async function DraftDashboardPage() {
   const session = await auth()
@@ -205,25 +206,7 @@ export default async function DraftDashboardPage() {
               lg:grid-cols-3
             ">
             {activeDrafts.length === 0 ? (
-              <div
-                className="
-                  group relative col-span-full border border-dashed
-                  border-tech-main/40 bg-white/30 py-16 text-center
-                  backdrop-blur-sm
-                ">
-                <div
-                  className="
-                    absolute inset-0
-                    bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(96,112,143,0.05)_10px,rgba(96,112,143,0.05)_20px)]
-                  "></div>
-                <h2
-                  className="
-                    relative z-10 font-mono text-lg tracking-widest
-                    text-tech-main/50 uppercase
-                  ">
-                  NO ACTIVE RECORDS FOUND.
-                </h2>
-              </div>
+              <EmptyState message="NO ACTIVE RECORDS FOUND." colSpanFull />
             ) : (
               activeDrafts.map(renderDraftCard)
             )}
