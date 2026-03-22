@@ -36,7 +36,7 @@ export function UnchangedBlock({
       flex flex-col border-y border-dashed border-tech-main/20 bg-tech-main/5
       font-mono text-sm text-tech-main-dark/60
     ">
-      <pre className="bg-transparent p-2 whitespace-pre-wrap">{head}</pre>
+      <pre className="bg-transparent p-2 whitespace-pre-wrap">{headLines.join("\n")}</pre>
       <div
         className="mx-4 my-1 py-2 px-4 bg-tech-main/10 text-tech-main hover:bg-tech-main/20 cursor-pointer text-center text-xs rounded-sm transition-colors font-bold tracking-widest uppercase"
         onClick={() => setExpanded(true)}
@@ -45,7 +45,8 @@ export function UnchangedBlock({
         {hiddenCount} UNCHANGED LINES HIDDEN. CLICK TO EXPAND & EDIT
         <span className="ml-2">?</span>
       </div>
-      <pre className="bg-transparent p-2 whitespace-pre-wrap">{tail}</pre>
+      <pre className="bg-transparent p-2 whitespace-pre-wrap">{tailLines.join("\n")}</pre>
     </div>
   )
 }
+
