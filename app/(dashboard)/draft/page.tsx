@@ -8,6 +8,7 @@ import { deleteDraftAction } from "@/actions/article"
 import { getPR } from "@/lib/github-pr"
 import { PageHeader } from "@/components/ui/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DraftStatusBadge } from "@/components/ui/status-badge"
 
 export default async function DraftDashboardPage() {
   const session = await auth()
@@ -85,25 +86,7 @@ export default async function DraftDashboardPage() {
 
       <div className="relative z-10">
         <div className="mb-4 flex items-start justify-between gap-2">
-          <span
-            className={`
-              shrink-0 border px-2 py-0.5 font-mono text-xs tracking-wider
-              ${
-                draft.displayStatus === "DRAFT"
-                  ? "border-tech-main/40 bg-tech-main/5 text-tech-main"
-                  : draft.displayStatus === "PENDING" ||
-                      draft.displayStatus === "SUBMITTED"
-                    ? "border-blue-500/40 bg-blue-500/10 text-blue-600"
-                    : draft.displayStatus === "REJECTED" ||
-                        draft.displayStatus === "CLOSED"
-                      ? "border-red-500/40 bg-red-500/10 text-red-600"
-                      : draft.displayStatus === "ARCHIVED"
-                        ? "border-gray-500/40 bg-gray-500/10 text-gray-600"
-                        : "border-green-500/40 bg-green-500/10 text-green-600"
-              }
-            `}>
-            [{draft.displayStatus}]
-          </span>
+          <DraftStatusBadge status={draft.displayStatus} />
           <div className="flex flex-col items-end gap-1">
             <span className="font-mono text-xs text-tech-main/50">
               {draft.updatedAt.toLocaleDateString()}
