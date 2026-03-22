@@ -10,6 +10,7 @@ import {
   ARTICLES_REPO_NAME,
 } from "@/lib/github-pr"
 import { auth } from "@/lib/auth"
+import { PageHeader } from "@/components/ui/page-header"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -215,32 +216,10 @@ export default async function ReviewHubPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-6">
-      <div className="relative border-b border-tech-main/40 pb-6">
-        <div
-          className="
-            absolute top-0 right-0 size-8 translate-x-px -translate-y-px
-            border-t border-r guide-line
-          "></div>
-        <h1
-          className="
-            flex items-center text-2xl font-bold tracking-tight
-            text-tech-main-dark uppercase
-            md:text-4xl
-          ">
-          <span
-            className="mr-4 size-4 border border-tech-main/40 bg-tech-main/20"></span>
-          REVIEW HUB
-        </h1>
-        <p
-          className="
-            mt-3 flex items-center font-mono text-xs tracking-widest
-            text-tech-main/80
-            sm:text-sm
-          ">
-          <span className="mr-2 size-2 animate-pulse rounded-full bg-tech-main"></span>
-          APPROVE CONTENT. MERGE REBELLION.
-        </p>
-      </div>
+      <PageHeader
+        title="REVIEW HUB"
+        subtitle="APPROVE CONTENT. MERGE REBELLION."
+      />
 
       <div className="grid grid-cols-1 gap-6">
         {openPRs.length === 0 ? (

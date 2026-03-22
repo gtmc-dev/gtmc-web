@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { deleteDraftAction } from "@/actions/article"
 import { getPR } from "@/lib/github-pr"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default async function DraftDashboardPage() {
   const session = await auth()
@@ -173,68 +174,19 @@ export default async function DraftDashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-6">
-      <div
-        className="
-          relative flex flex-col items-start justify-between gap-4 border-b
-          border-tech-main/40 pb-6
-          md:flex-row md:items-end
-        ">
-        <div
-          className="
-            absolute top-0 right-0 size-8 translate-x-px -translate-y-px
-            border-t border-r guide-line
-          "></div>
-        <div
-          className="
-            mb-0 w-full
-            md:w-auto
-          ">
-          <h1
-            className="
-              flex items-center gap-2 text-2xl font-bold tracking-tight
-              text-tech-main-dark uppercase
-              md:text-4xl
-            ">
-            <span
-              className="
-                size-3 shrink-0 border border-tech-main/40 bg-tech-main/20
-              "></span>
-            <span className="wrap-break-word">Ops Center</span>
-          </h1>
-          <p
-            className="
-              mt-3 flex items-center gap-2 font-mono text-xs tracking-widest
-              text-tech-main/80
-              sm:text-sm
-            ">
-            <span
-              className="
-                size-1.5 shrink-0 animate-pulse rounded-full bg-tech-main
-              "></span>
-            <span className="wrap-break-word">
-              YOUR DIGITAL WORKSHOP / DRAFTS & REVISIONS
-            </span>
-          </p>
-        </div>
-
-        <Link
-          href="/draft/new"
-          className="
-            w-full
-            md:w-auto
-          ">
-          <BrutalButton
-            variant="primary"
-            className="
-              flex min-h-11 w-full items-center justify-center px-6 text-xs
-              tracking-widest uppercase transition-transform
-              hover:scale-[1.02]
-              md:w-auto
-            ">
-            + INITIALIZE SUBMISSION
-          </BrutalButton>
-        </Link>
-      </div>
+      <PageHeader
+        title="Ops Center"
+        subtitle="YOUR DIGITAL WORKSHOP / DRAFTS & REVISIONS"
+        action={
+          <Link href="/draft/new" className="w-full md:w-auto">
+            <BrutalButton
+              variant="primary"
+              className="flex min-h-11 w-full items-center justify-center px-6 text-xs tracking-widest uppercase transition-transform hover:scale-[1.02] md:w-auto">
+              + INITIALIZE SUBMISSION
+            </BrutalButton>
+          </Link>
+        }
+      />
 
       <div className="space-y-8">
         <div>
