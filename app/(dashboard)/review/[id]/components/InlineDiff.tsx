@@ -13,13 +13,15 @@ export function InlineDiff({
   const diffs = useMemo(() => diffWords(incomingText, currentText), [currentText, incomingText])
 
   return (
-    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+    <pre className="font-mono text-sm/relaxed whitespace-pre-wrap">
       {diffs.map((part, index) => {
         if (mode === 'current') {
           // current mode: showing what we have that incoming doesn't
           if (part.added) {
             return (
-              <span key={index} className="bg-blue-300/40 text-blue-900 font-medium">
+              <span key={index} className="
+                bg-blue-300/40 font-medium text-blue-900
+              ">
                 {part.value}
               </span>
             )
@@ -33,7 +35,9 @@ export function InlineDiff({
           // incoming mode: showing what incoming has that current doesn't
           if (part.removed) {
             return (
-              <span key={index} className="bg-green-400/40 text-green-900 font-medium">
+              <span key={index} className="
+                bg-green-400/40 font-medium text-green-900
+              ">
                 {part.value}
               </span>
             )

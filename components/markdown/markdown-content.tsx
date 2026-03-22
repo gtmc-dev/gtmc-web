@@ -32,7 +32,16 @@ export function MarkdownContent({
 
   return (
     <div
-      className={`prose prose-tech selection:bg-tech-main/20 w-full max-w-none overflow-hidden wrap-break-word text-slate-800 selection:text-slate-900${className ? ` ${className}` : ""}`}>
+      className={`
+        prose
+        prose-tech
+        selection:bg-tech-main/20
+        w-full max-w-none overflow-hidden wrap-break-word
+        text-slate-800
+        selection:text-slate-900${className ? `
+          ${className}
+        ` : ""}
+      `}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

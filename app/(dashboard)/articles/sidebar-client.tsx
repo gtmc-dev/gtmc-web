@@ -173,11 +173,20 @@ export function SidebarClient({
           return (
             <li
               key={item.id}
-              className="my-1.5 list-none font-mono text-[15px] md:text-base">
+              className="
+                my-1.5 list-none font-mono text-[15px]
+                md:text-base
+              ">
               {item.isFolder ? (
                 <button
                   onClick={(e) => toggleFolder(item.id, e)}
-                  className="text-tech-main/80 hover:text-tech-main mt-3 mb-1 flex w-full cursor-pointer items-center text-left font-bold uppercase opacity-80 transition-colors focus:outline-none">
+                  className="
+                    text-tech-main/80
+                    hover:text-tech-main
+                    mt-3 mb-1 flex w-full cursor-pointer items-center text-left
+                    font-bold uppercase opacity-80 transition-colors
+                    focus:outline-none
+                  ">
                   <span className="text-tech-main/50 inline-block w-4 text-xs">
                     {folderExpanded ? "▼" : "▶"}
                   </span>
@@ -186,11 +195,25 @@ export function SidebarClient({
               ) : (
                 <div className="relative">
                   <div
-                    className={`group relative -ml-4 flex items-center py-1.5 pl-4 transition-colors ${isActive ? "text-tech-main font-bold" : "hover:text-tech-main text-slate-700"}`}>
+                    className={`
+                      group relative -ml-4 flex items-center py-1.5 pl-4
+                      transition-colors
+                      ${isActive ? `text-tech-main font-bold` : `
+                        hover:text-tech-main
+                        text-slate-700
+                      `}
+                    `}>
                     {isActive && toc.length > 0 ? (
                       <button
                         onClick={toggleFileExp}
-                        className="text-tech-main hover:text-tech-main/80 absolute top-1/2 left-0 z-10 -translate-y-1/2 cursor-pointer text-[10px] transition-opacity focus:outline-none md:text-xs"
+                        className="
+                          text-tech-main
+                          hover:text-tech-main/80
+                          absolute top-1/2 left-0 z-10 -translate-y-1/2
+                          cursor-pointer text-[10px] transition-opacity
+                          focus:outline-none
+                          md:text-xs
+                        "
                         title={
                           isFileExpanded ? "收起目录" : "展开目录"
                         }>
@@ -198,7 +221,15 @@ export function SidebarClient({
                       </button>
                     ) : (
                       <span
-                        className={`absolute top-1/2 left-0 -translate-y-1/2 text-xs transition-opacity md:text-sm ${isActive ? "text-tech-main opacity-100" : "text-tech-main opacity-0 group-hover:opacity-100"}`}>
+                        className={`
+                          absolute top-1/2 left-0 -translate-y-1/2 text-xs
+                          transition-opacity
+                          md:text-sm
+                          ${isActive ? `text-tech-main opacity-100` : `
+                            text-tech-main opacity-0
+                            group-hover:opacity-100
+                          `}
+                        `}>
                         &gt;
                       </span>
                     )}
@@ -212,24 +243,45 @@ export function SidebarClient({
                           onNavigate?.()
                         }
                       }}
-                      className={`block w-full border-b pb-px pl-1 ${isActive ? "border-tech-main/50 cursor-pointer" : "group-hover:border-tech-main/30 border-transparent"}`}>
+                      className={`
+                        block w-full border-b pb-px pl-1
+                        ${isActive ? `border-tech-main/50 cursor-pointer` : `
+                          group-hover:border-tech-main/30
+                          border-transparent
+                        `}
+                      `}>
                       {item.title}
                     </Link>
                   </div>
                   {/* 二级标题展示（三级目录） */}
                   {isActive && toc.length > 0 && (
                     <div
-                      className={`grid transition-all duration-300 ease-out ${
+                      className={`
+                        grid transition-all duration-300 ease-out
+                        ${
                         isFileExpanded
                           ? "grid-rows-[1fr] opacity-100"
                           : "grid-rows-[0fr] opacity-0"
-                      }`}>
+                      }
+                      `}>
                       <div className="overflow-hidden">
-                        <ul className="border-tech-main/20 mt-1 mb-2 ml-1 space-y-2 border-l pl-4">
+                        <ul className="
+                          border-tech-main/20 mt-1 mb-2 ml-1 space-y-2 border-l
+                          pl-4
+                        ">
                           {toc.map((h2) => (
                             <li
                               key={h2.id}
-                              className="text-tech-main/70 hover:text-tech-main before:bg-tech-main/30 relative text-[13px] transition-colors before:absolute before:top-1/2 before:-left-4 before:h-px before:w-2 before:-translate-y-1/2 before:content-[''] md:text-sm">
+                              className="
+                                text-tech-main/70
+                                hover:text-tech-main
+                                before:bg-tech-main/30
+                                relative text-[13px] transition-colors
+                                before:absolute before:top-1/2 before:-left-4
+                                before:h-px before:w-2 before:-translate-y-1/2
+                                before:content-['']
+                                md:text-sm
+                              ">
                               <Link
                                 href={`#${h2.id}`}
                                 onClick={() => onNavigate?.()}
@@ -246,11 +298,14 @@ export function SidebarClient({
               )}
               {item.children && item.children.length > 0 && (
                 <div
-                  className={`grid transition-all duration-300 ease-out ${
+                  className={`
+                    grid transition-all duration-300 ease-out
+                    ${
                     !item.isFolder || folderExpanded
                       ? "grid-rows-[1fr] opacity-100"
                       : "grid-rows-[0fr] opacity-0"
-                  }`}>
+                  }
+                  `}>
                   <div className="overflow-hidden">
                     {renderTree(item.children, level + 1)}
                   </div>
@@ -288,7 +343,13 @@ export function SidebarClient({
       <div className="mb-4">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="border-tech-main/40 hover:bg-tech-main cursor-pointer border px-3 py-1.5 font-mono text-[11px] transition-colors hover:text-white">
+          className="
+            border-tech-main/40
+            hover:bg-tech-main
+            cursor-pointer border px-3 py-1.5 font-mono text-[11px]
+            transition-colors
+            hover:text-white
+          ">
           + NEW DIR / FILE
         </button>
       </div>
@@ -302,9 +363,19 @@ export function SidebarClient({
       )}
 
       {isModalOpen && (
-        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 duration-300">
-          <div className="border-tech-main w-full max-w-md rounded border-2 bg-white p-6 shadow-[8px_8px_0_0_rgba(var(--tech-main),1)] dark:bg-black">
-            <h3 className="text-tech-main border-tech-main/20 mb-6 border-b pb-2 font-mono text-lg font-bold tracking-widest uppercase">
+        <div className="
+          animate-in fade-in fixed inset-0 z-50 flex items-center justify-center
+          bg-black/80 p-4 duration-300
+        ">
+          <div className="
+            border-tech-main w-full max-w-md rounded-sm border-2 bg-white p-6
+            shadow-[8px_8px_0_0_rgba(var(--tech-main),1)]
+            dark:bg-black
+          ">
+            <h3 className="
+              text-tech-main border-tech-main/20 mb-6 border-b pb-2 font-mono
+              text-lg font-bold tracking-widest uppercase
+            ">
               CREATE_SYS_OBJECT
             </h3>
 
@@ -312,7 +383,10 @@ export function SidebarClient({
               onSubmit={handleCreate}
               className="space-y-4 font-mono">
               <div>
-                <label className="text-tech-main/80 mb-1 block text-[11px] tracking-wider uppercase">
+                <label className="
+                  text-tech-main/80 mb-1 block text-[11px] tracking-wider
+                  uppercase
+                ">
                   Title
                 </label>
                 <input
@@ -325,13 +399,20 @@ export function SidebarClient({
                       title: e.target.value,
                     })
                   }
-                  className="bg-tech-main/5 border-tech-main/40 focus:border-tech-main text-tech-main w-full border px-3 py-2 text-sm outline-none"
+                  className="
+                    bg-tech-main/5 border-tech-main/40
+                    focus:border-tech-main
+                    text-tech-main w-full border px-3 py-2 text-sm outline-none
+                  "
                   placeholder="e.g. Overview"
                 />
               </div>
 
               <div>
-                <label className="text-tech-main/80 mb-1 block text-[11px] tracking-wider uppercase">
+                <label className="
+                  text-tech-main/80 mb-1 block text-[11px] tracking-wider
+                  uppercase
+                ">
                   Slug (URL path)
                 </label>
                 <input
@@ -340,12 +421,19 @@ export function SidebarClient({
                   onChange={(e) =>
                     setFormData({ ...formData, slug: e.target.value })
                   }
-                  className="bg-tech-main/5 border-tech-main/40 focus:border-tech-main text-tech-main w-full border px-3 py-2 text-sm outline-none"
+                  className="
+                    bg-tech-main/5 border-tech-main/40
+                    focus:border-tech-main
+                    text-tech-main w-full border px-3 py-2 text-sm outline-none
+                  "
                   placeholder="Leave empty to auto-generate"
                 />
               </div>
 
-              <div className="bg-tech-main/5 border-tech-main/20 flex items-center gap-3 border px-3 py-2">
+              <div className="
+                bg-tech-main/5 border-tech-main/20 flex items-center gap-3
+                border px-3 py-2
+              ">
                 <input
                   type="checkbox"
                   id="isFolder"
@@ -356,17 +444,22 @@ export function SidebarClient({
                       isFolder: e.target.checked,
                     })
                   }
-                  className="accent-tech-main h-4 w-4"
+                  className="accent-tech-main size-4"
                 />
                 <label
                   htmlFor="isFolder"
-                  className="text-tech-main/80 cursor-pointer text-sm select-none">
+                  className="
+                    text-tech-main/80 cursor-pointer text-sm select-none
+                  ">
                   Create as Directory (Folder)
                 </label>
               </div>
 
               <div>
-                <label className="text-tech-main/80 mb-1 block text-[11px] tracking-wider uppercase">
+                <label className="
+                  text-tech-main/80 mb-1 block text-[11px] tracking-wider
+                  uppercase
+                ">
                   Parent Directory
                 </label>
                 <select
@@ -377,7 +470,10 @@ export function SidebarClient({
                       parentId: e.target.value,
                     })
                   }
-                  className="bg-tech-main/5 border-tech-main/40 text-tech-main w-full border px-3 py-2 text-sm outline-none">
+                  className="
+                    bg-tech-main/5 border-tech-main/40 text-tech-main w-full
+                    border px-3 py-2 text-sm outline-none
+                  ">
                   <option value="">[ ROOT_DIRECTORY ]</option>
                   {availableFolders.map((f) => (
                     <option key={f.id} value={f.id}>
@@ -387,16 +483,29 @@ export function SidebarClient({
                 </select>
               </div>
 
-              <div className="border-tech-main/20 mt-6 flex justify-end gap-2 border-t pt-4">
+              <div className="
+                border-tech-main/20 mt-6 flex justify-end gap-2 border-t pt-4
+              ">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="border-tech-main/40 text-tech-main hover:bg-tech-main/10 cursor-pointer border px-4 py-2 text-[11px] font-bold tracking-widest uppercase transition-colors">
+                  className="
+                    border-tech-main/40 text-tech-main
+                    hover:bg-tech-main/10
+                    cursor-pointer border px-4 py-2 text-[11px] font-bold
+                    tracking-widest uppercase transition-colors
+                  ">
                   ABORT
                 </button>
                 <button
                   type="submit"
-                  className="bg-tech-main cursor-pointer px-4 py-2 text-[11px] font-bold tracking-widest text-white uppercase shadow-[2px_2px_0_0_rgba(var(--tech-main),0.4)] transition-opacity hover:opacity-90">
+                  className="
+                    bg-tech-main cursor-pointer px-4 py-2 text-[11px] font-bold
+                    tracking-widest text-white uppercase
+                    shadow-[2px_2px_0_0_rgba(var(--tech-main),0.4)]
+                    transition-opacity
+                    hover:opacity-90
+                  ">
                   EXECUTE
                 </button>
               </div>

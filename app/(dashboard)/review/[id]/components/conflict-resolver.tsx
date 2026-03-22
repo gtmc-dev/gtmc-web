@@ -175,12 +175,16 @@ export default function ConflictResolver({
   return (
     <div className="space-y-4">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-l-4 border-tech-main bg-tech-main/10 p-4">
+      <div className="
+        border-tech-main bg-tech-main/10 flex flex-col items-start
+        justify-between border-l-4 p-4
+        sm:flex-row sm:items-center
+      ">
         <div>
-          <p className="font-bold tracking-widest uppercase text-tech-main">
+          <p className="text-tech-main font-bold tracking-widest uppercase">
             Merge Conflict Detected
           </p>
-          <p className="text-sm text-tech-main-dark">
+          <p className="text-tech-main-dark text-sm">
             {viewMode === "visual"
               ? remainingConflicts === 0
                 ? "All conflicts resolved! You can submit now."
@@ -188,7 +192,10 @@ export default function ConflictResolver({
               : "Raw text mode active."}
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex gap-2">
+        <div className="
+          mt-4 flex gap-2
+          sm:mt-0
+        ">
           <BrutalButton
             variant={viewMode === "visual" ? "primary" : "secondary"}
             onClick={(e) => {
@@ -215,16 +222,22 @@ export default function ConflictResolver({
       <form action={handleResolve} className="space-y-4">
         <input type="hidden" name="filePath" value={filePath} />
 
-        <div className="bg-tech-main/5 border-tech-main/30 border p-1 rounded-sm w-full relative">
+        <div className="
+          bg-tech-main/5 border-tech-main/30 relative w-full rounded-sm border
+          p-1
+        ">
           {viewMode === "raw" ? (
             <textarea
               name="content"
               value={rawContent}
               onChange={(e) => setRawContent(e.target.value)}
-              className="text-tech-main-dark min-h-[600px] w-full resize-y bg-transparent p-4 font-mono text-sm outline-none"
+              className="
+                text-tech-main-dark min-h-[600px] w-full resize-y bg-transparent
+                p-4 font-mono text-sm outline-none
+              "
             />
           ) : (
-            <div className="flex flex-col min-h-[600px] bg-transparent">
+            <div className="flex min-h-[600px] flex-col bg-transparent">
               {blocks.map((b) => {
                 if (b.type === "text") {
                   return (
@@ -239,19 +252,31 @@ export default function ConflictResolver({
                 if (b.resolvedMode) {
                   const linesCount = (b.resolvedContent?.split("\n").length || 0) + 1
                   return (
-                    <div key={b.id} className="border border-green-500/50 bg-green-500/10 my-2 shadow-sm">
-                      <div className="flex items-center justify-between bg-green-500/20 px-3 py-1 text-xs text-green-700 font-bold border-b border-green-500/30">
+                    <div key={b.id} className="
+                      my-2 border border-green-500/50 bg-green-500/10 shadow-sm
+                    ">
+                      <div className="
+                        flex items-center justify-between border-b
+                        border-green-500/30 bg-green-500/20 px-3 py-1 text-xs
+                        font-bold text-green-700
+                      ">
                         <span>Resolved ({b.resolvedMode})</span>
                         <button
                           type="button"
-                          className="hover:underline text-red-600"
+                          className="
+                            text-red-600
+                            hover:underline
+                          "
                           onClick={() => handleRevert(b.id)}
                         >
                           Revert
                         </button>
                       </div>
                       <textarea
-                        className="w-full bg-transparent p-2 font-mono text-sm outline-none resize-y"
+                        className="
+                          w-full resize-y bg-transparent p-2 font-mono text-sm
+                          outline-none
+                        "
                         rows={Math.max(3, linesCount)}
                         value={b.resolvedContent}
                         onChange={(e) => updateResolvedContent(b.id, e.target.value)}
@@ -262,12 +287,21 @@ export default function ConflictResolver({
 
                 // Unresolved Conflict Block
                 return (
-                  <div key={b.id} className="border border-red-500/50 my-2 flex flex-col font-mono text-sm shadow-sm">
+                  <div key={b.id} className="
+                    my-2 flex flex-col border border-red-500/50 font-mono
+                    text-sm shadow-sm
+                  ">
                     {/* Actions Bar */}
-                    <div className="flex gap-2 p-2 bg-red-500/10 border-b border-red-500/30 text-xs text-red-800">
+                    <div className="
+                      flex gap-2 border-b border-red-500/30 bg-red-500/10 p-2
+                      text-xs text-red-800
+                    ">
                       <button
                         type="button"
-                        className="hover:underline font-bold"
+                        className="
+                          font-bold
+                          hover:underline
+                        "
                         onClick={() => handleAccept(b.id, "current")}
                       >
                         Accept Current
@@ -275,7 +309,10 @@ export default function ConflictResolver({
                       <span>|</span>
                       <button
                         type="button"
-                        className="hover:underline font-bold"
+                        className="
+                          font-bold
+                          hover:underline
+                        "
                         onClick={() => handleAccept(b.id, "incoming")}
                       >
                         Accept Incoming
@@ -283,7 +320,10 @@ export default function ConflictResolver({
                       <span>|</span>
                       <button
                         type="button"
-                        className="hover:underline font-bold"
+                        className="
+                          font-bold
+                          hover:underline
+                        "
                         onClick={() => handleAccept(b.id, "both")}
                       >
                         Accept Both
@@ -291,8 +331,12 @@ export default function ConflictResolver({
                     </div>
 
                     {/* Current Change */}
-                    <div className="bg-blue-500/10 border-l-4 border-blue-500 p-2">
-                      <div className="text-blue-600/80 text-xs font-bold mb-1 opacity-70">
+                    <div className="
+                      border-l-4 border-blue-500 bg-blue-500/10 p-2
+                    ">
+                      <div className="
+                        mb-1 text-xs font-bold text-blue-600/80 opacity-70
+                      ">
                         {b.currentName}
                       </div>
                       <InlineDiff
@@ -303,8 +347,13 @@ export default function ConflictResolver({
                     </div>
 
                     {/* Incoming Change */}
-                    <div className="bg-green-500/10 border-l-4 border-green-500 p-2 border-t border-red-500/30">
-                      <div className="text-green-600/80 text-xs font-bold mb-1 opacity-70">
+                    <div className="
+                      border-t border-l-4 border-green-500 border-red-500/30
+                      bg-green-500/10 p-2
+                    ">
+                      <div className="
+                        mb-1 text-xs font-bold text-green-600/80 opacity-70
+                      ">
                         {b.incomingName}
                       </div>
                       <InlineDiff
