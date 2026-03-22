@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { resolveConflictAction } from "@/actions/review"
 import { BrutalButton } from "@/components/ui/brutal-button"
 import { InlineDiff } from "./InlineDiff"
+import { UnchangedBlock } from "./UnchangedBlock"
 
 type BlockType = "text" | "conflict"
 
@@ -226,14 +227,11 @@ export default function ConflictResolver({
             <div className="flex flex-col min-h-[600px] bg-transparent">
               {blocks.map((b) => {
                 if (b.type === "text") {
-                  const linesCount = (b.content?.split("\n").length || 0) + 1
                   return (
-                    <textarea
+                    <UnchangedBlock
                       key={b.id}
-                      className="w-full bg-transparent p-2 font-mono text-sm outline-none resize-none focus:bg-tech-main/5"
-                      rows={Math.max(2, linesCount)}
-                      value={b.content}
-                      onChange={(e) => updateTextContent(b.id, e.target.value)}
+                      content={b.content || ""}
+                      onChange={(val) => updateTextContent(b.id, val)}
                     />
                   )
                 }
