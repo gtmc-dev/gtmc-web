@@ -315,7 +315,14 @@ export async function resolveConflictAndMerge(
     pull_number: prNumber,
   })
 
-  const treeEntries: any[] = []
+  type TreeEntry = {
+    path?: string
+    mode?: "100644" | "100755" | "040000" | "160000" | "120000"
+    type?: "blob" | "tree" | "commit"
+    sha?: string | null
+    content?: string
+  }
+  const treeEntries: TreeEntry[] = []
   let resolvedFileAdded = false
 
   for (const f of files) {
@@ -386,6 +393,7 @@ export async function resolveConflictAndMerge(
     owner: ARTICLES_REPO_OWNER,
     repo: ARTICLES_REPO_NAME,
     pull_number: prNumber,
+    merge_method: "rebase",
   })
   return data
 }
@@ -396,6 +404,7 @@ export async function mergePR(prNumber: number, token?: string) {
     owner: ARTICLES_REPO_OWNER,
     repo: ARTICLES_REPO_NAME,
     pull_number: prNumber,
+    merge_method: "rebase",
   })
   return data
 }

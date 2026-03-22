@@ -25,6 +25,7 @@ export async function mergePRAction(prNumber: number) {
       owner,
       repo,
       pull_number: prNumber,
+      merge_method: "rebase",
     })
     revalidatePath("/review")
     return { success: true }
@@ -82,7 +83,14 @@ export async function resolveConflictAction(
       pull_number: prNumber,
     })
 
-    const treeEntries: any[] = []
+    type TreeEntry = {
+      path?: string
+      mode?: "100644" | "100755" | "040000" | "160000" | "120000"
+      type?: "blob" | "tree" | "commit"
+      sha?: string | null
+      content?: string
+    }
+    const treeEntries: TreeEntry[] = []
     let resolvedFileAdded = false
 
     for (const f of files) {
@@ -124,10 +132,10 @@ export async function resolveConflictAction(
       owner,
       repo,
       base_tree: mainSha,
-      tree: treeEntries as any,
-    })
+        tree: treeEntries as TreeEntry[],
+      })
 
-    const { data: newCommit } = await octokit.git.createCommit({
+      const { data: newCommit } = await octokit.git.createCommit({
       owner,
       repo,
       message: `Resolve conflicts for ${filePath}\n\nOriginal message:\n${originalMessage}`,
