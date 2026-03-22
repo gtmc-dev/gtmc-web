@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth-helpers"
 import { revalidatePath } from "next/cache"
 import type { Prisma } from "@prisma/client"
 import { createPR } from "@/lib/github-pr"
+import { PATHS } from "@/lib/cache-config"
 
 export async function saveDraftAction(formData: FormData) {
   const session = await requireAuth()
@@ -60,7 +61,7 @@ export async function saveDraftAction(formData: FormData) {
     })
   }
 
-  revalidatePath("/draft")
+  revalidatePath(PATHS.DRAFT)
   return { success: true, revisionId: savedRevision.id }
 }
 
@@ -113,8 +114,8 @@ export async function submitForReviewAction(revisionId: string) {
       },
     })
 
-    revalidatePath("/draft")
-    revalidatePath("/review")
+    revalidatePath(PATHS.DRAFT)
+    revalidatePath(PATHS.REVIEW)
     return { success: true }
   } catch (error) {
     throw new Error(
@@ -147,6 +148,6 @@ export async function deleteDraftAction(revisionId: string) {
     where: { id: revisionId },
   })
 
-  revalidatePath("/draft")
+  revalidatePath(PATHS.DRAFT)
   return { success: true }
 }

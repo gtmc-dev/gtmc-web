@@ -3,6 +3,7 @@
 import { requireAuth } from "@/lib/auth-helpers"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { PATHS } from "@/lib/cache-config"
 import {
   addIssueComment,
   createIssue,
@@ -153,7 +154,7 @@ export async function createFeature(data: {
     },
   })
 
-  revalidatePath("/features")
+  revalidatePath(PATHS.FEATURES)
   return {
     success: true,
     feature: {
@@ -217,8 +218,8 @@ export async function updateFeature(
     labels: newLabels,
   })
 
-  revalidatePath("/features")
-  revalidatePath(`/features/${id}`)
+  revalidatePath(PATHS.FEATURES)
+  revalidatePath(PATHS.FEATURE(id))
   return {
     success: true,
     feature: {
