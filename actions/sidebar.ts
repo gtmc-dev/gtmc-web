@@ -25,7 +25,7 @@ const getCachedRepoTree = unstable_cache(
     return getRepoContentTree()
   },
   ["github-repo-tree"],
-  { revalidate: 300 }
+  { revalidate: 60, tags: ["github-repo-tree"] }
 )
 
 const getCachedTranslations = unstable_cache(
@@ -33,7 +33,7 @@ const getCachedTranslations = unstable_cache(
     return getRepoTranslations()
   },
   ["github-sidebar-translations"],
-  { revalidate: 3600 }
+  { revalidate: 3600, tags: ["github-repo-translations"] }
 )
 
 /**
