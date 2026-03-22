@@ -636,13 +636,13 @@ export default function Home() {
             {/* 工业感/图纸感的定位刻度 */}
             <div
               className="
-                absolute top-0 left-0 size-3 -translate-x-[2px]
-                -translate-y-[2px] border-t-2 border-l-2 border-tech-main
+                absolute top-0 left-0 size-3 -translate-0.5 border-t-2
+                border-l-2 border-tech-main
               "></div>
             <div
               className="
-                absolute right-0 bottom-0 size-3 translate-x-[2px]
-                translate-y-[2px] border-r-2 border-b-2 border-tech-main
+                absolute right-0 bottom-0 size-3 translate-0.5 border-r-2
+                border-b-2 border-tech-main
               "></div>
 
             {/* 钉子/打孔装饰 */}
@@ -803,13 +803,12 @@ export default function Home() {
               key={i}
               className={`
                 flex size-8 items-center justify-center
-                ${
-                  i === 3
-                    ? `
-                      border-2 border-tech-main-dark bg-tech-main/10
-                      shadow-[0_0_8px_rgba(96,112,143,0.3)]
-                    `
-                    : `border border-tech-main/40`
+                ${i === 3
+                  ? `
+                    border-2 border-tech-main-dark bg-tech-main/10
+                    shadow-[0_0_8px_rgba(96,112,143,0.3)]
+                  `
+                  : `border border-tech-main/40`
                 }
               `}>
               {i === 3 && (
