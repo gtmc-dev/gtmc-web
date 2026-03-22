@@ -56,10 +56,12 @@ async function analyzePRConflictStatus(prNumber: number, token?: string) {
                 break
               }
             }
-          } catch (e) {}
+          } catch (e) {
+            console.error("Failed to fetch file content for conflict check:", e)
+          }
         }
       }
-    } catch {}
+    } catch { }
   }
   return isConflict
 }
@@ -139,11 +141,10 @@ export default async function ReviewHubPage() {
           <span
             className={`
               border px-2 py-0.5 font-mono text-xs tracking-wider
-              ${
-              isConflict
+              ${isConflict
                 ? `border-red-500/40 bg-red-500/20 text-red-600`
                 : `border-blue-500/40 bg-blue-500/10 text-blue-600`
-            }
+              }
             `}>
             [PR #{pr.number}]
           </span>
@@ -199,7 +200,7 @@ export default async function ReviewHubPage() {
           <BrutalButton
             variant={isConflict ? "danger" : "primary"}
             className="
-              flex min-h-[44px] w-full items-center justify-center px-6 text-xs
+              flex min-h-11 w-full items-center justify-center px-6 text-xs
               tracking-widest uppercase transition-transform
               hover:scale-[1.02]
               md:w-auto

@@ -286,12 +286,12 @@ export default function ConflictResolver({
               value={rawContent}
               onChange={(e) => setRawContent(e.target.value)}
               className="
-                min-h-[600px] w-full resize-y bg-transparent p-4 font-mono
-                text-sm text-tech-main-dark outline-none
+                min-h-150 w-full resize-y bg-transparent p-4 font-mono text-sm
+                text-tech-main-dark outline-none
               "
             />
           ) : (
-            <div className="flex min-h-[600px] flex-col bg-transparent">
+            <div className="flex min-h-150 flex-col bg-transparent">
               {blocks.map((b) => {
                 if (b.type === "text") {
                   return (
@@ -409,7 +409,7 @@ export default function ConflictResolver({
                     {/* Incoming Change */}
                     <div
                       className="
-                        border-t border-l-4 border-green-500 border-red-500/30
+                        border-t border-l-4 border-green-500 border-t-red-500/30
                         bg-green-500/10 p-2
                       ">
                       <div

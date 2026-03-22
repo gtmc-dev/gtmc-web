@@ -177,7 +177,7 @@ export default async function ReviewDetailPage({
         ">
         <div
           className="
-            absolute -bottom-[5px] left-0 size-2 border border-tech-main/50
+            absolute -bottom-1.25 left-0 size-2 border border-tech-main/50
             bg-tech-main/20
           "></div>
         <div>
@@ -191,7 +191,7 @@ export default async function ReviewDetailPage({
           </h1>
           <div
             className="
-              flex inline-flex flex-wrap items-center gap-4 border
+              inline-flex flex-wrap items-center gap-4 border
               border-tech-main/30 bg-tech-main/10 p-3 font-mono text-xs
               text-tech-main-dark
             ">
