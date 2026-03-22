@@ -1,15 +1,12 @@
 ﻿"use server"
 
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 export async function updateProfileAction(formData: FormData) {
-  const session = await auth()
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized")
-  }
+  const session = await requireAuth()
 
   const name = formData.get("name") as string
   const image = formData.get("image") as string

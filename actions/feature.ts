@@ -1,6 +1,6 @@
 "use server"
 
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth-helpers"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import {
@@ -120,8 +120,7 @@ export async function createFeature(data: {
   content: string
   tags: string[]
 }) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const metadata: IssueMetadata = {
     appUserId: session.user.id,
@@ -170,8 +169,7 @@ export async function updateFeature(
   id: string,
   data: { title: string; content: string; tags: string[] }
 ) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const issueNumber = parseInt(id, 10)
   if (isNaN(issueNumber)) throw new Error("Invalid issue number")
@@ -236,8 +234,7 @@ export async function updateFeatureExplanation(
   id: string,
   explanation: string
 ) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const issueNumber = parseInt(id, 10)
   if (isNaN(issueNumber)) throw new Error("Invalid issue number")
@@ -272,8 +269,7 @@ export async function updateFeatureExplanation(
 }
 
 export async function assignFeature(id: string) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const issueNumber = parseInt(id, 10)
   if (isNaN(issueNumber)) throw new Error("Invalid issue number")
@@ -353,8 +349,7 @@ At: ${new Date().toISOString()}`
 }
 
 export async function unassignFeature(id: string) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const issueNumber = parseInt(id, 10)
   if (isNaN(issueNumber)) throw new Error("Invalid issue number")
@@ -424,8 +419,7 @@ At: ${new Date().toISOString()}`
 }
 
 export async function resolveFeature(id: string, resolutionComment?: string) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const issueNumber = parseInt(id, 10)
   if (isNaN(issueNumber)) throw new Error("Invalid issue number")
@@ -464,8 +458,7 @@ export async function resolveFeature(id: string, resolutionComment?: string) {
 }
 
 export async function addFeatureComment(id: string, content: string) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Unauthorized")
+  const session = await requireAuth()
 
   const issueNumber = parseInt(id, 10)
   if (isNaN(issueNumber)) throw new Error("Invalid issue number")
