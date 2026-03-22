@@ -192,7 +192,7 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
         resultMimeType = data.mimeType
         resultFileSize = data.fileSize
       } else {
-        showBadge("LARGE FILE — MAY TAKE LONGER_", "info")
+        showBadge("UPLOADING_ 0%", "progress")
 
         const blobResult = await upload(
           sanitizeFilename(file.name, file.type),
@@ -200,10 +200,17 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
           {
             access: "public",
             handleUploadUrl: "/api/upload/feature/token",
+            multipart: true,
             clientPayload: JSON.stringify({
               mimeType: file.type,
               originalSize: file.size,
             }),
+            onUploadProgress: ({ percentage }) => {
+              showBadge(
+                `UPLOADING_ ${Math.round(percentage)}%`,
+                "progress",
+              )
+            },
           },
         )
 
