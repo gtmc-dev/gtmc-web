@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
             : getNonImageMimeTypes(),
           maximumSizeInBytes: 50 * 1024 * 1024,
           addRandomSuffix: false,
+          allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
+            ? [process.env.NEXT_PUBLIC_APP_URL]
+            : undefined,
         }
       },
     })
