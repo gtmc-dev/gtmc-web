@@ -32,11 +32,14 @@ export function UnchangedBlock({
   const hiddenCount = lines.length - 6
 
   return (
-    <div className="
-      flex flex-col border-y border-dashed guide-line bg-tech-main/5 font-mono
-      text-sm text-tech-main-dark/60
-    ">
-      <pre className="bg-transparent p-2 whitespace-pre-wrap">{headLines.join("\n")}</pre>
+    <div
+      className="
+        flex flex-col border-y border-dashed guide-line bg-tech-main/5 font-mono
+        text-sm text-tech-main-dark/60
+      ">
+      <pre className="bg-transparent p-2 whitespace-pre-wrap">
+        {headLines.join("\n")}
+      </pre>
       <div
         className="
           mx-4 my-1 cursor-pointer rounded-sm bg-tech-main/10 px-4 py-2
@@ -44,14 +47,14 @@ export function UnchangedBlock({
           transition-colors
           hover:bg-tech-main/20
         "
-        onClick={() => setExpanded(true)}
-      >
-        <span className="mr-2">?</span> 
+        onClick={() => setExpanded(true)}>
+        <span className="mr-2">?</span>
         {hiddenCount} UNCHANGED LINES HIDDEN. CLICK TO EXPAND & EDIT
         <span className="ml-2">?</span>
       </div>
-      <pre className="bg-transparent p-2 whitespace-pre-wrap">{tailLines.join("\n")}</pre>
+      <pre className="bg-transparent p-2 whitespace-pre-wrap">
+        {tailLines.join("\n")}
+      </pre>
     </div>
   )
 }
-

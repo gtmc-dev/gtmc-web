@@ -2,11 +2,7 @@
 
 import { usePathname } from "next/navigation"
 
-export default function Template({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   return (
