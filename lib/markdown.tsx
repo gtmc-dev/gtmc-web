@@ -70,9 +70,8 @@ export function getMarkdownComponents(rawPath: string) {
     table: ({ ...props }: MarkdownComponentProps) => (
       <div
         className="
-          -mx-6 my-6 w-full overflow-x-auto border border-tech-main/30
-          bg-tech-bg/50 px-6 backdrop-blur-sm
-          sm:-mx-8 sm:px-8
+          my-6 w-full overflow-x-auto border border-tech-main/30
+          bg-tech-bg/50 backdrop-blur-sm
         ">
         <table
           className="
@@ -378,7 +377,9 @@ export function getMarkdownComponents(rawPath: string) {
               ">
               <div className="px-0" dir="ltr">
                 <SyntaxHighlighter
-                  style={solarizedlight as Record<string, Record<string, string>>}
+                  style={
+                    solarizedlight as Record<string, Record<string, string>>
+                  }
                   language={lang}
                   PreTag="div"
                   customStyle={{
