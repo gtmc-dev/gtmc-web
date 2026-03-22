@@ -84,9 +84,15 @@ export function FeatureReadonlyView({
                 id="feature-source-panel"
                 role="tabpanel"
                 aria-labelledby="tab-source">
-                <pre className="p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-                  {content}
-                </pre>
+                {content?.trim() ? (
+                  <pre className="p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                    {content}
+                  </pre>
+                ) : (
+                  <p className="text-tech-main/40 p-6 font-mono text-xs">
+                    NOTHING_TO_PREVIEW_
+                  </p>
+                )}
               </div>
             )}
           </div>
