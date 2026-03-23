@@ -254,8 +254,19 @@ export function SidebarClient({
   ])
 
   const scrollToCurrent = useCallback(() => {
+    console.log("[LOCATE] scrollToCurrent called")
+    console.log("[LOCATE] window.scrollY:", window.scrollY)
+    console.log("[LOCATE] window.innerHeight:", window.innerHeight)
+    console.log("[LOCATE] window.innerHeight / 2:", window.innerHeight / 2)
+    console.log(
+      "[LOCATE] Should expand TOC?",
+      window.scrollY >= window.innerHeight / 2
+    )
     const { parentIds } = findItemAndParents(tree, getEffectivePathname())
-    if (window.scrollY >= window.innerHeight / 2) setIsFileExpanded(true)
+    if (window.scrollY >= window.innerHeight / 2) {
+      console.log("[LOCATE] Expanding TOC (setIsFileExpanded(true))")
+      setIsFileExpanded(true)
+    }
     expandAndScroll(parentIds)
   }, [tree, findItemAndParents, getEffectivePathname, expandAndScroll])
 
