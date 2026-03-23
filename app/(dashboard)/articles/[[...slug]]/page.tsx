@@ -138,17 +138,19 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             : []),
         ]
 
+    let fileFound = false
     for (const tryPath of pathsToTry) {
       const githubContent = await getRepoFileContent(tryPath)
       if (githubContent !== null) {
         content = githubContent
         rawPath = tryPath
         editPath = tryPath.replace(/\.md$/, "")
+        fileFound = true
         break
       }
     }
 
-    if (!content) {
+    if (!fileFound && !content) {
       const lowerPath = normalizedPath.toLowerCase()
       const isPrefaceEntry =
         lowerPath === "preface" ||
@@ -166,6 +168,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       } else {
         notFound()
       }
+    }
+
+    if (fileFound && !content) {
+      const title = rawPath.replace(/\.md$/, "").split("/").pop() ?? "Article"
+      content = `# ${title}\n\n> This article exists but has no content yet. Click **[EDIT_TARGET]** above to start writing.`
     }
   }
 
