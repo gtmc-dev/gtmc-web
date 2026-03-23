@@ -95,7 +95,11 @@ export function SearchCommand() {
   const navigateToResult = useCallback(
     (result: SearchResult) => {
       setIsOpen(false)
-      router.push(`/articles/${result.slug}`)
+      const encodedSlug = result.slug
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/")
+      router.push(`/articles/${encodedSlug}`)
     },
     [router]
   )
