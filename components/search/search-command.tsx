@@ -134,7 +134,7 @@ export function SearchCommand() {
 
       if (decodedCurrentSlug === result.slug) {
         closeModal()
-        if (result.matchType === "content" && query.trim().length >= 2) {
+        if (result.snippet && query.trim().length >= 2) {
           const event = new CustomEvent("highlight-search", {
             detail: { query: query.trim() },
           })
@@ -149,7 +149,7 @@ export function SearchCommand() {
         .map(encodeURIComponent)
         .join("/")
       const highlightParam =
-        result.matchType === "content" && query.trim().length >= 2
+        result.snippet && query.trim().length >= 2
           ? `?highlight=${encodeURIComponent(query.trim())}`
           : ""
       router.push(`/articles/${encodedSlug}${highlightParam}`)
