@@ -126,10 +126,9 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             className={`
               border-tech-main/40 py-3 font-mono text-lg backdrop-blur-sm
               focus:border-tech-main/60
-              ${
-                isReadOnly
-                  ? `cursor-not-allowed bg-gray-100 opacity-70`
-                  : `bg-white/80`
+              ${isReadOnly
+                ? `cursor-not-allowed bg-gray-100 opacity-70`
+                : `bg-white/80`
               }
             `}
             value={title}
@@ -146,10 +145,9 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             className={`
               border-tech-main/40 py-2 font-mono text-sm backdrop-blur-sm
               focus:border-tech-main/60
-              ${
-                isReadOnly
-                  ? `cursor-not-allowed bg-gray-100 opacity-70`
-                  : `bg-white/80`
+              ${isReadOnly
+                ? `cursor-not-allowed bg-gray-100 opacity-70`
+                : `bg-white/80`
               }
             `}
             value={filePath}
@@ -183,10 +181,9 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             }}
             className={`
               px-4 py-2 transition-colors select-none
-              ${
-                activeTab === "write"
-                  ? `bg-tech-main text-white`
-                  : `
+              ${activeTab === "write"
+                ? `bg-tech-main text-white`
+                : `
                     cursor-pointer text-tech-main/60
                     hover:bg-tech-main/10
                   `
@@ -205,10 +202,9 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             }}
             className={`
               px-4 py-2 transition-colors select-none
-              ${
-                activeTab === "preview"
-                  ? `bg-tech-main text-white`
-                  : `
+              ${activeTab === "preview"
+                ? `bg-tech-main text-white`
+                : `
                     cursor-pointer text-tech-main/60
                     hover:bg-tech-main/10
                   `
@@ -233,10 +229,9 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
               className={`
                 w-full grow resize-none border-none p-6 font-mono
                 text-sm/relaxed text-black placeholder-zinc-500 outline-none
-                ${
-                  isReadOnly
-                    ? `cursor-not-allowed bg-gray-50`
-                    : `bg-transparent`
+                ${isReadOnly
+                  ? `cursor-not-allowed bg-gray-50`
+                  : `bg-transparent`
                 }
               `}
               placeholder="ENTER CONTENT... (Use Markdown)"
@@ -281,7 +276,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             relative mt-6 flex justify-end gap-4 border-t border-tech-main/10
             pt-4
           ">
-          <div className="absolute top-0 right-0 h-px w-8 bg-tech-main"></div>
+          <div className="absolute top-0 right-0 h-px w-8 bg-tech-main" />
 
           <BrutalButton
             type="submit"

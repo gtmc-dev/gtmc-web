@@ -118,14 +118,14 @@ export function FeatureList({ features }: { features: Feature[] }) {
                       border-l-2 border-tech-main/40 opacity-0
                       transition-opacity
                       group-hover:opacity-100
-                    "></div>
+                    "/>
                   <div
                     className="
                       absolute right-0 bottom-0 size-2 translate-px border-r-2
                       border-b-2 border-tech-main/40 opacity-0
                       transition-opacity
                       group-hover:opacity-100
-                    "></div>
+                    "/>
 
                   <div className="relative z-10 flex h-full flex-col">
                     <div className="mb-4 flex items-start justify-between gap-2">
@@ -224,10 +224,9 @@ export function FeatureList({ features }: { features: Feature[] }) {
                     className={`
                       flex min-h-8 cursor-pointer items-center justify-center
                       border px-3 py-2 font-mono text-xs transition-all
-                      ${
-                        statusFilter === status
-                          ? "border-tech-main bg-tech-main text-white"
-                          : `
+                      ${statusFilter === status
+                        ? "border-tech-main bg-tech-main text-white"
+                        : `
                             border-tech-main/40 bg-transparent text-tech-main
                             hover:border-tech-main/60
                           `
@@ -257,10 +256,9 @@ export function FeatureList({ features }: { features: Feature[] }) {
                         flex min-h-8 cursor-pointer items-center justify-center
                         border px-3 py-2 font-mono text-xs uppercase
                         transition-all
-                        ${
-                          selectedTags.includes(tag)
-                            ? "border-tech-accent bg-tech-accent text-white"
-                            : `
+                        ${selectedTags.includes(tag)
+                          ? "border-tech-accent bg-tech-accent text-white"
+                          : `
                               border-tech-main/40 bg-tech-accent/5
                               text-tech-main
                               hover:border-tech-main/60
