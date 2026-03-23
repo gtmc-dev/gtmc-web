@@ -6,6 +6,7 @@ interface SearchResult {
   slug: string
   snippet: string | null
   matchType: "title" | "content"
+  exactMatch: boolean
 }
 
 type SearchMatchMap = Record<string, string[]>
@@ -116,10 +117,10 @@ export async function GET(req: NextRequest) {
         matchMap[term]?.includes("title")
       )
 
+      const titleExact = title.toLowerCase().includes(loweredQuery)
+      const contentExact = content.toLowerCase().includes(loweredQuery)
       const matchType: "title" | "content" =
-        title.toLowerCase().includes(loweredQuery) || titleMatchedByTerm
-          ? "title"
-          : "content"
+        titleExact || titleMatchedByTerm ? "title" : "content"
 
       results.push({
         title,
@@ -129,32 +130,16 @@ export async function GET(req: NextRequest) {
             ? extractSnippet(content, query, matchedTerms)
             : null,
         matchType,
+        exactMatch: titleExact || contentExact,
       })
     }
 
-    // Sort by phrase match priority: exact phrase in title > exact phrase in content > fuzzy matches
+    // Sort by phrase match priority: exact phrase matches first
     results.sort((a, b) => {
-      const aTitleExact = a.title.toLowerCase().includes(loweredQuery)
-      const bTitleExact = b.title.toLowerCase().includes(loweredQuery)
-      const aContentExact =
-        a.matchType === "content" &&
-        (typeof rawResults.find((r) => r.slug === a.slug)?.content === "string"
-          ? (rawResults.find((r) => r.slug === a.slug)?.content as string)
-              .toLowerCase()
-              .includes(loweredQuery)
-          : false)
-      const bContentExact =
-        b.matchType === "content" &&
-        (typeof rawResults.find((r) => r.slug === b.slug)?.content === "string"
-          ? (rawResults.find((r) => r.slug === b.slug)?.content as string)
-              .toLowerCase()
-              .includes(loweredQuery)
-          : false)
-
-      if (aTitleExact && !bTitleExact) return -1
-      if (!aTitleExact && bTitleExact) return 1
-      if (aContentExact && !bContentExact) return -1
-      if (!aContentExact && bContentExact) return 1
+      if (a.exactMatch && !b.exactMatch) return -1
+      if (!a.exactMatch && b.exactMatch) return 1
+      if (a.matchType === "title" && b.matchType === "content") return -1
+      if (a.matchType === "content" && b.matchType === "title") return 1
       return 0
     })
 

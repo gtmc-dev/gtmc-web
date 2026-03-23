@@ -170,13 +170,11 @@ export function SearchCommand() {
   const highlightMatch = useCallback(
     (text: string) => {
       if (!query || query.length < 2) return text
-      const regex = new RegExp(
-        `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-        "gi"
-      )
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      const regex = new RegExp(`(${escapedQuery})`, "gi")
       const parts = text.split(regex)
       return parts.map((part, i) =>
-        regex.test(part) ? (
+        part.toLowerCase() === query.toLowerCase() ? (
           <mark key={i} className="bg-tech-main/20 px-0.5 text-tech-main-dark">
             {part}
           </mark>
