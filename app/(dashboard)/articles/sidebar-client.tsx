@@ -47,14 +47,23 @@ export function SidebarClient({
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [mounted, setMounted] = useState(false)
-  const activeItemRef = useRef<HTMLLIElement>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [highlightActive, setHighlightActive] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem(
+        "gtmc_sidebar_expanded",
+        JSON.stringify(Array.from(expandedFolders))
+      )
+    }
+  }, [expandedFolders, mounted])
 
   useEffect(() => {
     let frameCount = 0
     const maxFrames = 10
-
     const scanHeadings = () => {
       const headings = document.querySelectorAll("main h2")
       if (headings.length > 0) {
@@ -72,7 +81,6 @@ export function SidebarClient({
       }
       return false
     }
-
     const retryWithRAF = () => {
       if (scanHeadings()) return
       if (frameCount < maxFrames) {
@@ -80,7 +88,6 @@ export function SidebarClient({
         requestAnimationFrame(retryWithRAF)
       }
     }
-
     retryWithRAF()
   }, [pathname])
 
@@ -92,103 +99,6 @@ export function SidebarClient({
     e.preventDefault()
     setIsFileExpanded((prev) => !prev)
   }
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("gtmc_sidebar_expanded")
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          setExpandedFolders(new Set(parsed))
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load sidebar state", e)
-    }
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem(
-        "gtmc_sidebar_expanded",
-        JSON.stringify(Array.from(expandedFolders))
-      )
-    }
-  }, [expandedFolders, mounted])
-
-  const getEffectivePathname = useCallback(() => {
-    if (pathname === "/articles" || pathname === "/articles/") {
-      return "/articles/Preface"
-    }
-    return pathname
-  }, [pathname])
-
-  const findItemAndParents = useCallback(
-    (
-      items: TreeNode[],
-      targetSlug: string,
-      parents: string[] = []
-    ): { item: TreeNode | null; parentIds: string[] } => {
-      for (const item of items) {
-        const itemSlug = `/articles/${item.slug}`
-        if (itemSlug === targetSlug || `${itemSlug}/` === targetSlug) {
-          return { item, parentIds: parents }
-        }
-        if (item.children && item.children.length > 0) {
-          const result = findItemAndParents(item.children, targetSlug, [
-            ...parents,
-            item.id,
-          ])
-          if (result.item) return result
-        }
-      }
-      return { item: null, parentIds: [] }
-    },
-    []
-  )
-
-  const scrollActiveItemIntoContainer = useCallback(() => {
-    const item = activeItemRef.current
-    const container = scrollContainerRef.current
-    if (!item) return
-    if (container) {
-      const itemRect = item.getBoundingClientRect()
-      const containerRect = container.getBoundingClientRect()
-      const relativeTop = itemRect.top - containerRect.top + container.scrollTop
-      const scrollTarget = relativeTop - containerRect.height / 4
-      container.scrollTo({ top: Math.max(0, scrollTarget), behavior: "smooth" })
-    } else {
-      item.scrollIntoView({ block: "start", behavior: "smooth" })
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!mounted || tree.length === 0) return
-    const effectivePath = getEffectivePathname()
-    const { parentIds } = findItemAndParents(tree, effectivePath)
-    if (parentIds.length > 0) {
-      setExpandedFolders((prev) => {
-        const next = new Set(prev)
-        parentIds.forEach((id) => next.add(id))
-        return next
-      })
-    }
-    const delay = parentIds.length > 0 ? 400 : 50
-    const timer = setTimeout(() => {
-      scrollActiveItemIntoContainer()
-      setHighlightActive(true)
-      setTimeout(() => setHighlightActive(false), 2000)
-    }, delay)
-    return () => clearTimeout(timer)
-  }, [
-    pathname,
-    mounted,
-    tree,
-    getEffectivePathname,
-    findItemAndParents,
-    scrollActiveItemIntoContainer,
-  ])
 
   const isFolderExpanded = useCallback(
     (id: string) => {
@@ -217,36 +127,6 @@ export function SidebarClient({
     setIsFileExpanded(false)
   }, [])
 
-  const scrollToCurrent = useCallback(() => {
-    const effectivePath = getEffectivePathname()
-    const { parentIds } = findItemAndParents(tree, effectivePath)
-    const alreadyExpanded = parentIds.every((id) => expandedFolders.has(id))
-    if (!alreadyExpanded) {
-      setExpandedFolders((prev) => {
-        const next = new Set(prev)
-        parentIds.forEach((id) => next.add(id))
-        return next
-      })
-    }
-    const userScrolledHalfScreen =
-      typeof window !== "undefined" && window.scrollY >= window.innerHeight / 2
-    if (userScrolledHalfScreen) {
-      setIsFileExpanded(true)
-    }
-    const delay = alreadyExpanded ? 50 : 400
-    setTimeout(() => {
-      scrollActiveItemIntoContainer()
-      setHighlightActive(true)
-      setTimeout(() => setHighlightActive(false), 2000)
-    }, delay)
-  }, [
-    tree,
-    expandedFolders,
-    getEffectivePathname,
-    findItemAndParents,
-    scrollActiveItemIntoContainer,
-  ])
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -266,12 +146,11 @@ export function SidebarClient({
   }
 
   const renderTree = (items: TreeNode[], level = 0) => {
-    const effectivePath = getEffectivePathname()
+    const decodedPathname = decodeURIComponent(pathname)
     return (
       <ul className="my-1 border-l guide-line pl-4">
         {items.map((item) => {
           const fileRoute = `/articles/${item.slug}`
-          const decodedPathname = decodeURIComponent(effectivePath)
           const decodedRoute = decodeURIComponent(fileRoute)
           const isActive =
             !item.isFolder &&
@@ -285,17 +164,11 @@ export function SidebarClient({
           return (
             <li
               key={item.id}
-              ref={!item.isFolder && isActive ? activeItemRef : undefined}
-              className={`
+              className="
                 my-1.5 list-none font-mono text-[15px] transition-all
                 duration-300
                 md:text-base
-                ${
-                  !item.isFolder && isActive && highlightActive
-                    ? "-ml-1 bg-tech-main/10 pl-1"
-                    : ""
-                }
-              `}>
+              ">
               {item.isFolder ? (
                 <button
                   onClick={(e) => toggleFolder(item.id, e)}
@@ -317,10 +190,9 @@ export function SidebarClient({
                     className={`
                       group relative -ml-4 flex items-center py-1.5 pl-4
                       transition-colors
-                      ${
-                        isActive
-                          ? `font-bold text-tech-main`
-                          : `
+                      ${isActive
+                        ? `font-bold text-tech-main`
+                        : `
                             text-slate-700
                             hover:text-tech-main
                           `
@@ -346,10 +218,9 @@ export function SidebarClient({
                           absolute top-1/2 left-0 -translate-y-1/2 text-xs
                           transition-opacity
                           md:text-sm
-                          ${
-                            isActive
-                              ? `text-tech-main opacity-100`
-                              : `
+                          ${isActive
+                            ? `text-tech-main opacity-100`
+                            : `
                                 text-tech-main opacity-0
                                 group-hover:opacity-100
                               `
@@ -370,10 +241,9 @@ export function SidebarClient({
                       }}
                       className={`
                         block w-full border-b pb-px pl-1
-                        ${
-                          isActive
-                            ? `cursor-pointer border-tech-main/50`
-                            : `
+                        ${isActive
+                          ? `cursor-pointer border-tech-main/50`
+                          : `
                               border-transparent
                               group-hover:border-tech-main/30
                             `
@@ -387,10 +257,9 @@ export function SidebarClient({
                     <div
                       className={`
                         grid transition-all duration-300 ease-out
-                        ${
-                          isFileExpanded
-                            ? "grid-rows-[1fr] opacity-100"
-                            : "grid-rows-[0fr] opacity-0"
+                        ${isFileExpanded
+                          ? "grid-rows-[1fr] opacity-100"
+                          : "grid-rows-[0fr] opacity-0"
                         }
                       `}>
                       <div className="overflow-hidden">
@@ -428,10 +297,9 @@ export function SidebarClient({
                 <div
                   className={`
                     grid transition-all duration-300 ease-out
-                    ${
-                      !item.isFolder || folderExpanded
-                        ? "grid-rows-[1fr] opacity-100"
-                        : "grid-rows-[0fr] opacity-0"
+                    ${!item.isFolder || folderExpanded
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
                     }
                   `}>
                   <div className="overflow-hidden">
@@ -487,15 +355,6 @@ export function SidebarClient({
           ">
           ⊟ COLLAPSE ALL
         </button>
-        <button
-          onClick={scrollToCurrent}
-          className="
-            cursor-pointer border border-tech-main/40 px-3 py-1.5 font-mono
-            text-[11px] transition-colors
-            hover:bg-tech-main hover:text-white
-          ">
-          ◎ LOCATE
-        </button>
       </div>
     </div>
   )
@@ -515,7 +374,6 @@ export function SidebarClient({
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="pl-3">{buttonsPanel}</div>
           <div
-            ref={scrollContainerRef}
             className={`
               custom-left-scrollbar min-h-0 flex-1 overflow-y-auto pl-6
               ${scrollClass}
@@ -548,15 +406,6 @@ export function SidebarClient({
                   hover:bg-tech-main hover:text-white
                 ">
                 ⊟ COLLAPSE ALL
-              </button>
-              <button
-                onClick={scrollToCurrent}
-                className="
-                  cursor-pointer border border-tech-main/40 px-3 py-1.5
-                  font-mono text-[11px] transition-colors
-                  hover:bg-tech-main hover:text-white
-                ">
-                ◎ LOCATE
               </button>
             </div>
           </div>
