@@ -1,18 +1,16 @@
 import { ImageResponse } from "next/og"
+import { type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getRepoFileContent } from "@/lib/github-pr"
 
-export const alt = "Graduate Texts in Minecraft"
-export const size = { width: 1200, height: 630 }
-export const contentType = "image/png"
+export const runtime = "nodejs"
 
-export default async function Image({
-  params,
-}: {
-  params: Promise<{ slug?: string[] }>
-}) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string[] }> }
+) {
   const { slug } = await params
-  const rawPath = slug ? slug.join("/") : "Preface.md"
+  const rawPath = slug.join("/")
 
   let title = "Graduate Texts in Minecraft"
 
@@ -89,6 +87,6 @@ export default async function Image({
         }}
       />
     </div>,
-    { ...size }
+    { width: 1200, height: 630 }
   )
 }

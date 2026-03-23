@@ -48,7 +48,9 @@ export async function generateMetadata({
         type: "article",
         publishedTime: dbArticle.createdAt.toISOString(),
         modifiedTime: dbArticle.updatedAt.toISOString(),
-        images: dbArticle.coverImage ? [dbArticle.coverImage] : undefined,
+        images: dbArticle.coverImage
+          ? [dbArticle.coverImage]
+          : [`/api/og/articles/${rawSlug}`],
       },
     }
   }
@@ -79,6 +81,7 @@ export async function generateMetadata({
           title,
           description,
           type: "article",
+          images: [`/api/og/articles/${tryPath.replace(/\.md$/, "")}`],
         },
       }
     }
