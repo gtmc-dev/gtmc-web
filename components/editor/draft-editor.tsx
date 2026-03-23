@@ -7,6 +7,10 @@ import ReactMarkdown from "react-markdown"
 import { saveDraftAction, submitForReviewAction } from "@/actions/article"
 import { getMarkdownComponents, getPluginsForContent } from "@/lib/markdown"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
+import {
+  LoadingIndicator,
+  PENDING_LABELS,
+} from "@/components/ui/loading-indicator"
 import { BrutalButton } from "../ui/brutal-button"
 import { BrutalInput } from "../ui/brutal-input"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
@@ -285,7 +289,11 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             variant="primary"
             disabled={isSaving}
             aria-busy={isSaving}>
-            {isSaving ? "SAVING..." : "SAVE DRAFT"}
+            {isSaving ? (
+              <LoadingIndicator label={PENDING_LABELS.SAVING_DRAFT} />
+            ) : (
+              "SAVE DRAFT"
+            )}
           </BrutalButton>
 
           <BrutalButton
@@ -294,7 +302,11 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             onClick={handleSubmitReview}
             disabled={isSubmittingReview || isSaving}
             aria-busy={isSubmittingReview}>
-            {isSubmittingReview ? "SUBMITTING..." : "SUBMIT FOR REVIEW"}
+            {isSubmittingReview ? (
+              <LoadingIndicator label={PENDING_LABELS.SUBMITTING_REVIEW} />
+            ) : (
+              "SUBMIT FOR REVIEW"
+            )}
           </BrutalButton>
         </div>
       )}

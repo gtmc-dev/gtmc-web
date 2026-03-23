@@ -10,7 +10,7 @@ import { compressImageForUpload } from "@/lib/image-compression"
 import {
   LoadingIndicator,
   PENDING_LABELS,
-} from "@/app/(dashboard)/features/loading-indicator"
+} from "@/components/ui/loading-indicator"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import ReactMarkdown from "react-markdown"
 import { getMarkdownComponents, getPluginsForContent } from "@/lib/markdown"
