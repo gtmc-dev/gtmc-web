@@ -174,7 +174,7 @@ export function SearchCommand() {
       const regex = new RegExp(`(${escapedQuery})`, "gi")
       const parts = text.split(regex)
       return parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
+        i % 2 === 1 ? (
           <mark key={i} className="bg-tech-main/20 px-0.5 text-tech-main-dark">
             {part}
           </mark>
