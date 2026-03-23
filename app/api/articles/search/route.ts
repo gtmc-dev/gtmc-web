@@ -125,10 +125,9 @@ export async function GET(req: NextRequest) {
       results.push({
         title,
         slug,
-        snippet:
-          matchType === "content"
-            ? extractSnippet(content, query, matchedTerms)
-            : null,
+        snippet: contentExact
+          ? extractSnippet(content, query, matchedTerms)
+          : null,
         matchType,
         exactMatch: titleExact || contentExact,
       })
