@@ -38,34 +38,18 @@ function extractSnippet(
   }
 
   const loweredContent = content.toLowerCase()
-  const candidates = [query, ...terms]
-    .map((term) => term.trim())
-    .filter((term) => term.length > 0)
-    .sort((a, b) => b.length - a.length)
+  const loweredQuery = query.toLowerCase()
+  const index = loweredContent.indexOf(loweredQuery)
 
-  let bestIndex = -1
-  let bestLength = query.length
-
-  for (const candidate of candidates) {
-    const index = loweredContent.indexOf(candidate.toLowerCase())
-    if (index === -1) {
-      continue
-    }
-    if (bestIndex === -1 || index < bestIndex) {
-      bestIndex = index
-      bestLength = candidate.length
-    }
-  }
-
-  if (bestIndex === -1) {
+  if (index === -1) {
     const fallback = content.slice(0, 120).trim()
     return fallback.length > 0 && fallback.length < content.length
       ? `${fallback}...`
       : fallback || null
   }
 
-  const start = Math.max(0, bestIndex - 50)
-  const end = Math.min(content.length, bestIndex + bestLength + 70)
+  const start = Math.max(0, index - 50)
+  const end = Math.min(content.length, index + query.length + 70)
   let snippet = content.slice(start, end).trim()
 
   if (start > 0) {
