@@ -11,6 +11,81 @@ import {
 import { getRepoFileContent } from "@/lib/github-pr"
 import { ArticleHighlight } from "@/components/articles/article-highlight"
 import { Suspense } from "react"
+import type { Metadata } from "next"
+
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/\*\*?([^*]+)\*\*?/g, "$1")
+    .replace(/__?([^_]+)__?/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/`+[^`]*`+/g, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug?: string[] }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const rawSlug = slug ? slug.map(decodeURIComponent).join("/") : "Preface.md"
+
+  const dbArticle = await prisma.article.findUnique({
+    where: { slug: rawSlug },
+  })
+
+  if (dbArticle && !dbArticle.isFolder) {
+    const description = stripMarkdown(dbArticle.content).slice(0, 155).trim()
+    return {
+      title: dbArticle.title,
+      description,
+      openGraph: {
+        title: dbArticle.title,
+        description,
+        type: "article",
+        publishedTime: dbArticle.createdAt.toISOString(),
+        modifiedTime: dbArticle.updatedAt.toISOString(),
+        images: dbArticle.coverImage ? [dbArticle.coverImage] : undefined,
+      },
+    }
+  }
+
+  // GitHub fallback — replicate page logic
+  const normalizedPath = rawSlug.replace(/^\/+/, "")
+  const pathsToTry = normalizedPath.endsWith(".md")
+    ? [normalizedPath, `${normalizedPath.replace(/\.md$/, "")}/Preface.md`]
+    : [
+        `${normalizedPath}.md`,
+        ...(normalizedPath.includes("/")
+          ? [`${normalizedPath}/Preface.md`]
+          : []),
+      ]
+
+  for (const tryPath of pathsToTry) {
+    const githubContent = await getRepoFileContent(tryPath)
+    if (githubContent !== null) {
+      const headingMatch = githubContent.match(/^#\s+(.+)$/m)
+      const title = headingMatch
+        ? headingMatch[1].trim()
+        : (tryPath.replace(/\.md$/, "").split("/").pop() ?? "Article")
+      const description = stripMarkdown(githubContent).slice(0, 155).trim()
+      return {
+        title,
+        description,
+        openGraph: {
+          title,
+          description,
+          type: "article",
+        },
+      }
+    }
+  }
+
+  return { title: "Article Not Found" }
+}
 
 interface ArticlePageProps {
   params: Promise<{
@@ -198,6 +273,34 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </button>
         </Link>
       </div>
+
+      {!dbArticle?.isFolder && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Article",
+              headline:
+                dbArticle?.title ??
+                rawPath.replace(/\.md$/, "").split("/").pop(),
+              description: stripMarkdown(content).slice(0, 155).trim(),
+              datePublished: dbArticle?.createdAt.toISOString(),
+              dateModified: dbArticle?.updatedAt.toISOString(),
+              url: `https://beta.techmc.wiki/articles/${rawPath}`,
+              isPartOf: {
+                "@type": "WebSite",
+                name: "Graduate Texts in Minecraft",
+                url: "https://beta.techmc.wiki",
+              },
+              publisher: {
+                "@type": "Organization",
+                name: "Technical Minecraft Community",
+              },
+            }),
+          }}
+        />
+      )}
 
       <div
         data-article-content
