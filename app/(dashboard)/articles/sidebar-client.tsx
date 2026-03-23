@@ -164,7 +164,7 @@ export function SidebarClient({
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || tree.length === 0) return
     const effectivePath = getEffectivePathname()
     const { parentIds } = findItemAndParents(tree, effectivePath)
     if (parentIds.length > 0) {
@@ -174,11 +174,12 @@ export function SidebarClient({
         return next
       })
     }
+    const delay = parentIds.length > 0 ? 400 : 50
     const timer = setTimeout(() => {
       scrollActiveItemIntoContainer()
       setHighlightActive(true)
       setTimeout(() => setHighlightActive(false), 2000)
-    }, 350)
+    }, delay)
     return () => clearTimeout(timer)
   }, [
     pathname,
@@ -219,18 +220,20 @@ export function SidebarClient({
   const scrollToCurrent = useCallback(() => {
     const effectivePath = getEffectivePathname()
     const { parentIds } = findItemAndParents(tree, effectivePath)
-    if (parentIds.length > 0) {
+    const alreadyExpanded = parentIds.every((id) => expandedFolders.has(id))
+    if (!alreadyExpanded) {
       setExpandedFolders((prev) => {
         const next = new Set(prev)
         parentIds.forEach((id) => next.add(id))
         return next
       })
     }
+    const delay = alreadyExpanded ? 50 : 400
     setTimeout(() => {
       scrollActiveItemIntoContainer()
       setHighlightActive(true)
       setTimeout(() => setHighlightActive(false), 2000)
-    }, 350)
+    }, delay)
   }, [
     tree,
     getEffectivePathname,
@@ -455,7 +458,7 @@ export function SidebarClient({
   )
 
   const buttonsPanel = (
-    <div className="shrink-0 -ml-6 bg-white/95 backdrop-blur-sm py-3 px-6 border-b guide-line">
+    <div className="shrink-0 bg-white/95 backdrop-blur-sm py-3 px-6 border-b guide-line">
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setIsModalOpen(true)}
@@ -510,7 +513,7 @@ export function SidebarClient({
         </div>
       ) : (
         <div>
-          <div className="sticky top-0 z-10 mb-4 -ml-6 bg-white/95 backdrop-blur-sm py-3 px-6 border-b guide-line">
+          <div className="sticky top-0 z-10 mb-4 bg-white/95 backdrop-blur-sm py-3 px-6 border-b guide-line">
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setIsModalOpen(true)}
