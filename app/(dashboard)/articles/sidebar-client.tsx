@@ -47,17 +47,20 @@ export function SidebarClient({
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [mounted, setMounted] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
   const activeItemRef = useRef<HTMLLIElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const folderGridRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const locatePendingRef = useRef(false)
   const pendingExpandIdsRef = useRef<string[]>([])
+  const expandedFoldersRef = useRef(expandedFolders)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
+    expandedFoldersRef.current = expandedFolders
     if (mounted) {
       localStorage.setItem(
         "gtmc_sidebar_expanded",
@@ -144,9 +147,14 @@ export function SidebarClient({
       target: string,
       parents: string[] = []
     ): { item: TreeNode | null; parentIds: string[] } => {
+      const decodedTarget = decodeURIComponent(target)
       for (const item of items) {
         const slug = `/articles/${item.slug}`
-        if (slug === target || `${slug}/` === target)
+        const decodedSlug = decodeURIComponent(slug)
+        if (
+          decodedSlug === decodedTarget ||
+          `${decodedSlug}/` === decodedTarget
+        )
           return { item, parentIds: parents }
         if (item.children?.length > 0) {
           const r = findItemAndParents(item.children, target, [
@@ -173,11 +181,15 @@ export function SidebarClient({
     } else {
       item.scrollIntoView({ block: "start", behavior: "smooth" })
     }
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
   }, [])
 
   const expandAndScroll = useCallback(
     (parentIds: string[]) => {
-      const needExpand = parentIds.filter((id) => !expandedFolders.has(id))
+      const needExpand = parentIds.filter(
+        (id) => !expandedFoldersRef.current.has(id)
+      )
       if (needExpand.length === 0) {
         scrollActiveItem()
         return
@@ -190,7 +202,7 @@ export function SidebarClient({
       pendingExpandIdsRef.current = needExpand
       locatePendingRef.current = true
     },
-    [expandedFolders, scrollActiveItem]
+    [scrollActiveItem]
   )
 
   useEffect(() => {
