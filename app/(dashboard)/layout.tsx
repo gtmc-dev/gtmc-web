@@ -95,12 +95,14 @@ export default function DashboardLayout({
           className="
             absolute top-0 left-0 hidden w-pxfull bg-tech-main/20
             lg:block
-          "/>
+          "
+        />
         <div
           className="
             absolute top-0 right-0 hidden w-pxfull bg-tech-main/20
             lg:block
-          "/>
+          "
+        />
         {children}
       </main>
     </div>

@@ -121,12 +121,14 @@ export default async function ProfilePage() {
           className="
             absolute top-0 left-0 size-2 -translate-0.5 border-t-2 border-l-2
             border-tech-main
-          "/>
+          "
+        />
         <div
           className="
             absolute right-0 bottom-0 size-2 translate-0.5 border-r-2 border-b-2
             border-tech-main
-          "/>
+          "
+        />
 
         <form
           action={updateProfileAction}
@@ -342,7 +344,8 @@ export default async function ProfilePage() {
             className="
               my-6 h-px w-full bg-tech-main/30
               sm:my-8
-            "/>
+            "
+          />
 
           <div
             className="

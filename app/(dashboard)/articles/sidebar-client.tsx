@@ -304,9 +304,11 @@ export function SidebarClient({
                 relative my-1.5 list-none font-mono text-[15px] transition-all
                 duration-300
                 md:text-base
-                ${!item.isFolder && isActive && highlightActive ? `
-                  bg-tech-main/10 px-1 py-0.5
-                ` : ""}
+                ${
+                  !item.isFolder && isActive && highlightActive
+                    ? `bg-tech-main/10 px-1 py-0.5`
+                    : ""
+                }
               `}>
               {!item.isFolder && isActive && highlightActive && (
                 <div>

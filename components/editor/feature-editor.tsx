@@ -331,9 +331,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
             className={`
               border-tech-main/40 py-3 font-mono text-lg backdrop-blur-sm
               focus:border-tech-main/60
-              ${isReadOnly
-                ? `cursor-not-allowed bg-gray-100 opacity-70`
-                : `bg-white/80`
+              ${
+                isReadOnly
+                  ? `cursor-not-allowed bg-gray-100 opacity-70`
+                  : `bg-white/80`
               }
             `}
             value={title}
@@ -350,9 +351,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
             className={`
               border-tech-main/40 py-2 font-mono text-sm backdrop-blur-sm
               focus:border-tech-main/60
-              ${isReadOnly
-                ? `cursor-not-allowed bg-gray-100 opacity-70`
-                : `bg-white/80`
+              ${
+                isReadOnly
+                  ? `cursor-not-allowed bg-gray-100 opacity-70`
+                  : `bg-white/80`
               }
             `}
             value={tags}
@@ -389,9 +391,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
             }}
             className={`
               px-4 py-2 transition-colors select-none
-              ${activeTab === "write"
-                ? `bg-tech-main text-white`
-                : `
+              ${
+                activeTab === "write"
+                  ? `bg-tech-main text-white`
+                  : `
                     cursor-pointer text-tech-main/60
                     hover:bg-tech-main/10
                   `
@@ -412,9 +415,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
             }}
             className={`
               px-4 py-2 transition-colors select-none
-              ${activeTab === "preview"
-                ? `bg-tech-main text-white`
-                : `
+              ${
+                activeTab === "preview"
+                  ? `bg-tech-main text-white`
+                  : `
                     cursor-pointer text-tech-main/60
                     hover:bg-tech-main/10
                   `
@@ -473,9 +477,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
               className={`
                 w-full grow resize-none border-none p-6 font-mono
                 text-sm/relaxed text-black placeholder-zinc-500 outline-none
-                ${isReadOnly
-                  ? `cursor-not-allowed bg-gray-50`
-                  : `bg-transparent`
+                ${
+                  isReadOnly
+                    ? `cursor-not-allowed bg-gray-50`
+                    : `bg-transparent`
                 }
               `}
               placeholder="ENTER FEATURE DESCRIPTION... (Use Markdown)"
@@ -498,9 +503,10 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
                 className={`
                   absolute top-4 right-4 z-20 flex items-center gap-2 border
                   px-3 py-1.5 font-mono text-xs shadow-sm backdrop-blur-sm
-                  ${badge.type === "error"
-                    ? "border-red-400 bg-red-900 text-red-200"
-                    : `
+                  ${
+                    badge.type === "error"
+                      ? "border-red-400 bg-red-900 text-red-200"
+                      : `
                         border-tech-accent bg-tech-main text-tech-accent
                         shadow-tech-accent/20
                       `
@@ -509,9 +515,9 @@ export function FeatureEditor({ initialData }: FeatureEditorProps) {
                 role="status"
                 aria-live="polite">
                 {badge.type === "progress" && (
-                  <span className="
-                    inline-block size-2 animate-pulse bg-tech-accent
-                  " />
+                  <span
+                    className="inline-block size-2 animate-pulse bg-tech-accent"
+                  />
                 )}
                 {badge.type === "error" && (
                   <span className="inline-block size-2 bg-red-400" />

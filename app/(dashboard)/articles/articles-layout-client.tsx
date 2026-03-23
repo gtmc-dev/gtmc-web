@@ -241,8 +241,9 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           aria-label="Toggle article tree"
           aria-expanded={isOpen}
           data-testid="mobile-tree-toggle">
-          <span
-            className="font-mono text-xs font-bold tracking-[0.15em] uppercase">
+          <span className="
+            font-mono text-xs font-bold tracking-[0.15em] uppercase
+          ">
             TREE
           </span>
           <span className="font-mono text-sm font-bold">
@@ -254,9 +255,10 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           <div
             className={`
               grid transition-all duration-300 ease-out
-              ${isOpen
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
+              ${
+                isOpen
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
               }
             `}>
             <div className="overflow-hidden">
@@ -275,28 +277,28 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
       {/* Mobile floating trigger (appears after scroll) */}
       {isMounted && isFloating
         ? createPortal(
-          <div
-            className="
+            <div
+              className="
                 fixed top-20 right-4 z-58 flex animate-tech-pop-in items-center
                 md:hidden
               "
-            data-testid="mobile-tree-floating-trigger">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="
+              data-testid="mobile-tree-floating-trigger">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="
                   min-h-[44px] cursor-pointer border border-tech-main/40
                   bg-white/95 px-4 py-2 font-mono text-xs font-bold
                   tracking-[0.15em] text-tech-main uppercase backdrop-blur-md
                   transition-all duration-300
                   hover:bg-tech-main/5
                 "
-              aria-label="Toggle article tree"
-              aria-expanded={isOpen}>
-              TREE
-            </button>
-          </div>,
-          document.body
-        )
+                aria-label="Toggle article tree"
+                aria-expanded={isOpen}>
+                TREE
+              </button>
+            </div>,
+            document.body
+          )
         : null}
 
       {/* Mobile floating tree card */}
@@ -332,7 +334,8 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
                 absolute top-0 left-0 h-0 w-px bg-tech-main opacity-20
                 transition-all duration-500 ease-out
                 group-hover:h-full
-              "/>
+              "
+            />
 
             <div
               className="

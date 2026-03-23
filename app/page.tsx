@@ -562,8 +562,9 @@ export default function Home() {
             flex-col items-center bg-tech-main/10
             md:flex
           ">
-          <div
-            className="mt-[50vh] size-2 border border-tech-main/50 bg-tech-bg" />
+          <div className="
+            mt-[50vh] size-2 border border-tech-main/50 bg-tech-bg
+          " />
         </div>
 
         {/* 技术图纸刻度尺 */}
@@ -598,7 +599,8 @@ export default function Home() {
               key={i}
               className="
                 relative h-8 w-full flex-none border-t border-tech-main/40
-              "/>
+              "
+            />
           ))}
         </div>
       </motion.div>
@@ -630,7 +632,8 @@ export default function Home() {
               absolute inset-0 -z-10 translate-3 border guide-line
               bg-transparent transition-transform duration-500 ease-out
               group-hover:translate-4
-            "/>
+            "
+          />
 
           {/* 尺寸标注装饰 */}
           <div
@@ -659,31 +662,36 @@ export default function Home() {
                 pointer-events-none absolute inset-0 translate-x-[-200%]
                 -skew-x-12 animate-[shimmer_3s_infinite_2s] bg-linear-to-r
                 from-transparent via-white/40 to-transparent
-              "/>
+              "
+            />
 
             {/* 工业感/图纸感的定位刻度 */}
             <div
               className="
                 absolute top-0 left-0 size-3 -translate-0.5 border-t-2
                 border-l-2 border-tech-main
-              "/>
+              "
+            />
             <div
               className="
                 absolute right-0 bottom-0 size-3 translate-0.5 border-r-2
                 border-b-2 border-tech-main
-              "/>
+              "
+            />
 
             {/* 钉子/打孔装饰 */}
             <div
               className="
                 absolute top-4 right-4 size-1.5 rounded-full border
                 border-tech-main/50 bg-tech-bg/50
-              "/>
+              "
+            />
             <div
               className="
                 absolute bottom-4 left-4 size-1.5 rounded-full border
                 border-tech-main/50 bg-tech-bg/50
-              "/>
+              "
+            />
 
             <div
               className="
@@ -701,7 +709,8 @@ export default function Home() {
                   className="
                     size-4 bg-tech-main/30 transition-colors
                     group-hover:bg-tech-main/60
-                  "/>
+                  "
+                />
               </div>
               <h2
                 className="
@@ -840,8 +849,9 @@ export default function Home() {
           className="
             pointer-events-none relative mt-12 flex space-x-1 opacity-40
           ">
-          <div
-            className="absolute -top-4 font-mono text-[8px] text-tech-main/60">
+          <div className="
+            absolute -top-4 font-mono text-[8px] text-tech-main/60
+          ">
             INVENTORY_SLOTS_
           </div>
           {[...Array(9)].map((_, i) => (
@@ -849,12 +859,13 @@ export default function Home() {
               key={i}
               className={`
                 flex size-8 items-center justify-center
-                ${i === 3
-                  ? `
+                ${
+                  i === 3
+                    ? `
                       border-2 border-tech-main-dark bg-tech-main/10
                       shadow-[0_0_8px_rgba(96,112,143,0.3)]
                     `
-                  : `border border-tech-main/40`
+                    : `border border-tech-main/40`
                 }
               `}>
               {i === 3 && (

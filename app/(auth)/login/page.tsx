@@ -102,7 +102,8 @@ export default function LoginPage() {
           absolute top-0 left-[50%] decor-desktop-only hidden w-pxfull
           bg-tech-main/10
           md:block
-        "/>
+        "
+      />
 
       {/* 巨型背景水印 */}
       <div
@@ -138,7 +139,8 @@ export default function LoginPage() {
               group-hover:translate-3
               md:translate-3
               md:group-hover:translate-4
-            "/>
+            "
+          />
 
           {/* 尺寸标注 decoration */}
           <div
@@ -167,29 +169,34 @@ export default function LoginPage() {
                 pointer-events-none absolute inset-0 translate-x-[-200%]
                 -skew-x-12 animate-[shimmer_3s_infinite_2s] bg-linear-to-r
                 from-transparent via-white/40 to-transparent
-              "/>
+              "
+            />
 
             {/* 角落刻度 */}
             <div
               className="
                 absolute top-0 left-0 size-3 -translate-0.5 border-t-2
                 border-l-2 border-tech-main
-              "/>
+              "
+            />
             <div
               className="
                 absolute top-0 right-0 size-3 translate-x-0.5 -translate-y-0.5
                 border-t-2 border-r-2 border-tech-main
-              "/>
+              "
+            />
             <div
               className="
                 absolute bottom-0 left-0 size-3 -translate-x-0.5 translate-y-0.5
                 border-b-2 border-l-2 border-tech-main
-              "/>
+              "
+            />
             <div
               className="
                 absolute right-0 bottom-0 size-3 translate-0.5 border-r-2
                 border-b-2 border-tech-main
-              "/>
+              "
+            />
 
             <div className="mb-8 flex flex-col items-center">
               <div

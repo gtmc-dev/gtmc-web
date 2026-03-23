@@ -118,14 +118,16 @@ export function FeatureList({ features }: { features: Feature[] }) {
                       border-l-2 border-tech-main/40 opacity-0
                       transition-opacity
                       group-hover:opacity-100
-                    "/>
+                    "
+                  />
                   <div
                     className="
                       absolute right-0 bottom-0 size-2 translate-px border-r-2
                       border-b-2 border-tech-main/40 opacity-0
                       transition-opacity
                       group-hover:opacity-100
-                    "/>
+                    "
+                  />
 
                   <div className="relative z-10 flex h-full flex-col">
                     <div className="mb-4 flex items-start justify-between gap-2">
@@ -154,8 +156,9 @@ export function FeatureList({ features }: { features: Feature[] }) {
                           flex items-center font-mono text-xs tracking-widest
                           text-tech-main opacity-80
                         ">
-                        <span
-                          className="mr-2 inline-block size-1.5 bg-tech-main"></span>
+                        <span className="
+                          mr-2 inline-block size-1.5 bg-tech-main
+                        "></span>
                         AUTHOR: {feature.author?.name || "UNKNOWN_USER"}
                       </p>
                       {feature.assignee && (
@@ -164,8 +167,9 @@ export function FeatureList({ features }: { features: Feature[] }) {
                             flex items-center font-mono text-xs tracking-widest
                             text-blue-600 opacity-80
                           ">
-                          <span
-                            className="mr-2 inline-block size-1.5 bg-blue-600"></span>
+                          <span className="
+                            mr-2 inline-block size-1.5 bg-blue-600
+                          "></span>
                           ASSIGNEE: {feature.assignee.name || "UNKNOWN_USER"}
                         </p>
                       )}
@@ -199,8 +203,9 @@ export function FeatureList({ features }: { features: Feature[] }) {
     <div className="space-y-6">
       {/* 过滤器 */}
       <RevealSection delay={0}>
-        <BrutalCard
-          className="border-tech-main/40 bg-white/80 p-6 backdrop-blur-sm">
+        <BrutalCard className="
+          border-tech-main/40 bg-white/80 p-6 backdrop-blur-sm
+        ">
           <div className="space-y-4">
             <div>
               <h4
@@ -224,9 +229,10 @@ export function FeatureList({ features }: { features: Feature[] }) {
                     className={`
                       flex min-h-8 cursor-pointer items-center justify-center
                       border px-3 py-2 font-mono text-xs transition-all
-                      ${statusFilter === status
-                        ? "border-tech-main bg-tech-main text-white"
-                        : `
+                      ${
+                        statusFilter === status
+                          ? "border-tech-main bg-tech-main text-white"
+                          : `
                             border-tech-main/40 bg-transparent text-tech-main
                             hover:border-tech-main/60
                           `
@@ -256,9 +262,10 @@ export function FeatureList({ features }: { features: Feature[] }) {
                         flex min-h-8 cursor-pointer items-center justify-center
                         border px-3 py-2 font-mono text-xs uppercase
                         transition-all
-                        ${selectedTags.includes(tag)
-                          ? "border-tech-accent bg-tech-accent text-white"
-                          : `
+                        ${
+                          selectedTags.includes(tag)
+                            ? "border-tech-accent bg-tech-accent text-white"
+                            : `
                               border-tech-main/40 bg-tech-accent/5
                               text-tech-main
                               hover:border-tech-main/60
