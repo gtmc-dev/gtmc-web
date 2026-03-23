@@ -136,7 +136,11 @@ export function SidebarClient({
   }, [])
 
   const getEffectivePathname = useCallback(() => {
-    if (pathname === "/articles" || pathname === "/articles/")
+    if (
+      pathname === "/articles" ||
+      pathname === "/articles/" ||
+      pathname === "/"
+    )
       return "/articles/Preface"
     return pathname
   }, [pathname])
@@ -274,7 +278,8 @@ export function SidebarClient({
   }
 
   const renderTree = (items: TreeNode[], level = 0) => {
-    const decodedPathname = decodeURIComponent(pathname)
+    const effectivePath = getEffectivePathname()
+    const decodedPathname = decodeURIComponent(effectivePath)
     return (
       <ul className="my-1 border-l guide-line pl-4">
         {items.map((item) => {
@@ -293,11 +298,12 @@ export function SidebarClient({
             <li
               key={item.id}
               ref={!item.isFolder && isActive ? activeItemRef : undefined}
-              className="
+              className={`
                 my-1.5 list-none font-mono text-[15px] transition-all
                 duration-300
                 md:text-base
-              ">
+                ${!item.isFolder && isActive && highlightActive ? "bg-tech-main/10 -mx-2 px-2 rounded-sm" : ""}
+              `}>
               {item.isFolder ? (
                 <button
                   onClick={(e) => toggleFolder(item.id, e)}
@@ -319,9 +325,10 @@ export function SidebarClient({
                     className={`
                       group relative -ml-4 flex items-center py-1.5 pl-4
                       transition-colors
-                      ${isActive
-                        ? `font-bold text-tech-main`
-                        : `
+                      ${
+                        isActive
+                          ? `font-bold text-tech-main`
+                          : `
                             text-slate-700
                             hover:text-tech-main
                           `
@@ -347,9 +354,10 @@ export function SidebarClient({
                           absolute top-1/2 left-0 -translate-y-1/2 text-xs
                           transition-opacity
                           md:text-sm
-                          ${isActive
-                            ? `text-tech-main opacity-100`
-                            : `
+                          ${
+                            isActive
+                              ? `text-tech-main opacity-100`
+                              : `
                                 text-tech-main opacity-0
                                 group-hover:opacity-100
                               `
@@ -370,9 +378,10 @@ export function SidebarClient({
                       }}
                       className={`
                         block w-full border-b pb-px pl-1
-                        ${isActive
-                          ? `cursor-pointer border-tech-main/50`
-                          : `
+                        ${
+                          isActive
+                            ? `cursor-pointer border-tech-main/50`
+                            : `
                               border-transparent
                               group-hover:border-tech-main/30
                             `
@@ -386,9 +395,10 @@ export function SidebarClient({
                     <div
                       className={`
                         grid transition-all duration-300 ease-out
-                        ${isFileExpanded
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0"
+                        ${
+                          isFileExpanded
+                            ? "grid-rows-[1fr] opacity-100"
+                            : "grid-rows-[0fr] opacity-0"
                         }
                       `}>
                       <div className="overflow-hidden">
@@ -430,9 +440,10 @@ export function SidebarClient({
                   }}
                   className={`
                     grid transition-all duration-300 ease-out
-                    ${!item.isFolder || folderExpanded
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
+                    ${
+                      !item.isFolder || folderExpanded
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
                     }
                   `}>
                   <div className="overflow-hidden">
