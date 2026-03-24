@@ -52,7 +52,7 @@ export default async function EditDraftPage({ params }: { params: Promise<{ id: 
 
         {draft.status === "SYNC_CONFLICT" ? (
           <div className="mb-4 border border-amber-500/50 bg-amber-500/10 p-4 font-mono text-sm text-amber-700">
-            {`// LATEST MAIN COULD NOT BE APPLIED CLEANLY. Resolve the conflict below, then update the PR branch.`}
+            {`// LATEST MAIN COULD NOT BE APPLIED CLEANLY. This draft is locked until an admin resolves the conflict from the review page.`}
           </div>
         ) : null}
 

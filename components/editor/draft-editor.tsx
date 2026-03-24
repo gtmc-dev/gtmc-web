@@ -4,11 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import ReactMarkdown from "react-markdown"
 
-import {
-  resolveDraftConflictAction,
-  saveDraftAction,
-  submitForReviewAction,
-} from "@/actions/article"
+import { saveDraftAction, submitForReviewAction } from "@/actions/article"
 import { getMarkdownComponents, getPluginsForContent } from "@/lib/markdown"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import {
@@ -57,7 +53,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   const articleId = initialData?.articleId
   const githubPrUrl = initialData?.githubPrUrl
   const isSyncConflict = draftStatus === "SYNC_CONFLICT"
-  const isReadOnly = draftStatus === "IN_REVIEW"
+  const isReadOnly = draftStatus === "IN_REVIEW" || draftStatus === "SYNC_CONFLICT"
 
   const insertSyntax = (prefix: string, suffix: string = "") => {
     if (isReadOnly || !textareaRef.current) return
@@ -128,34 +124,6 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     }
   }
 
-  const handleResolveConflict = async () => {
-    if (!revisionId) {
-      alert("未找到草稿 ID / Missing draft ID")
-      return
-    }
-
-    setIsSubmittingReview(true)
-    try {
-      const formData = new FormData()
-      formData.append("content", content)
-
-      const result = await resolveDraftConflictAction(revisionId, formData)
-      setDraftStatus(result.status)
-      alert(
-        result.status === "SYNC_CONFLICT"
-          ? "main 已继续前进，请再处理一次冲突 / main moved again, please resolve once more."
-          : "冲突已解决，PR 已更新 / Conflict resolved and PR updated."
-      )
-      router.push(`/draft/${revisionId}`)
-      router.refresh()
-    } catch (error) {
-      console.error(error)
-      alert("处理冲突失败 / Conflict Resolution Failed")
-    } finally {
-      setIsSubmittingReview(false)
-    }
-  }
-
   return (
     <form
       onSubmit={handleSaveDraft}
@@ -215,6 +183,13 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
           <a href={githubPrUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">
             OPEN_GITHUB_PR
           </a>
+        </div>
+      ) : null}
+
+      {isSyncConflict ? (
+        <div className="border-l-4 border-amber-500 bg-amber-500/10 p-4 text-amber-700">
+          <p className="font-bold uppercase tracking-widest">Admin Resolution Pending</p>
+          <p className="text-sm">This PR is blocked by a sync conflict. Only an admin can resolve it from the review page.</p>
         </div>
       ) : null}
 
@@ -349,22 +324,20 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             {isSaving ? (
               <LoadingIndicator label={PENDING_LABELS.SAVING_DRAFT} />
             ) : (
-              isSyncConflict ? "SAVE PROGRESS" : "SAVE DRAFT"
+              "SAVE DRAFT"
             )}
           </BrutalButton>
 
           <BrutalButton
             type="button"
             variant="ghost"
-            onClick={isSyncConflict ? handleResolveConflict : handleSubmitReview}
+            onClick={handleSubmitReview}
             disabled={isSubmittingReview || isSaving}
             aria-busy={isSubmittingReview}>
             {isSubmittingReview ? (
-              <LoadingIndicator
-                label={isSyncConflict ? PENDING_LABELS.UPDATING_PR : PENDING_LABELS.SUBMITTING_REVIEW}
-              />
+              <LoadingIndicator label={PENDING_LABELS.SUBMITTING_REVIEW} />
             ) : (
-              isSyncConflict ? "RESOLVE & UPDATE PR" : "OPEN PR & SYNC MAIN"
+              "OPEN PR & SYNC MAIN"
             )}
           </BrutalButton>
         </div>

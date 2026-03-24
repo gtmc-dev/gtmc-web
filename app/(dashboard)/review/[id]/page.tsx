@@ -13,6 +13,7 @@ import { getMarkdownComponents } from "@/lib/markdown";
 import { getOctokit, ARTICLES_REPO_OWNER, ARTICLES_REPO_NAME } from "@/lib/github-pr";
 import { mergePRAction, closePRAction } from "@/actions/review";
 import { prisma } from "@/lib/prisma";
+import ConflictResolver from "./components/conflict-resolver";
 
 const owner = ARTICLES_REPO_OWNER;
 const repo = ARTICLES_REPO_NAME;
@@ -124,22 +125,11 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       </div>
 
       {hasConflict || linkedDraft?.status === "SYNC_CONFLICT" ? (
-        <div className="space-y-4">
-          <div className="border-l-4 border-amber-500 bg-amber-500/10 p-4 text-amber-700">
-            <p className="font-bold uppercase tracking-widest">Author Action Required</p>
-            <p className="text-sm">
-              {linkedDraft?.status === "SYNC_CONFLICT"
-                ? "This PR is waiting for the author to resolve the latest main sync conflict from the draft editor."
-                : "GitHub reports this PR as conflicted. The author needs to resync the draft branch before it can be merged."}
-            </p>
-          </div>
-
-          {linkedDraft ? (
-            <Link href={`/draft/${linkedDraft.id}`}>
-              <BrutalButton variant="ghost">OPEN_LINKED_DRAFT</BrutalButton>
-            </Link>
-          ) : null}
-        </div>
+        <ConflictResolver
+          prNumber={prNumber}
+          filePath={mainFile?.filename || linkedDraft?.filePath || ""}
+          initialContent={linkedDraft?.conflictContent || rawContent}
+        />
       ) : (
         <>
           <div>

@@ -7,11 +7,10 @@ import { auth } from "@/lib/auth";
 import {
   getMainBranchHeadSha,
   openDraftPullRequest,
-  resolveDraftSyncConflict,
 } from "@/lib/article-submission";
 import { prisma } from "@/lib/prisma";
 
-const EDITABLE_STATUSES = new Set(["DRAFT", "SYNC_CONFLICT"]);
+const EDITABLE_STATUSES = new Set(["DRAFT"]);
 
 export async function saveDraftAction(formData: FormData) {
   const session = await auth();
@@ -157,73 +156,6 @@ export async function submitForReviewAction(revisionId: string) {
   } catch (error) {
     throw new Error(`Failed to create PR: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
-}
-
-export async function resolveDraftConflictAction(revisionId: string, formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    throw new Error("Unauthorized");
-  }
-
-  const content = formData.get("content") as string;
-
-  if (!content) {
-    throw new Error("Resolved content is required");
-  }
-
-  const existing = await prisma.revision.findUnique({
-    where: { id: revisionId },
-    include: { author: true },
-  });
-
-  if (!existing) {
-    throw new Error("Revision not found");
-  }
-
-  if (existing.authorId !== session.user.id) {
-    throw new Error("Unauthorized");
-  }
-
-  if (existing.status !== "SYNC_CONFLICT") {
-    throw new Error("This draft does not have a pending sync conflict");
-  }
-
-  if (!existing.filePath || !existing.prBranchName) {
-    throw new Error("The draft is missing PR metadata");
-  }
-
-  const token = existing.author.githubPat || process.env.GITHUB_TOKEN;
-  const authorName = session.user.name || "GTMC Author";
-  const authorEmail = session.user.email || "author@gtmc.dev";
-
-  const result = await resolveDraftSyncConflict({
-    authorEmail,
-    authorName,
-    branchName: existing.prBranchName,
-    content,
-    filePath: existing.filePath,
-    syncedMainSha: existing.syncedMainSha,
-    title: existing.title,
-    token,
-  });
-
-  await prisma.revision.update({
-    where: { id: revisionId },
-    data: {
-      conflictContent: result.conflictContent,
-      content: result.status === "IN_REVIEW" ? result.content : existing.content,
-      filePath: result.filePath,
-      status: result.status,
-      syncedMainSha: result.syncedMainSha,
-    },
-  });
-
-  revalidatePath("/draft");
-  revalidatePath(`/draft/${revisionId}`);
-  revalidatePath("/review");
-
-  return { success: true, status: result.status };
 }
 
 export async function deleteDraftAction(revisionId: string) {

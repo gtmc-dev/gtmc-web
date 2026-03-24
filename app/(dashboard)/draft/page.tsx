@@ -138,7 +138,6 @@ export default async function DraftDashboardPage() {
             hover:border-tech-main/60 hover:bg-white/80
           ">
           {draft.displayStatus === "DRAFT" ||
-          draft.displayStatus === "SYNC_CONFLICT" ||
           draft.displayStatus === "CLOSED"
             ? "> EDIT_RECORD"
             : "> VIEW_STREAM"}
