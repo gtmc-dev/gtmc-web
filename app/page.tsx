@@ -561,9 +561,7 @@ export default function Home() {
             flex-col items-center bg-tech-main/10
             md:flex
           ">
-          <div
-            className="mt-[50vh] size-2 border border-tech-main/50 bg-tech-bg"
-          />
+          <div className="mt-[50vh] size-2 border border-tech-main/50 bg-tech-bg" />
         </div>
 
         {/* 技术图纸刻度尺 */}
@@ -749,7 +747,8 @@ export default function Home() {
                     ml-4 inline-block h-[1em] w-6 animate-pulse bg-tech-main
                     align-middle opacity-0 [animation-delay:1s]
                     fill-mode-forwards
-                  "/>
+                  "
+                />
               </div>
             </h1>
 
@@ -769,7 +768,8 @@ export default function Home() {
                 <span
                   className="
                     mr-3 ml-0.5 size-2 animate-pulse rounded-full bg-tech-main
-                  " />
+                  "
+                />
                 &gt;&gt; MODPACKS | MECHANICS | TUTORIALS
               </span>
             </div>
@@ -833,8 +833,8 @@ export default function Home() {
                 flex h-12 w-full items-center justify-center border
                 border-tech-main/40 bg-white/70 px-8 py-3 text-sm font-medium
                 tracking-widest text-tech-main-dark uppercase shadow-sm
-                backdrop-blur-md transition-all duration-300
-                hover:border-tech-main hover:bg-white
+                backdrop-blur-md transition-transform duration-300
+                hover:scale-105 hover:border-tech-main hover:bg-white
                 sm:w-auto
               ">
               /{"/"} INITIALIZE LOGIN
@@ -847,8 +847,7 @@ export default function Home() {
           className="
             pointer-events-none relative mt-12 flex space-x-1 opacity-40
           ">
-          <div
-            className="absolute -top-4 font-mono text-[8px] text-tech-main/60">
+          <div className="absolute -top-4 font-mono text-[8px] text-tech-main/60">
             INVENTORY_SLOTS_
           </div>
           {[...Array(9)].map((_, i) => (
@@ -856,12 +855,13 @@ export default function Home() {
               key={i}
               className={`
                 flex size-8 items-center justify-center
-                ${i === 3
-                  ? `
+                ${
+                  i === 3
+                    ? `
                     border-2 border-tech-main-dark bg-tech-main/10
                     shadow-[0_0_8px_rgba(96,112,143,0.3)]
                   `
-                  : `border border-tech-main/40`
+                    : `border border-tech-main/40`
                 }
               `}>
               {i === 3 && (
