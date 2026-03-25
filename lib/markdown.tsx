@@ -9,6 +9,129 @@ import rehypeRaw from "rehype-raw"
 import rehypeKatex from "rehype-katex"
 import rehypeSlug from "rehype-slug"
 import type { ReactNode } from "react"
+import React from "react"
+import type { Element, Nodes, Root, Text } from "hast"
+import { visit } from "unist-util-visit"
+
+const CJK_REGEX =
+  /[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/
+const LATIN_REGEX = /[a-zA-Z0-9]/
+
+function isCJK(char: string): boolean {
+  return CJK_REGEX.test(char)
+}
+
+function isLatin(char: string): boolean {
+  return LATIN_REGEX.test(char)
+}
+
+function isShortUppercase(text: string): boolean {
+  return text.length >= 1 && text.length <= 6 && /^[A-Z]+$/.test(text)
+}
+
+function needsSpaceBetween(char1: string, char2: string): boolean {
+  return (isCJK(char1) && isLatin(char2)) || (isLatin(char1) && isCJK(char2))
+}
+
+function addSpaceBetweenCJKAndLatin(text: string): string {
+  return text
+    .replace(
+      new RegExp(`(${CJK_REGEX.source})(?=${LATIN_REGEX.source})`, "g"),
+      "$1 "
+    )
+    .replace(
+      new RegExp(`(${LATIN_REGEX.source})(?=${CJK_REGEX.source})`, "g"),
+      "$1 "
+    )
+}
+
+function getTextContent(node: Nodes): string {
+  if (node.type === "text") return node.value
+  if ("children" in node && node.children.length > 0) {
+    return node.children.map(getTextContent).join("")
+  }
+  return ""
+}
+
+function getLastChar(node: Nodes): string {
+  if (node.type === "text") return node.value.slice(-1)
+  if ("children" in node && node.children.length > 0) {
+    return getLastChar(node.children[node.children.length - 1])
+  }
+  return ""
+}
+
+function getFirstChar(node: Nodes): string {
+  if (node.type === "text") return node.value[0] || ""
+  if ("children" in node && node.children.length > 0) {
+    return getFirstChar(node.children[0])
+  }
+  return ""
+}
+
+function appendSpace(node: Nodes): void {
+  if (node.type === "text") {
+    node.value = node.value + " "
+    return
+  }
+  if ("children" in node && node.children.length > 0) {
+    appendSpace(node.children[node.children.length - 1])
+  }
+}
+
+function prependSpace(node: Nodes): void {
+  if (node.type === "text") {
+    node.value = " " + node.value
+    return
+  }
+  if ("children" in node && node.children.length > 0) {
+    prependSpace(node.children[0])
+  }
+}
+
+export function rehypeCJKSpacing() {
+  return (tree: Root) => {
+    visit(tree, (node: Nodes) => {
+      if (node.type !== "element") return
+      const element = node as Element
+      if (element.tagName === "code" || element.tagName === "pre") return
+      if (!element.children || element.children.length === 0) return
+
+      for (let i = 0; i < element.children.length - 1; i++) {
+        const current = element.children[i]
+        const next = element.children[i + 1]
+
+        const currentText = getTextContent(current)
+        const nextText = getTextContent(next)
+
+        if (isShortUppercase(currentText) || isShortUppercase(nextText)) {
+          continue
+        }
+
+        const lastChar = getLastChar(current)
+        const firstChar = getFirstChar(next)
+
+        if (lastChar && firstChar && needsSpaceBetween(lastChar, firstChar)) {
+          const nextIsInline =
+            next.type === "element" && (next as Element).tagName !== "br"
+
+          if (nextIsInline) {
+            appendSpace(current)
+          } else {
+            prependSpace(next)
+          }
+        }
+      }
+    })
+
+    visit(tree, (node: Nodes) => {
+      if (node.type !== "text") return
+      const textNode = node as Text
+      textNode.value = addSpaceBetweenCJKAndLatin(textNode.value)
+    })
+  }
+}
+
 
 type MarkdownComponentProps = {
   children?: ReactNode
@@ -423,8 +546,11 @@ export function getPluginsForContent(content: string) {
     typeof remarkGfm | typeof remarkMath | typeof remarkBreaks
   > = [remarkGfm, remarkBreaks]
   const rehypePlugins: Array<
-    typeof rehypeRaw | typeof rehypeKatex | typeof rehypeSlug
-  > = [rehypeRaw, rehypeSlug]
+    | typeof rehypeRaw
+    | typeof rehypeKatex
+    | typeof rehypeSlug
+    | typeof rehypeCJKSpacing
+  > = [rehypeRaw, rehypeCJKSpacing, rehypeSlug]
 
   if (
     content.includes("$") ||
@@ -432,7 +558,7 @@ export function getPluginsForContent(content: string) {
     content.includes("\\[")
   ) {
     remarkPlugins.push(remarkMath)
-    rehypePlugins.push(rehypeKatex)
+    rehypePlugins.splice(2, 0, rehypeKatex)
   }
 
   return { remarkPlugins, rehypePlugins }
