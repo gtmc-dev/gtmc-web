@@ -12,6 +12,10 @@ function flattenLeafSlugs(nodes: RepoTreeNode[]): string[] {
   )
 }
 
+function encodeSlug(slug: string): string {
+  return slug.split("/").map(encodeURIComponent).join("/")
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = "https://beta.techmc.wiki"
   const seenSlugs = new Set<string>()
@@ -38,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const dbUrls: MetadataRoute.Sitemap = dbArticles.map((a) => {
     seenSlugs.add(a.slug)
     return {
-      url: `${BASE}/articles/${a.slug}`,
+      url: `${BASE}/articles/${encodeSlug(a.slug)}`,
       lastModified: a.updatedAt,
       changeFrequency: "weekly",
       priority: 0.8,
@@ -52,7 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     repoUrls = leafSlugs
       .filter((slug) => !seenSlugs.has(slug))
       .map((slug) => ({
-        url: `${BASE}/articles/${slug}`,
+        url: `${BASE}/articles/${encodeSlug(slug)}`,
         lastModified: new Date(),
         changeFrequency: "weekly" as const,
         priority: 0.8,
