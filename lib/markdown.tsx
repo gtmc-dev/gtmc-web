@@ -34,15 +34,69 @@ function needsSpaceBetween(char1: string, char2: string): boolean {
 }
 
 function addSpaceBetweenCJKAndLatin(text: string): string {
-  return text
-    .replace(
-      new RegExp(`(${CJK_REGEX.source})(?=${LATIN_REGEX.source})`, "g"),
-      "$1 "
-    )
-    .replace(
-      new RegExp(`(${LATIN_REGEX.source})(?=${CJK_REGEX.source})`, "g"),
-      "$1 "
-    )
+  const parts: string[] = []
+  let i = 0
+
+  while (i < text.length) {
+    const char = text[i]
+    parts.push(char)
+
+    if (i < text.length - 1) {
+      const nextChar = text[i + 1]
+
+      if (needsSpaceBetween(char, nextChar)) {
+        let latinWord = ""
+        let j = i + 1
+
+        if (isLatin(nextChar)) {
+          while (j < text.length && isLatin(text[j])) {
+            latinWord += text[j]
+            j++
+          }
+        } else if (isLatin(char)) {
+          let k = i
+          while (k >= 0 && isLatin(text[k])) {
+            latinWord = text[k] + latinWord
+            k--
+          }
+        }
+
+        if (!isShortUppercase(latinWord)) {
+          parts.push(" ")
+        }
+      }
+    }
+
+    i++
+  }
+
+  return parts.join("")
+}
+
+function getTrailingLatinWord(node: Nodes): string {
+  const text = getTextContent(node)
+  let word = ""
+  for (let i = text.length - 1; i >= 0; i--) {
+    if (isLatin(text[i])) {
+      word = text[i] + word
+    } else {
+      break
+    }
+  }
+  return word
+}
+
+function getLeadingLatinWord(node: Nodes): string {
+  const text = getTextContent(node)
+  let word = ""
+  for (let i = 0; i < text.length; i++) {
+    if (isLatin(text[i])) {
+      word += text[i]
+    } else {
+      break
+    }
+  }
+  return word
 }
 
 function getTextContent(node: Nodes): string {
@@ -101,17 +155,17 @@ export function rehypeCJKSpacing() {
         const current = element.children[i]
         const next = element.children[i + 1]
 
-        const currentText = getTextContent(current)
-        const nextText = getTextContent(next)
-
-        if (isShortUppercase(currentText) || isShortUppercase(nextText)) {
-          continue
-        }
-
         const lastChar = getLastChar(current)
         const firstChar = getFirstChar(next)
 
         if (lastChar && firstChar && needsSpaceBetween(lastChar, firstChar)) {
+          const trailingWord = getTrailingLatinWord(current)
+          const leadingWord = getLeadingLatinWord(next)
+
+          if (isShortUppercase(trailingWord) || isShortUppercase(leadingWord)) {
+            continue
+          }
+
           const nextIsInline =
             next.type === "element" && (next as Element).tagName !== "br"
 
