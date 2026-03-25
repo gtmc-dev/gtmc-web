@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getRepoContentTree, type RepoTreeNode } from "@/lib/github-pr"
 import { listAllIssues } from "@/lib/github-features"
 
+export const dynamic = "force-dynamic"
 export const revalidate = 3600
 
 function flattenLeafSlugs(nodes: RepoTreeNode[]): string[] {
