@@ -10,8 +10,8 @@ export default function Footer() {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-tech-main/40 to-transparent" />
 
       <div className="mx-auto container-safe relative px-4 sm:px-6 lg:px-8">
-        <div className="pointer-events-none absolute top-0 left-0 size-2 border-t-2 border-l-2 border-tech-main/30 hidden md:block" />
-        <div className="pointer-events-none absolute top-0 right-0 size-2 border-t-2 border-r-2 border-tech-main/30 hidden md:block" />
+        <div className="pointer-events-none absolute top-0 left-0 size-2 border-t-2 border-l-2 border-tech-main/40 hidden md:block" />
+        <div className="pointer-events-none absolute top-0 right-0 size-2 border-t-2 border-r-2 border-tech-main/40 hidden md:block" />
 
         <div className="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-8">
           <div className="flex flex-col space-y-4 md:col-span-4">
