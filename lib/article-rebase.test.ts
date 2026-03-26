@@ -4,6 +4,8 @@ import { describe, expect, it, beforeEach, mock } from "bun:test"
 const mockCompareCommits = mock()
 const mockGetCommit = mock()
 const mockGetContent = mock()
+const mockRevisionUpdate = mock(async () => ({}))
+const mockRevisionFindUnique = mock(async () => null)
 
 mock.module("@/lib/github-pr", () => ({
   getOctokit: mock(() => ({
@@ -20,12 +22,13 @@ mock.module("@/lib/github-pr", () => ({
 mock.module("@/lib/prisma", () => ({
   prisma: {
     revision: {
-      update: mock(async () => ({})),
+      update: mockRevisionUpdate,
+      findUnique: mockRevisionFindUnique,
     },
   },
 }))
 
-const { rebaseArticleContent, analyzeRebaseNeed } =
+const { rebaseArticleContent, analyzeRebaseNeed, abortRebase, resumeRebase } =
   await import("./article-rebase")
 import type { RebaseInput, AnalyzeRebaseInput } from "./article-rebase"
 
@@ -34,6 +37,8 @@ describe("rebaseArticleContent", () => {
     mockCompareCommits.mockReset()
     mockGetCommit.mockReset()
     mockGetContent.mockReset()
+    mockRevisionUpdate.mockReset()
+    mockRevisionFindUnique.mockReset()
     mockCompareCommits.mockImplementation(async () => ({
       data: { commits: [] },
     }))
@@ -41,6 +46,8 @@ describe("rebaseArticleContent", () => {
     mockGetContent.mockImplementation(async () => ({
       data: { type: "file", content: "", sha: "" },
     }))
+    mockRevisionUpdate.mockImplementation(async () => ({}))
+    mockRevisionFindUnique.mockImplementation(async () => null)
   })
 
   it("NO_CHANGE: baseMainSha === latestMainSha", async () => {
@@ -265,10 +272,14 @@ describe("analyzeRebaseNeed", () => {
   beforeEach(() => {
     mockCompareCommits.mockReset()
     mockGetCommit.mockReset()
+    mockRevisionUpdate.mockReset()
+    mockRevisionFindUnique.mockReset()
     mockCompareCommits.mockImplementation(async () => ({
       data: { commits: [] },
     }))
     mockGetCommit.mockImplementation(async () => ({ data: { files: [] } }))
+    mockRevisionUpdate.mockImplementation(async () => ({}))
+    mockRevisionFindUnique.mockImplementation(async () => null)
   })
 
   it("returns QUICK_MERGE_OK when baseMainSha === latestMainSha", async () => {
@@ -422,5 +433,157 @@ describe("analyzeRebaseNeed", () => {
     expect(resultOne.adminMessage).toBe(
       "The article was modified in 1 commit. A quick merge should suffice."
     )
+  })
+})
+
+describe("abortRebase", () => {
+  beforeEach(() => {
+    mockRevisionUpdate.mockReset()
+    mockRevisionFindUnique.mockReset()
+    mockRevisionUpdate.mockImplementation(async () => ({}))
+    mockRevisionFindUnique.mockImplementation(async () => null)
+  })
+
+  it("restores original content when conflict state exists", async () => {
+    mockRevisionFindUnique.mockImplementation(async () => ({
+      rebaseState: {
+        status: "CONFLICT",
+        commitShas: ["c1", "c2"],
+        currentCommitIndex: 1,
+        conflictedCommitSha: "c2",
+        originalContent: "original body",
+        commitInfos: [],
+      },
+    }))
+
+    const result = await abortRebase({ draftId: "draft-1" })
+
+    expect(result).toEqual({
+      status: "ABORTED",
+      originalContent: "original body",
+    })
+    expect(mockRevisionUpdate).toHaveBeenCalledWith({
+      where: { id: "draft-1" },
+      data: {
+        content: "original body",
+        rebaseState: {
+          status: "ABORTED",
+          commitShas: ["c1", "c2"],
+          currentCommitIndex: 1,
+          conflictedCommitSha: "c2",
+          originalContent: "original body",
+          commitInfos: [],
+        },
+      },
+    })
+  })
+
+  it("returns error when no active rebase", async () => {
+    mockRevisionFindUnique.mockImplementation(async () => ({
+      rebaseState: {
+        status: "COMPLETED",
+        commitShas: [],
+        currentCommitIndex: 0,
+        originalContent: "original body",
+        commitInfos: [],
+      },
+    }))
+
+    const result = await abortRebase({ draftId: "draft-1" })
+
+    expect(result).toEqual({
+      status: "ERROR",
+      message: "No active rebase to abort",
+    })
+    expect(mockRevisionUpdate).not.toHaveBeenCalled()
+  })
+})
+
+describe("resumeRebase", () => {
+  beforeEach(() => {
+    mockGetContent.mockReset()
+    mockRevisionUpdate.mockReset()
+    mockRevisionFindUnique.mockReset()
+    mockGetContent.mockImplementation(async () => ({
+      data: { type: "file", content: "", sha: "" },
+    }))
+    mockRevisionUpdate.mockImplementation(async () => ({}))
+    mockRevisionFindUnique.mockImplementation(async () => null)
+  })
+
+  it("continues from conflict and completes successfully", async () => {
+    mockRevisionFindUnique.mockImplementation(async () => ({
+      filePath: "test.md",
+      rebaseState: {
+        status: "CONFLICT",
+        commitShas: ["c1", "c2"],
+        currentCommitIndex: 0,
+        conflictedCommitSha: "c1",
+        originalContent: "draft",
+        commitInfos: [
+          {
+            sha: "c1",
+            message: "first",
+            author: "A1",
+            timestamp: "2024-01-01",
+          },
+          {
+            sha: "c2",
+            message: "second",
+            author: "A2",
+            timestamp: "2024-01-02",
+          },
+        ],
+      },
+    }))
+
+    mockGetContent.mockImplementation(async ({ ref }: any) => {
+      const contentMap: Record<string, string> = {
+        c1: "resolved",
+        c2: "resolved\nnext",
+      }
+      return {
+        data: {
+          type: "file",
+          content: Buffer.from(contentMap[ref] || "").toString("base64"),
+          sha: `s${ref}`,
+        },
+      }
+    })
+
+    const result = await resumeRebase({
+      draftId: "draft-1",
+      resolvedContent: "resolved",
+    })
+
+    expect(result.status).toBe("SUCCESS")
+    if (result.status === "SUCCESS") {
+      expect(result.finalContent).toBe("resolved\nnext")
+      expect(result.appliedCommits.map((c) => c.sha)).toEqual(["c2"])
+    }
+  })
+
+  it("returns error when state is not CONFLICT", async () => {
+    mockRevisionFindUnique.mockImplementation(async () => ({
+      filePath: "test.md",
+      rebaseState: {
+        status: "IN_PROGRESS",
+        commitShas: ["c1"],
+        currentCommitIndex: 0,
+        originalContent: "draft",
+        commitInfos: [],
+      },
+    }))
+
+    const result = await resumeRebase({
+      draftId: "draft-1",
+      resolvedContent: "resolved",
+    })
+
+    expect(result).toEqual({
+      status: "ERROR",
+      message: "No conflict to resume from",
+    })
+    expect(mockRevisionUpdate).not.toHaveBeenCalled()
   })
 })
