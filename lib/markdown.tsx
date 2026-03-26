@@ -1,5 +1,4 @@
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { solarizedlight } from "react-syntax-highlighter/dist/cjs/styles/prism"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import path from "path"
 import remarkGfm from "remark-gfm"
@@ -12,6 +11,11 @@ import type { ReactNode } from "react"
 import React from "react"
 import type { Element, Nodes, Root, Text } from "hast"
 import { visit } from "unist-util-visit"
+import { solarizedlight } from "react-syntax-highlighter/dist/cjs/styles/prism"
+
+const SyntaxHighlighter = dynamic(() =>
+  import("react-syntax-highlighter").then((mod) => ({ default: mod.Prism }))
+)
 
 const CJK_REGEX =
   /[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/
