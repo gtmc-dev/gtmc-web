@@ -91,10 +91,10 @@ export function ForegroundLayer({
           <BrutalButton
             variant="ghost"
             className="
-              flex h-12 w-full items-center justify-center text-xs font-medium
-              tracking-widest text-tech-main-dark uppercase shadow-sm
-              backdrop-blur-md transition-transform duration-300
-              hover:scale-102 hover:border-tech-main hover:bg-tech-main/5
+              flex h-12 w-full items-center justify-center bg-white text-xs
+              font-medium tracking-widest text-tech-main-dark uppercase
+              shadow-sm backdrop-blur-md transition-transform duration-300
+              hover:scale-102 hover:border-tech-main hover:bg-tech-main/10
               sm:w-auto sm:text-sm
             ">
             {"//"} LOGIN (GITHUB)
@@ -114,13 +114,12 @@ export function ForegroundLayer({
             key={i}
             className={`
               flex size-8 items-center justify-center
-              ${
-                i === 3
-                  ? `
-                    border-2 border-tech-main-dark bg-tech-main/10
-                    shadow-[0_0_8px_rgba(96,112,143,0.3)]
-                  `
-                  : `border border-tech-main/40`
+              ${i === 3
+                ? `
+                  border-2 border-tech-main-dark bg-tech-main/10
+                  shadow-[0_0_8px_rgba(96,112,143,0.3)]
+                `
+                : `border border-tech-main/40`
               }
             `}>
             {i === 3 && (
