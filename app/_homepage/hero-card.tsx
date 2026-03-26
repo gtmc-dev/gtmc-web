@@ -172,15 +172,19 @@ export function HeroCard({
             fill-mode-forwards
             sm:gap-4
           ">
-          <span className="
-            text-xs text-tech-main-dark/80
-            sm:text-base
-          " >支持多人协作、内容审核与 Git 自动备份的 MC 资源与知识整合站点。</span>
+          <span
+            className="
+              text-xs text-tech-main-dark/80
+              sm:text-base
+            ">
+            支持多人协作、内容审核与 Git 自动备份的 MC 资源与知识整合站点。
+          </span>
 
-          <span className="
-            flex flex-row items-center gap-2
-            sm:gap-4
-          ">
+          <span
+            className="
+              flex flex-row items-center gap-2
+              sm:gap-4
+            ">
             <span
               className="
                 hidden min-h-1.5 min-w-1.5 animate-pulse rounded-full
@@ -188,16 +192,23 @@ export function HeroCard({
                 sm:min-h-2 sm:min-w-2
               "
             />
-            <span className="
-              font-mono text-[8px] tracking-tech-wide opacity-60
-              sm:text-[12px]
-            ">
-              <span className="sm:hidden">
-                -&gt; TUTORIALS<br />-&gt; EXPLANATIONS<br />-&gt; CODE ANALYSIS</span>
-              <span className="
-                hidden
-                sm:inline
+            <span
+              className="
+                font-mono text-[8px] tracking-tech-wide opacity-60
+                sm:text-[12px]
               ">
+              <span className="sm:hidden">
+                -&gt; TUTORIALS
+                <br />
+                -&gt; EXPLANATIONS
+                <br />
+                -&gt; CODE ANALYSIS
+              </span>
+              <span
+                className="
+                  hidden
+                  sm:inline
+                ">
                 &gt;&gt; TUTORIALS | EXPLANATIONS | CODE ANALYSIS
               </span>
             </span>
