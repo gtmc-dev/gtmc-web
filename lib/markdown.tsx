@@ -155,8 +155,8 @@ export function rehypeLinkedCode() {
           node.properties["data-has-code"] = "true"
           node.children?.forEach((c) => {
             if (c.type === "element" && (c as Element).tagName === "code") {
-              ; (c as Element).properties = (c as Element).properties || {}
-                ; (c as Element).properties["data-linked-code"] = "true"
+              ;(c as Element).properties = (c as Element).properties || {}
+              ;(c as Element).properties["data-linked-code"] = "true"
             }
           })
         }
@@ -170,8 +170,8 @@ export function rehypeLinkedCode() {
           node.properties["data-has-link"] = "true"
           node.children?.forEach((c) => {
             if (c.type === "element" && (c as Element).tagName === "a") {
-              ; (c as Element).properties = (c as Element).properties || {}
-                ; (c as Element).properties["data-in-code"] = "true"
+              ;(c as Element).properties = (c as Element).properties || {}
+              ;(c as Element).properties["data-in-code"] = "true"
             }
           })
         }
@@ -279,7 +279,12 @@ export function getMarkdownComponents(rawPath: string) {
       return (
         <Link
           href={href}
-          className="mx-1 inline-block border border-tech-main/30 border-b-2 bg-tech-main/10 px-1 py-[0.05rem] font-mono text-[0.8em] text-tech-main transition-colors hover:bg-tech-main/80 hover:border-tech-main hover:text-white"
+          className="
+            mx-1 inline-block border border-b-2 border-tech-main/30
+            bg-tech-main/10 px-1 py-[0.05rem] font-mono text-[0.8em]
+            text-tech-main transition-colors
+            hover:border-tech-main hover:bg-tech-main/80 hover:text-white
+          "
           {...rest}>
           {children}
         </Link>
@@ -299,7 +304,11 @@ export function getMarkdownComponents(rawPath: string) {
     return (
       <Link
         href={href}
-        className="border-b border-tech-main/50 font-mono text-tech-main transition-colors hover:bg-tech-main/80 hover:text-white"
+        className="
+          border-b border-tech-main/50 font-mono text-tech-main
+          transition-colors
+          hover:bg-tech-main/80 hover:text-white
+        "
         {...props}>
         {children}
       </Link>
@@ -319,7 +328,13 @@ export function getMarkdownComponents(rawPath: string) {
         const { "data-linked-code": _, ...rest } = props
         return (
           <code
-            className="mx-1 border border-tech-main/30 border-b-2 bg-tech-main/10 px-1 py-[0.05rem] font-mono text-[0.8em] text-tech-main not-italic transition-colors group-hover/lc:bg-tech-main/80 group-hover/lc:border-tech-main group-hover/lc:text-white"
+            className="
+              mx-1 border border-b-2 border-tech-main/30 bg-tech-main/10 px-1
+              py-[0.05rem] font-mono text-[0.8em] text-tech-main not-italic
+              transition-colors
+              group-hover/lc:border-tech-main group-hover/lc:bg-tech-main/80
+              group-hover/lc:text-white
+            "
             {...rest}>
             {children}
           </code>
@@ -335,7 +350,10 @@ export function getMarkdownComponents(rawPath: string) {
       }
       return (
         <code
-          className="mx-1 border border-tech-main/30 bg-tech-main/10 px-1 py-[0.05rem] font-mono text-[0.8em] text-tech-main not-italic"
+          className="
+            mx-1 border border-tech-main/30 bg-tech-main/10 px-1 py-[0.05rem]
+            font-mono text-[0.8em] text-tech-main not-italic
+          "
           {...props}>
           {children}
         </code>
@@ -365,9 +383,8 @@ export function getMarkdownComponents(rawPath: string) {
         />
         <div
           className="
-            pointer-events-none absolute bottom-0 left-0 size-3
-            -translate-x-px translate-y-px border-b-2 border-l-2
-            border-tech-main/30
+            pointer-events-none absolute bottom-0 left-0 size-3 -translate-x-px
+            translate-y-px border-b-2 border-l-2 border-tech-main/30
           "
         />
         <div
@@ -405,14 +422,12 @@ export function getMarkdownComponents(rawPath: string) {
           />
           <div
             className="
-              pointer-events-none absolute inset-x-0 top-1/4 h-px
-              bg-tech-main/3
+              pointer-events-none absolute inset-x-0 top-1/4 h-px bg-tech-main/3
             "
           />
           <div
             className="
-              pointer-events-none absolute inset-x-0 top-3/4 h-px
-              bg-tech-main/3
+              pointer-events-none absolute inset-x-0 top-3/4 h-px bg-tech-main/3
             "
           />
           <div
@@ -442,8 +457,7 @@ export function getMarkdownComponents(rawPath: string) {
         </div>
         <div
           className="
-            flex items-center justify-end border-t border-tech-main/10 px-4
-            py-1
+            flex items-center justify-end border-t border-tech-main/10 px-4 py-1
           ">
           <span
             className="
