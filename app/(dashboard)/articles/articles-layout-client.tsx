@@ -234,33 +234,42 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           md:hidden
           ${isStuck ? "pointer-events-none" : ""}
         `}>
-        <div className={isStuck ? "flex justify-end pr-4 pt-2" : ""}>
+        <div className="flex justify-end">
           <button
             onClick={() => setIsOpen(!isOpen)}
             className={`
-              pointer-events-auto cursor-pointer font-mono text-xs font-bold
-              tracking-[0.15em] text-tech-main uppercase
+              pointer-events-auto cursor-pointer overflow-hidden font-mono
+              text-xs font-bold tracking-[0.15em] text-tech-main uppercase
+              bg-white/95 backdrop-blur-md
               transition-all duration-500 ease-out
               hover:bg-tech-main/5
               ${
                 isStuck
-                  ? "min-h-11 border border-tech-main/40 bg-white/95 px-4 py-2 shadow-sm backdrop-blur-md"
-                  : "flex min-h-11 w-full items-center justify-between border-b border-tech-main/40 bg-white/95 px-4 backdrop-blur-md"
+                  ? "mt-2 mr-4 min-h-11 w-20 border border-tech-main/40 px-4 py-2 shadow-sm"
+                  : "min-h-11 w-full border-b border-tech-main/40 px-4"
               }
             `}
             aria-label="Toggle article tree"
             aria-expanded={isOpen}
             data-testid="mobile-tree-toggle">
-            {isStuck ? (
-              <span>ToC</span>
-            ) : (
-              <>
+            <span className="relative flex h-6 w-full items-center">
+              <span
+                className={`
+                  absolute inset-0 flex items-center justify-between
+                  transition-opacity duration-300
+                  ${isStuck ? "opacity-0" : "opacity-100"}
+                `}>
                 <span>Table of Contents</span>
-                <span className="font-mono text-sm font-bold">
-                  {isOpen ? "▼" : "▶"}
-                </span>
-              </>
-            )}
+                <span className="text-sm font-bold">{isOpen ? "▼" : "▶"}</span>
+              </span>
+              <span
+                className={`
+                  transition-opacity duration-300
+                  ${isStuck ? "opacity-100" : "opacity-0"}
+                `}>
+                ToC
+              </span>
+            </span>
           </button>
         </div>
 
