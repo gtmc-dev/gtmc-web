@@ -3,7 +3,8 @@
 import * as React from "react"
 import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { SidebarClient } from "./sidebar-client"
+import { SidebarClient, type SidebarClientHandle } from "./sidebar-client"
+import { SidebarActions } from "./sidebar/actions"
 import { MobileTreeCard } from "./mobile-tree-card"
 import {
   ScanConfirmOverlay,
@@ -118,6 +119,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   const [isTreeLoading, setIsTreeLoading] = useState(tree.length === 0)
   const pathname = usePathname()
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const desktopSidebarRef = useRef<SidebarClientHandle>(null)
 
   useEffect(() => {
     setIsOpen(false)
@@ -225,7 +227,10 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
       ">
       <div
         ref={sentinelRef}
-        className="h-0 w-full md:hidden"
+        className="
+          h-0 w-full
+          md:hidden
+        "
         aria-hidden="true"
       />
       <div
@@ -238,14 +243,17 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           <button
             onClick={() => setIsOpen(!isOpen)}
             className={`
-              pointer-events-auto cursor-pointer overflow-hidden font-mono
-              text-xs font-bold tracking-[0.15em] text-tech-main
-              bg-white/70 backdrop-blur-sm
-              transition-all duration-500 ease-out
+              pointer-events-auto cursor-pointer overflow-hidden bg-white/70
+              font-mono text-xs font-bold tracking-[0.15em] text-tech-main
+              backdrop-blur-sm transition-all duration-500 ease-out
               hover:bg-tech-main/5
-              ${isStuck
-                ? "mt-4 mr-4 min-h-10 w-20 border border-tech-main/40 px-4 py-2 shadow-sm"
-                : "min-h-12 w-full border-b border-tech-main/40 px-4"
+              ${
+                isStuck
+                  ? `
+                    mt-4 mr-4 min-h-10 w-20 border border-tech-main/40 px-4 py-2
+                    shadow-sm
+                  `
+                  : "min-h-12 w-full border-b border-tech-main/40 px-4"
               }
             `}
             aria-label="Toggle article tree"
@@ -275,9 +283,10 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
         <div
           className={`
             grid transition-all duration-300 ease-out
-            ${isOpen && !isStuck
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+            ${
+              isOpen && !isStuck
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
             }
           `}>
           <div className="overflow-hidden">
@@ -320,23 +329,32 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
               overflow-visible border-b guide-line text-tech-main
               md:px-4 md:py-2
             ">
-            <div
-              className="
-                group/title flex shrink-0 items-center justify-between border-b
-                guide-line px-4 pb-2
-              ">
+            <div className="flex shrink-0 flex-col">
               <div
                 className="
-                  flex items-center font-mono text-xs font-bold
-                  tracking-tech-wide text-tech-main/60 uppercase
+                  group/title flex shrink-0 items-center justify-between border-b
+                  guide-line px-4 pb-2
                 ">
-                <span
+                <div
                   className="
-                    mr-2 inline-block size-1.5 animate-pulse bg-tech-main/60
-                  "
-                />
-                SYS.DIR_TREE
+                    flex items-center font-mono text-xs font-bold
+                    tracking-tech-wide text-tech-main/60 uppercase
+                  ">
+                  <span
+                    className="
+                      mr-2 inline-block size-1.5 animate-pulse bg-tech-main/60
+                    "
+                  />
+                  SYS.DIR_TREE
+                </div>
               </div>
+
+              <SidebarActions
+                internalScroll
+                onCreate={() => desktopSidebarRef.current?.openCreateModal()}
+                onCollapseAll={(e) => desktopSidebarRef.current?.collapseAll(e)}
+                onLocate={() => desktopSidebarRef.current?.scrollToCurrent()}
+              />
             </div>
 
             {showTreePlaceholder ? (
@@ -348,9 +366,11 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
               </div>
             ) : (
               <SidebarClient
+                ref={desktopSidebarRef}
                 tree={treeData}
                 internalScroll
                 scrollClass="pr-4"
+                hideActions
               />
             )}
           </div>

@@ -2,6 +2,10 @@ import type { Root, Element, Text } from "hast"
 import { visit } from "unist-util-visit"
 import { getSingletonHighlighter, bundledLanguages } from "shiki"
 
+export type RehypeShikiPlugin = Awaited<ReturnType<typeof createRehypeShiki>>
+
+let cachedRehypeShikiPromise: Promise<RehypeShikiPlugin> | null = null
+
 export async function createRehypeShiki() {
   const highlighter = await getSingletonHighlighter({
     themes: ["solarized-light"],
@@ -44,7 +48,9 @@ export async function createRehypeShiki() {
           )
           if (!highlightedCode) return
 
-          codeNode.children = highlightedCode.children
+          codeNode.children = highlightedCode.children.filter(
+            (child) => !(child.type === "text" && child.value.trim() === "")
+          )
 
           node.properties = node.properties ?? {}
           node.properties["data-raw-code"] = rawCode
@@ -58,6 +64,14 @@ export async function createRehypeShiki() {
       })
     }
   }
+}
+
+export function getCachedRehypeShiki(): Promise<RehypeShikiPlugin> {
+  if (!cachedRehypeShikiPromise) {
+    cachedRehypeShikiPromise = createRehypeShiki()
+  }
+
+  return cachedRehypeShikiPromise
 }
 
 function getTextContent(node: Element | Text): string {
