@@ -84,7 +84,6 @@ export const SidebarClient = React.forwardRef<
 
   const collapseAll = React.useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault()
       setExpandedFolders(new Set())
       setIsFileExpanded(false)
     },
