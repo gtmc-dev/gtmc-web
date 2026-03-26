@@ -50,6 +50,12 @@ export type RebaseOutcome =
       appliedCommits: RebaseCommitInfo[]
       remainingCommitShas: string[]
     }
+  | {
+      status: "FILE_DELETED_CONFLICT"
+      draftContent: string
+      deletedAtCommit: RebaseCommitInfo
+      appliedCommits: RebaseCommitInfo[]
+    }
   | { status: "NO_CHANGE"; message: string }
 
 export interface AbortRebaseInput {
@@ -123,7 +129,7 @@ async function applyRebaseCommits(input: {
 }): Promise<
   Extract<
     RebaseOutcome | ResumeRebaseOutcome,
-    { status: "SUCCESS" | "CONFLICT" }
+    { status: "SUCCESS" | "CONFLICT" | "FILE_DELETED_CONFLICT" }
   >
 > {
   const {
