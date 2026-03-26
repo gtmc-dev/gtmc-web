@@ -250,6 +250,14 @@ export async function submitWithRebaseAction(revisionId: string) {
         conflictContent: result.conflictContent,
       },
     })
+  } else if (result.status === "FILE_DELETED_CONFLICT") {
+    await prisma.revision.update({
+      where: { id: revisionId },
+      data: {
+        status: "SYNC_CONFLICT",
+        conflictContent: null,
+      },
+    })
   }
 
   revalidatePaths(
