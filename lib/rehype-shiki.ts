@@ -1,10 +1,9 @@
 import type { Root, Element, Text } from "hast"
 import { visit } from "unist-util-visit"
-import { getSingletonHighlighter, bundledLanguages } from "shiki"
+import { getSingletonHighlighter } from "shiki"
 
 export type RehypeShikiPlugin = Awaited<ReturnType<typeof createRehypeShiki>>
 
-let cachedRehypeShikiPromise: Promise<RehypeShikiPlugin> | null = null
 const highlightCache = new Map<string, Element | null>()
 
 function extractLangsFromMarkdown(content: string): string[] {
@@ -105,13 +104,7 @@ export function getCachedRehypeShiki(
   content?: string
 ): Promise<RehypeShikiPlugin> {
   const langs = content ? extractLangsFromMarkdown(content) : undefined
-  const cacheKey = langs ? langs.sort().join(",") : "default"
-
-  if (!cachedRehypeShikiPromise) {
-    cachedRehypeShikiPromise = createRehypeShiki(langs)
-  }
-
-  return cachedRehypeShikiPromise
+  return createRehypeShiki(langs)
 }
 
 function getTextContent(node: Element | Text): string {
