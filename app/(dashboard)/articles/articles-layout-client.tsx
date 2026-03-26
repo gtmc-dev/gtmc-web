@@ -133,6 +133,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
     if (isFloating && isOpen) {
       setIsOpen(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFloating])
 
   useEffect(() => {
