@@ -275,7 +275,7 @@ export function getMarkdownComponents(rawPath: string) {
     const hasCode = props["data-has-code"] === "true"
     const inCode = props["data-in-code"] === "true"
     if (inCode) {
-      const { "data-in-code": _, ...rest } = props
+      const { "data-in-code": _inCode, ...rest } = props
       return (
         <Link
           href={href}
@@ -291,7 +291,7 @@ export function getMarkdownComponents(rawPath: string) {
       )
     }
     if (hasCode) {
-      const { "data-has-code": _, ...rest } = props
+      const { "data-has-code": _hasCode, ...rest } = props
       return (
         <Link
           href={href}
@@ -325,7 +325,7 @@ export function getMarkdownComponents(rawPath: string) {
       const isLinked = props["data-linked-code"] === "true"
       const hasLink = props["data-has-link"] === "true"
       if (isLinked) {
-        const { "data-linked-code": _, ...rest } = props
+        const { "data-linked-code": _linkedCode, ...rest } = props
         return (
           <code
             className="
@@ -341,7 +341,7 @@ export function getMarkdownComponents(rawPath: string) {
         )
       }
       if (hasLink) {
-        const { "data-has-link": _, ...rest } = props
+        const { "data-has-link": _hasLink, ...rest } = props
         return (
           <code className="font-mono text-[0.8em] not-italic" {...rest}>
             {children}

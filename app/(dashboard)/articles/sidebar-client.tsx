@@ -11,6 +11,18 @@ import { useExpandedFolders } from "./sidebar/use-expanded-folders"
 import { useScrollToActive } from "./sidebar/use-scroll-to-active"
 import { useToc } from "./sidebar/use-toc"
 
+function flattenFolders(items: TreeNode[]): TreeNode[] {
+  let folders: TreeNode[] = []
+  items.forEach((item) => {
+    if (item.isFolder) {
+      folders.push(item)
+      if (item.children)
+        folders = [...folders, ...flattenFolders(item.children)]
+    }
+  })
+  return folders
+}
+
 export function SidebarClient({
   tree,
   onNavigate,
@@ -93,22 +105,7 @@ export function SidebarClient({
     highlightActive,
   })
 
-  const flattenFolders = React.useCallback((items: TreeNode[]): TreeNode[] => {
-    let folders: TreeNode[] = []
-    items.forEach((item) => {
-      if (item.isFolder) {
-        folders.push(item)
-        if (item.children)
-          folders = [...folders, ...flattenFolders(item.children)]
-      }
-    })
-    return folders
-  }, [])
-
-  const availableFolders = useMemo(
-    () => flattenFolders(tree),
-    [tree, flattenFolders]
-  )
+  const availableFolders = useMemo(() => flattenFolders(tree), [tree])
   const effectivePath = getEffectivePathname()
 
   return (
