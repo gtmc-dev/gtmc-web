@@ -130,6 +130,12 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   }, [pathname])
 
   useEffect(() => {
+    if (isFloating && isOpen) {
+      setIsOpen(false)
+    }
+  }, [isFloating])
+
+  useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsFloating(!entry.isIntersecting)
