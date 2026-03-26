@@ -23,7 +23,7 @@ export function MobileTreeCard({
   }, [])
 
   React.useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !isFloating) return
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
