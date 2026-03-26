@@ -429,7 +429,11 @@ export function getMarkdownComponents(rawPath: string) {
           className={
             hasCode
               ? "group font-mono text-tech-main"
-              : "border-b border-tech-main/50 font-mono text-tech-main transition-colors hover:bg-tech-main/80 hover:text-white"
+              : `
+                border-b border-tech-main/50 font-mono text-tech-main
+                transition-colors
+                hover:bg-tech-main/80 hover:text-white
+              `
           }
           {...props}>
           {hasCode ? transformCodeChildrenForLink(children) : children}
@@ -507,7 +511,10 @@ export function getMarkdownComponents(rawPath: string) {
         }
         return (
           <code
-            className="mx-1 rounded-none border border-tech-main/30 bg-tech-main/10 px-1 py-[0.05rem] font-mono text-[0.8em] text-tech-main not-italic"
+            className="
+              mx-1 rounded-none border border-tech-main/30 bg-tech-main/10 px-1
+              py-[0.05rem] font-mono text-[0.8em] text-tech-main not-italic
+            "
             {...props}>
             {children}
           </code>
@@ -656,7 +663,7 @@ export function getPluginsForContent(content: string) {
     | typeof rehypeKatex
     | typeof rehypeSlug
     | typeof rehypeCJKSpacing
-  > = [rehypeRaw, rehypeSlug]
+  > = [rehypeRaw, rehypeCJKSpacing, rehypeSlug]
 
   if (
     content.includes("$") ||
@@ -664,7 +671,7 @@ export function getPluginsForContent(content: string) {
     content.includes("\\[")
   ) {
     remarkPlugins.push(remarkMath)
-    rehypePlugins.push(rehypeKatex)
+    rehypePlugins.splice(2, 0, rehypeKatex)
   }
 
   rehypePlugins.push(rehypeCJKSpacing)
