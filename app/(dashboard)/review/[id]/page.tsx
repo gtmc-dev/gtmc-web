@@ -5,7 +5,7 @@ import "katex/dist/katex.min.css"
 import Link from "next/link"
 import { BrutalButton } from "@/components/ui/brutal-button"
 import { getMarkdownComponents, getPluginsForContent } from "@/lib/markdown"
-import { createRehypeShiki } from "@/lib/rehype-shiki"
+import { getCachedRehypeShiki } from "@/lib/rehype-shiki"
 import {
   getGitHubWriteToken,
   getOctokit,
@@ -85,7 +85,7 @@ export default async function ReviewDetailPage({
   }
 
   const isMergeable = pr.mergeable === true
-  const shikiPlugin = await createRehypeShiki()
+  const shikiPlugin = await getCachedRehypeShiki()
   const { remarkPlugins, rehypePlugins } = getPluginsForContent(
     rawContent,
     shikiPlugin
