@@ -40,7 +40,11 @@ function processDirectory(
 
   const articleFiles = entries
     .filter(
-      (e) => e.isFile() && e.name.endsWith(".md") && e.name !== "README.md"
+      (e) =>
+        e.isFile() &&
+        e.name.endsWith(".md") &&
+        e.name !== "README.md" &&
+        !e.name.startsWith("_")
     )
     .map((e) => e.name)
 
@@ -81,7 +85,9 @@ function processDirectory(
     slugMap[compositeSlug] = `${relFromArticles}/${articleFile}`
   }
 
-  const subDirs = entries.filter((e) => e.isDirectory())
+  const subDirs = entries.filter(
+    (e) => e.isDirectory() && !e.name.startsWith("_") && e.name !== "img"
+  )
 
   for (const subDirEntry of subDirs) {
     const subDirPath = path.join(dirPath, subDirEntry.name)
@@ -148,7 +154,9 @@ function main(): void {
 
   const topLevelFolders = fs
     .readdirSync(ARTICLES_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
+    .filter(
+      (e) => e.isDirectory() && !e.name.startsWith("_") && e.name !== "img"
+    )
     .map((e) => e.name)
 
   for (const folderName of topLevelFolders) {
@@ -196,7 +204,11 @@ function main(): void {
   const rootFiles = fs
     .readdirSync(ARTICLES_DIR, { withFileTypes: true })
     .filter(
-      (e) => e.isFile() && e.name.endsWith(".md") && e.name !== "README.md"
+      (e) =>
+        e.isFile() &&
+        e.name.endsWith(".md") &&
+        e.name !== "README.md" &&
+        !e.name.startsWith("_")
     )
     .map((e) => e.name)
 
