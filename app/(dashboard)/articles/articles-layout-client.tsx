@@ -114,11 +114,15 @@ function TreeLoadingPlaceholder() {
 
 export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isStuck, setIsStuck] = useState(false)
+  const [isStuck, setIsStuck] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.scrollY > 64
+    }
+    return false
+  })
   const [treeData, setTreeData] = useState<TreeNode[]>(tree)
   const [isTreeLoading, setIsTreeLoading] = useState(tree.length === 0)
   const pathname = usePathname()
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const desktopSidebarRef = useRef<SidebarClientHandle>(null)
 
   useEffect(() => {
@@ -134,21 +138,17 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   }, [isStuck])
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsStuck(!entry.isIntersecting)
-      },
-      {
-        threshold: 0,
-        rootMargin: "-64px 0px 0px 0px",
-      }
-    )
+    const NAVBAR_HEIGHT = 64
 
-    if (sentinelRef.current) {
-      observer.observe(sentinelRef.current)
+    const handleScroll = () => {
+      setIsStuck(window.scrollY > NAVBAR_HEIGHT)
     }
 
-    return () => observer.disconnect()
+    // Sync immediately on mount in case page is already scrolled
+    handleScroll()
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   useEffect(() => {
@@ -228,42 +228,39 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
         isolate
         md:flex-row
       ">
-      <div
-        ref={sentinelRef}
-        className="
-          h-0 w-full
-          md:hidden
-        "
-        aria-hidden="true"
-      />
-
       <div className="sticky top-16 z-30 md:hidden">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
+        <div
           className={`
-            cursor-pointer overflow-hidden bg-white/70
-            font-mono text-xs font-bold tracking-[0.15em] text-tech-main
-            backdrop-blur-sm transition-all duration-500 ease-out
-            hover:bg-tech-main/5
-            ${
-              isStuck
-                ? "float-right mt-4 mr-4 min-h-10 w-20 border border-tech-main/40 px-4 py-2 shadow-sm"
-                : "min-h-12 w-full border-b border-tech-main/40 px-4"
-            }
-          `}
-          aria-label="Toggle article tree"
-          aria-expanded={isOpen}
-          data-testid="mobile-tree-toggle">
-          {isStuck ? (
-            <span>ToC</span>
-          ) : (
-            <span className="flex w-full items-center justify-between">
-              <span>Table of Contents</span>
-              <span className="text-sm font-bold">{isOpen ? "▼" : "▶"}</span>
-            </span>
-          )}
-        </button>
+            flex transition-all duration-500 ease-out
+            ${isStuck ? "justify-end px-4 pt-4 pb-0" : "justify-stretch px-0 pt-0 pb-0"}
+          `}>
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className={`
+              cursor-pointer overflow-hidden bg-white/70
+              font-mono text-xs font-bold tracking-[0.15em] text-tech-main
+              backdrop-blur-sm transition-all duration-500 ease-out
+              hover:bg-tech-main/5
+              ${
+                isStuck
+                  ? "min-h-10 w-20 border border-tech-main/40 px-4 py-2 shadow-sm"
+                  : "min-h-12 w-full border-b border-tech-main/40 px-4"
+              }
+            `}
+            aria-label="Toggle article tree"
+            aria-expanded={isOpen}
+            data-testid="mobile-tree-toggle">
+            {isStuck ? (
+              <span>ToC</span>
+            ) : (
+              <span className="flex w-full items-center justify-between">
+                <span>Table of Contents</span>
+                <span className="text-sm font-bold">{isOpen ? "▼" : "▶"}</span>
+              </span>
+            )}
+          </button>
+        </div>
 
         <div
           className={`
