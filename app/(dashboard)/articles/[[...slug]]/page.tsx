@@ -21,7 +21,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params
 
   const slugPath = (slug ?? []).map(decodeURIComponent).join("/")
-  const filePath = resolveSlug(slugPath)
+  let filePath = resolveSlug(slugPath)
+
+  if (filePath === null && /\.md$/i.test(slugPath)) {
+    filePath = resolveSlug(slugPath.replace(/\.md$/i, ""))
+  }
 
   if (filePath === null) {
     notFound()

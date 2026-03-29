@@ -191,6 +191,58 @@ function main(): void {
     if (folderError) hasError = true
   }
 
+  const folderSlugKeys = new Set(Object.keys(slugMap))
+
+  const rootFiles = fs
+    .readdirSync(ARTICLES_DIR, { withFileTypes: true })
+    .filter(
+      (e) => e.isFile() && e.name.endsWith(".md") && e.name !== "README.md"
+    )
+    .map((e) => e.name)
+
+  const rootSlugsSeen = new Map<string, string>()
+
+  for (const rootFile of rootFiles) {
+    const rootFilePath = path.join(ARTICLES_DIR, rootFile)
+    const rawSlug = getSlugFromFile(rootFilePath)
+
+    let key: string
+    if (rawSlug !== null && rawSlug !== "") {
+      if (!SLUG_REGEX.test(rawSlug)) {
+        process.stderr.write(
+          `Error: Invalid slug format "${rawSlug}" in: articles/${rootFile}\n`
+        )
+        hasError = true
+        continue
+      }
+      key = rawSlug
+    } else {
+      key = rootFile.replace(/\.md$/, "")
+    }
+
+    if (rootSlugsSeen.has(key)) {
+      const conflictFile = rootSlugsSeen.get(key)!
+      process.stderr.write(
+        `Error: Duplicate root article key "${key}": articles/${rootFile} ` +
+          `(conflicts with articles/${conflictFile})\n`
+      )
+      hasError = true
+      continue
+    }
+
+    if (folderSlugKeys.has(key)) {
+      process.stderr.write(
+        `Error: Root article key "${key}" (articles/${rootFile}) conflicts with ` +
+          `an existing folder article slug\n`
+      )
+      hasError = true
+      continue
+    }
+
+    rootSlugsSeen.set(key, rootFile)
+    slugMap[key] = rootFile
+  }
+
   if (hasError) {
     process.stderr.write(
       "\nSlug map generation failed due to validation errors above.\n"
