@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { usePathname } from "next/navigation"
 import { SidebarClient, type SidebarClientHandle } from "./sidebar-client"
 import { SidebarActions } from "./sidebar/actions"
-import { MobileTreeCard } from "./mobile-tree-card"
 import {
   ScanConfirmOverlay,
   SectionRail,
@@ -24,6 +24,13 @@ interface TreeNode {
 interface ArticlesLayoutProps {
   children: React.ReactNode
   tree: TreeNode[]
+}
+
+interface MobileArticlesNavProps {
+  treeData: TreeNode[]
+  isTreeLoading: boolean
+  treeContent: React.ReactNode
+  sidebarRef: React.RefObject<SidebarClientHandle | null>
 }
 
 function TreeLoadingPlaceholder() {
@@ -112,40 +119,25 @@ function TreeLoadingPlaceholder() {
   )
 }
 
-export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
+function MobileArticlesNav({ treeContent }: MobileArticlesNavProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isStuck, setIsStuck] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.scrollY > 64
-    }
-    return false
-  })
-  const [showFullText, setShowFullText] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.scrollY <= 64
-    }
-    return true
-  })
-  const [treeData, setTreeData] = useState<TreeNode[]>(tree)
-  const [isTreeLoading, setIsTreeLoading] = useState(tree.length === 0)
+  const [isStuck, setIsStuck] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const pathname = usePathname()
-  const desktopSidebarRef = useRef<SidebarClientHandle>(null)
 
   useEffect(() => {
-    if (pathname) {
-      setIsOpen(false)
-    }
+    queueMicrotask(() => {
+      setIsMounted(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (pathname) {
+        setIsOpen(false)
+      }
+    })
   }, [pathname])
-
-  useEffect(() => {
-    const timer = setTimeout(
-      () => {
-        setShowFullText(!isStuck)
-      },
-      isStuck ? 0 : 250
-    )
-    return () => clearTimeout(timer)
-  }, [isStuck])
 
   useEffect(() => {
     const NAVBAR_HEIGHT = 64
@@ -160,6 +152,222 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  useEffect(() => {
+    if (!isStuck || !isOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false)
+    }
+
+    document.addEventListener("keydown", handleEscape)
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isStuck, isOpen])
+
+  if (!isMounted) {
+    return null
+  }
+
+  return createPortal(
+    <>
+      <div
+        className="
+          fixed inset-x-0 bottom-0 z-45
+          md:hidden
+        ">
+        <div
+          className={`
+            grid transition-all duration-300 ease-out
+            ${
+              isOpen && !isStuck
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
+            }
+          `}>
+          <div className="overflow-hidden px-4 pb-2">
+            <div
+              className="
+                max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain
+                border guide-line bg-white/95 px-4 pt-3 pb-4 backdrop-blur-sm
+              ">
+              {treeContent}
+            </div>
+          </div>
+        </div>
+
+        <div className="pointer-events-none px-4 pt-2 pb-4">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsOpen(!isOpen)
+              }}
+              className="
+                pointer-events-auto fixed right-4 bottom-20 z-45 cursor-pointer
+                overflow-hidden border border-tech-main/40 bg-white/70 font-mono
+                text-xs font-bold tracking-[0.15em] text-tech-main
+                backdrop-blur-sm transition-all duration-500 ease-out
+                hover:bg-tech-main/5
+                md:hidden
+              "
+              style={
+                {
+                  width: isStuck ? "5rem" : "100%",
+                  maxWidth: "calc(100vw - 2rem)",
+                  minHeight: isStuck ? "2.5rem" : "3rem",
+                  padding: isStuck ? "0.5rem 1rem" : "1rem",
+                  borderBottom: isStuck ? undefined : "1px solid",
+                  boxShadow: isStuck
+                    ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+                    : "none",
+                } as React.CSSProperties
+              }
+              aria-label="Toggle article tree"
+              aria-expanded={isOpen}
+              data-testid="mobile-tree-toggle">
+              <div className="relative flex w-full items-center justify-between">
+                <span
+                  className={`
+                    overflow-hidden whitespace-nowrap transition-all
+                    duration-300 ease-out
+                    ${
+                      isStuck
+                        ? "max-w-0 opacity-0"
+                        : `max-w-[200px] opacity-100`
+                    }
+                  `}>
+                  Table of Contents
+                </span>
+                <span
+                  className={`
+                    absolute left-1/2 -translate-x-1/2 overflow-hidden
+                    whitespace-nowrap transition-all duration-300 ease-out
+                    ${isStuck ? "max-w-[50px] opacity-100" : "max-w-0 opacity-0"}
+                  `}>
+                  ToC
+                </span>
+                <span
+                  className={`
+                    overflow-hidden text-sm font-bold whitespace-nowrap
+                    transition-all duration-300 ease-out
+                    ${isStuck ? "max-w-0 opacity-0" : "max-w-[20px] opacity-100"}
+                  `}>
+                  {isOpen ? "▼" : "▶"}
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile floating tree card (inline, floating mode only) */}
+      {isStuck && isOpen && (
+        <div
+          className="
+            fixed inset-0 z-59
+            md:hidden
+          ">
+          <div
+            className="
+              absolute inset-0 animate-fade-in bg-tech-main-dark/20
+              backdrop-blur-xs
+            "
+            onClick={() => setIsOpen(false)}
+            data-testid="mobile-tree-card-backdrop"
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              absolute top-1/2 left-1/2 z-60 flex max-h-[calc(100dvh-6rem)]
+              w-[calc(100dvw-4rem)] max-w-[24rem] -translate-1/2
+              animate-tech-pop-in flex-col border border-tech-main/40
+              bg-white/95 backdrop-blur-md
+            "
+            data-testid="mobile-tree-card">
+            <div
+              className="
+                pointer-events-none absolute top-0 left-0 size-2 -translate-px
+                border-t-2 border-l-2 border-tech-main/40
+              "
+            />
+            <div
+              className="
+                pointer-events-none absolute top-0 right-0 size-2 translate-x-px
+                -translate-y-px border-t-2 border-r-2 border-tech-main/40
+              "
+            />
+            <div
+              className="
+                pointer-events-none absolute bottom-0 left-0 size-2
+                -translate-x-px translate-y-px border-b-2 border-l-2
+                border-tech-main/40
+              "
+            />
+            <div
+              className="
+                pointer-events-none absolute right-0 bottom-0 size-2
+                translate-px border-r-2 border-b-2 border-tech-main/40
+              "
+            />
+
+            <div
+              className="
+                z-20 flex h-10/12 shrink-0 items-center justify-between border-b
+                border-tech-main/40 px-4
+              "
+              data-testid="mobile-tree-card-header">
+              <div
+                className="
+                  flex items-center gap-2 font-mono text-xs font-bold
+                  tracking-tech-wide text-tech-main/60 uppercase
+                ">
+                <span className="size-1.5 animate-pulse bg-tech-main/60" />
+                SYS.DIR_TREE
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="
+                  cursor-pointer px-3 py-2 font-mono text-xs font-bold
+                  tracking-[0.15em] text-tech-main uppercase transition-colors
+                  hover:bg-tech-main/10
+                "
+                data-testid="mobile-tree-card-close"
+                aria-label="Close tree">
+                CLOSE
+              </button>
+            </div>
+
+            <div
+              className="
+                min-h-0 overflow-y-auto p-4
+                sm:p-6
+              ">
+              {treeContent}
+            </div>
+          </div>
+        </div>
+      )}
+    </>,
+    document.body
+  )
+}
+
+export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
+  const [treeData, setTreeData] = useState<TreeNode[]>(tree)
+  const [isTreeLoading, setIsTreeLoading] = useState(tree.length === 0)
+  const sidebarRef = useRef<SidebarClientHandle>(null)
+  const desktopSidebarRef = sidebarRef
 
   useEffect(() => {
     if (tree.length > 0) {
@@ -226,7 +434,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           <TreeLoadingPlaceholder />
         </div>
       ) : (
-        <SidebarClient tree={treeData} onNavigate={() => setIsOpen(false)} />
+        <SidebarClient tree={treeData} />
       )}
     </div>
   )
@@ -234,97 +442,16 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   return (
     <div
       className="
-        relative mx-auto flex min-h-[calc(100vh-8rem)] max-w-full flex-col
-        isolate
+        relative isolate mx-auto flex min-h-[calc(100vh-8rem)] max-w-full
+        flex-col
         md:flex-row
       ">
-      <div className="sticky top-16 z-30 md:hidden">
-        <div
-          className="flex transition-all duration-500 ease-out"
-          style={{
-            padding: isStuck ? "1rem 1rem 0 1rem" : "0",
-            justifyContent: isStuck ? "flex-end" : "stretch",
-          }}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setIsOpen(!isOpen)
-            }}
-            className="
-              cursor-pointer overflow-hidden bg-white/70
-              font-mono text-xs font-bold tracking-[0.15em] text-tech-main
-              backdrop-blur-sm transition-all duration-500 ease-out
-              hover:bg-tech-main/5
-              border border-tech-main/40
-            "
-            style={
-              {
-                width: isStuck ? "5rem" : "100%",
-                minHeight: isStuck ? "2.5rem" : "3rem",
-                padding: isStuck ? "0.5rem 1rem" : "1rem",
-                borderBottom: isStuck ? undefined : "1px solid",
-                boxShadow: isStuck ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none",
-              } as React.CSSProperties
-            }
-            aria-label="Toggle article tree"
-            aria-expanded={isOpen}
-            data-testid="mobile-tree-toggle">
-            <div className="relative flex w-full items-center justify-between">
-              <span
-                className="transition-opacity duration-300"
-                style={{
-                  opacity: showFullText ? 1 : 0,
-                }}>
-                Table of Contents
-              </span>
-              <span
-                className="absolute left-1/2 -translate-x-1/2 transition-opacity duration-300"
-                style={{
-                  opacity: showFullText ? 0 : 1,
-                }}>
-                ToC
-              </span>
-              <span
-                className="text-sm font-bold transition-opacity duration-300"
-                style={{
-                  opacity: showFullText ? 1 : 0,
-                }}>
-                {isOpen ? "▼" : "▶"}
-              </span>
-            </div>
-          </button>
-        </div>
-
-        <div
-          className={`
-            grid transition-all duration-300 ease-out
-            ${
-              isOpen && !isStuck
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
-            }
-          `}>
-          <div className="overflow-hidden">
-            <div
-              className="
-                max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain
-                border-t guide-line bg-white/95 px-4 pt-3 pb-4
-              ">
-              {treeContent}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile floating tree card */}
-      <MobileTreeCard
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        isFloating={isStuck}>
-        {treeContent}
-      </MobileTreeCard>
+      <MobileArticlesNav
+        treeData={treeData}
+        isTreeLoading={isTreeLoading}
+        treeContent={treeContent}
+        sidebarRef={sidebarRef}
+      />
 
       {/* Desktop sidebar */}
       <aside
