@@ -283,7 +283,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           md:hidden
         ">
         <div
-          className="flex transition-all duration-500 ease-out"
+          className="relative transition-all duration-500 ease-out"
           style={{
             padding: isStuck ? "1rem 1rem 0 1rem" : "0",
             justifyContent: isStuck ? "flex-end" : "stretch",
@@ -298,15 +298,15 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
             className="
               cursor-pointer overflow-hidden border border-tech-main/40
               bg-white/70 font-mono text-xs font-bold tracking-[0.15em]
-              text-tech-main backdrop-blur-sm transition-all duration-500
+              text-tech-main backdrop-blur-sm transition-all duration-400
               ease-out
               hover:bg-tech-main/5
             "
             style={
               {
                 width: isStuck ? "5rem" : "100%",
-                minHeight: isStuck ? "2.5rem" : "3rem",
-                padding: isStuck ? "0.5rem 1rem" : "1rem",
+                minHeight: isStuck ? "2rem" : "3rem",
+                padding: isStuck ? "0.25rem 1rem" : "1rem",
                 borderBottom: isStuck ? undefined : "1px solid",
                 boxShadow: isStuck ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none",
               } as React.CSSProperties
@@ -316,27 +316,21 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
             data-testid="mobile-tree-toggle">
             <div className="relative flex w-full items-center justify-between">
               <span
-                className="transition-opacity duration-300"
-                style={{
-                  opacity: showFullText ? 1 : 0,
-                }}>
+                className="transition-opacity duration-150"
+                style={{ opacity: showFullText ? 1 : 0, }}>
                 Table of Contents
               </span>
               <span
                 className="
                   absolute left-1/2 -translate-x-1/2 transition-opacity
-                  duration-300
+                  duration-200
                 "
-                style={{
-                  opacity: showFullText ? 0 : 1,
-                }}>
+                style={{ opacity: showFullText ? 0 : 1, }}>
                 ToC
               </span>
               <span
-                className="text-sm font-bold transition-opacity duration-300"
-                style={{
-                  opacity: showFullText ? 1 : 0,
-                }}>
+                className="text-sm font-bold transition-opacity duration-200"
+                style={{ opacity: showFullText ? 1 : 0, }}>
                 {isOpen ? "▼" : "▶"}
               </span>
             </div>
@@ -346,12 +340,12 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
         <div
           className={`
             grid transition-all duration-300 ease-out
-            ${
-              isOpen && !isStuck
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
+            ${isOpen && !isStuck
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
             }
-          `}>
+          `}
+        >
           <div className="overflow-hidden">
             <div
               className="
