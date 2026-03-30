@@ -7,6 +7,7 @@ import {
 } from "@/lib/github-pr"
 import { getArticleContent } from "@/lib/article-loader"
 import { prisma } from "@/lib/prisma"
+import { shouldIgnoreFile } from "@/lib/article-ignore"
 
 interface IndexedArticle {
   id: string
@@ -108,7 +109,13 @@ async function buildIndex(): Promise<MiniSearch<IndexedArticle>> {
     getSidebarTree(),
   ])
 
-  const articles: IndexedArticle[] = dbArticles.map((article) => ({
+  // Filter out ignored articles from DB articles
+  const filteredDbArticles = dbArticles.filter((article) => {
+    const fileName = article.slug.split("/").pop() || article.slug
+    return !shouldIgnoreFile(fileName, !article.slug.includes("/"))
+  })
+
+  const articles: IndexedArticle[] = filteredDbArticles.map((article) => ({
     id: article.slug,
     title: article.title,
     slug: article.slug,
