@@ -7,6 +7,7 @@ import {
   type RepoTreeNode,
 } from "./github-pr"
 import { shouldIgnoreDirectory, shouldIgnoreFile } from "./article-ignore"
+import { parseFrontMatter } from "./frontmatter-parser"
 
 const ARTICLES_DIR = path.join(process.cwd(), "articles")
 const SUBMODULE_GIT = path.join(ARTICLES_DIR, ".git")
@@ -92,14 +93,30 @@ function buildLocalTree(dir: string, parentPath = ""): RepoTreeNode[] {
     } else if (entry.name.endsWith(".md")) {
       const titleName = entry.name.replace(/\.md$/, "")
       const slugWithoutExt = slug.replace(/\.md$/, "")
-      nodes.push({
+      const content = fs.readFileSync(path.join(dir, entry.name), "utf-8")
+      const fm = parseFrontMatter(content)
+      const nodeSlug = fileToSlugKey[slugWithoutExt] ?? slugWithoutExt
+      const isReadme = entry.name.toLowerCase() === "readme.md"
+      const mdNode: RepoTreeNode & {
+        index: number
+        isAppendix: boolean
+        isPreface: boolean
+      } = {
         id: `local-${slugWithoutExt}`,
-        title: titleName,
-        slug: fileToSlugKey[slugWithoutExt] ?? slugWithoutExt,
+        title: isReadme
+          ? fm.introTitle || fm.title || titleName
+          : fm.title || titleName,
+        slug: nodeSlug,
         isFolder: false,
+        index: fm.index,
+        isAppendix:
+          parentPath.toLowerCase().includes("appendix") ||
+          parentPath.includes("附录"),
+        isPreface: nodeSlug === "preface",
         parentId: parentPath ? `local-${parentPath}` : null,
         children: [],
-      })
+      }
+      nodes.push(mdNode)
     }
   }
 
