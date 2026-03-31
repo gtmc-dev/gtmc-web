@@ -414,6 +414,16 @@ export function getMarkdownComponents(rawPath: string) {
         {...props}
       />
     ),
+    sup: ({ ...props }: MarkdownComponentProps) => (
+      <sup
+        className="
+          mx-0.5 cursor-pointer font-mono not-italic
+          before:text-tech-main/60 before:content-['{']
+          after:text-tech-main/60 after:content-['}']
+        "
+        {...props}
+      />
+    ),
     pre: preComponent,
     code: codeComponent,
   } as Record<string, MarkdownComponent>
