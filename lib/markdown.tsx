@@ -3,6 +3,7 @@ import path from "path"
 import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import remarkBreaks from "remark-breaks"
+import { remarkNumberedHeadingsDot } from "@/lib/remark-numbered-headings"
 import rehypeRaw from "rehype-raw"
 import rehypeKatex from "rehype-katex"
 import rehypeSlug from "rehype-slug"
@@ -30,8 +31,8 @@ export function rehypeLinkedCode() {
           node.properties["data-has-code"] = "true"
           node.children?.forEach((c) => {
             if (c.type === "element" && (c as Element).tagName === "code") {
-              ; (c as Element).properties = (c as Element).properties || {}
-                ; (c as Element).properties["data-linked-code"] = "true"
+              ;(c as Element).properties = (c as Element).properties || {}
+              ;(c as Element).properties["data-linked-code"] = "true"
             }
           })
         }
@@ -45,8 +46,8 @@ export function rehypeLinkedCode() {
           node.properties["data-has-link"] = "true"
           node.children?.forEach((c) => {
             if (c.type === "element" && (c as Element).tagName === "a") {
-              ; (c as Element).properties = (c as Element).properties || {}
-                ; (c as Element).properties["data-in-code"] = "true"
+              ;(c as Element).properties = (c as Element).properties || {}
+              ;(c as Element).properties["data-in-code"] = "true"
             }
           })
         }
@@ -513,8 +514,11 @@ export function getPluginsForContent(
   rehypeShikiPlugin?: Awaited<ReturnType<typeof createRehypeShiki>>
 ) {
   const remarkPlugins: Array<
-    typeof remarkGfm | typeof remarkMath | typeof remarkBreaks
-  > = [remarkGfm, remarkBreaks]
+    | typeof remarkGfm
+    | typeof remarkMath
+    | typeof remarkBreaks
+    | [typeof remarkNumberedHeadingsDot, { startDepth: number }]
+  > = [remarkGfm, remarkBreaks, [remarkNumberedHeadingsDot, { startDepth: 2 }]]
   const rehypePlugins: Array<
     | typeof rehypeRaw
     | typeof rehypeKatex
