@@ -2,7 +2,6 @@ import ReactMarkdown from "react-markdown"
 import "katex/dist/katex.min.css"
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
-import Link from "next/link"
 import matter from "gray-matter"
 import {
   calculateReadingMetrics,
@@ -161,29 +160,15 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       ">
       <CornerBrackets size="size-4" />
 
-      {/* Article Header Region - Mobile-first in-flow card */}
+      {/* Article Header */}
       <div
         className="
           relative mb-8 flex flex-col gap-4 border guide-line bg-white/80 p-4
           backdrop-blur-sm
           sm:p-6
         ">
-        {/* Corner markers matching BrutalCard pattern */}
         <CornerBrackets />
 
-        {/* Region 1: System/Read Label */}
-        <div className="
-          flex flex-wrap justify-between font-mono text-xs text-tech-main/50
-        ">
-
-          <span className="flex items-center gap-2">
-            <span className="size-2 animate-pulse bg-tech-main/50" />
-            SYS.READ_STREAM | UTF-8
-          </span>
-          <span>PATH: {result.filePath}</span>
-        </div>
-
-        {/* Region 2: Article Title */}
         <h1
           className="
             font-mono text-lg leading-none font-bold tracking-tight
@@ -193,48 +178,6 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           {articleTitle}
         </h1>
 
-        {/* Region 3: Reading Stats Row */}
-        <div
-          className="
-            flex flex-col gap-2 font-mono text-xs text-tech-main opacity-80
-            transition-opacity
-            hover:opacity-100
-            sm:flex-row sm:items-center
-          ">
-          <div className="flex items-center gap-1">
-            <span className="opacity-50">WORDS:</span>
-            <span className="font-bold">{wordCount.toLocaleString()}</span>
-          </div>
-          <span
-            className="
-              hidden opacity-30
-              sm:inline
-            ">
-            |
-          </span>
-          <div className="flex items-center gap-1">
-            <span className="opacity-50">EST_TIME:</span>
-            <span className="font-bold">{readingTime} MIN</span>
-          </div>
-        </div>
-
-        {/* Region 4: Edit Action Row */}
-        <Link href={`/draft/new?file=${encodeURIComponent(editPath)}`}>
-          <button
-            type="button"
-            className="
-              relative flex min-h-11 w-full cursor-pointer items-center gap-2
-              overflow-hidden border border-tech-main/40 bg-tech-main/10 px-4
-              py-2 font-mono text-xs tracking-widest text-tech-main uppercase
-              transition-all duration-300
-              hover:bg-tech-main hover:text-white
-              sm:w-auto
-            ">
-            <span className="relative z-10 font-bold">[EDIT_TARGET]</span>
-          </button>
-        </Link>
-
-        {/* Region 5: Article Metadata */}
         {author && createdAt && lastModified && (
           <ArticleMetadata
             author={author}
@@ -242,6 +185,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             createdAt={createdAt}
             lastModified={lastModified}
             canonicalUrl={canonicalUrl}
+            filePath={result.filePath}
+            wordCount={wordCount}
+            readingTime={readingTime}
+            editPath={editPath}
           />
         )}
       </div>
