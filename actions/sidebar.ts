@@ -211,9 +211,9 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
         }
 
         const aIsReadme =
-          a.title === "<EMPTY>" || a.slug.toLowerCase().endsWith("/readme")
+          !a.title || a.title === "" || a.slug.toLowerCase().endsWith("/readme")
         const bIsReadme =
-          b.title === "<EMPTY>" || b.slug.toLowerCase().endsWith("/readme")
+          !b.title || b.title === "" || b.slug.toLowerCase().endsWith("/readme")
         if (aIsReadme !== bIsReadme) {
           return aIsReadme ? -1 : 1
         }
