@@ -154,44 +154,29 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   return (
     <div
       className="
-        relative min-h-screen border border-tech-main/40 bg-transparent p-6
-        pb-32 backdrop-blur-sm
+        relative m-auto min-h-screen border border-tech-main/40 bg-transparent
+        p-6 backdrop-blur-sm
         sm:p-8
       ">
+
       <CornerBrackets size="size-4" />
 
       {/* Article Header */}
-      <div
-        className="
-          relative mb-8 flex flex-col gap-4 border guide-line bg-white/80 p-4
-          backdrop-blur-sm
-          sm:p-6
-        ">
-        <CornerBrackets />
+      {author && createdAt && lastModified && (
+        <ArticleMetadata
+          title={articleTitle}
+          author={author}
+          coAuthors={coAuthors}
+          createdAt={createdAt}
+          lastModified={lastModified}
+          canonicalUrl={canonicalUrl}
+          filePath={result.filePath}
+          wordCount={wordCount}
+          readingTime={readingTime}
+          editPath={editPath}
+        />
+      )}
 
-        <h1
-          className="
-            font-mono text-lg leading-none font-bold tracking-tight
-            text-tech-main-dark
-            sm:text-xl
-          ">
-          {articleTitle}
-        </h1>
-
-        {author && createdAt && lastModified && (
-          <ArticleMetadata
-            author={author}
-            coAuthors={coAuthors}
-            createdAt={createdAt}
-            lastModified={lastModified}
-            canonicalUrl={canonicalUrl}
-            filePath={result.filePath}
-            wordCount={wordCount}
-            readingTime={readingTime}
-            editPath={editPath}
-          />
-        )}
-      </div>
 
       <article
         className="

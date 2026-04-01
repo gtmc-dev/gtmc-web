@@ -7,13 +7,13 @@ export function formatAbsoluteTime(dateString: string): string {
     if (isNaN(date.getTime())) {
       return "Invalid Date"
     }
-    
+
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, "0")
     const day = String(date.getDate()).padStart(2, "0")
     const hours = String(date.getHours()).padStart(2, "0")
     const minutes = String(date.getMinutes()).padStart(2, "0")
-    
+
     return `${year}-${month}-${day} ${hours}:${minutes}`
   } catch {
     return "Invalid Date"
@@ -29,13 +29,13 @@ export function formatRelativeTime(dateString: string): string {
     if (isNaN(date.getTime())) {
       return "Invalid Date"
     }
-    
+
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    
+
     // Within a month (30 days)
-    if (diffDays < 30 && diffDays >= 0) {
+    if (diffDays < 180 && diffDays >= 0) {
       if (diffDays === 0) {
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
         if (diffHours === 0) {
@@ -46,8 +46,8 @@ export function formatRelativeTime(dateString: string): string {
       }
       return `${diffDays} 天前`
     }
-    
-    // Beyond a month, use absolute format
+
+    // Beyond 1/2 year, use absolute format
     return formatAbsoluteTime(dateString)
   } catch {
     return "Invalid Date"
