@@ -1,6 +1,6 @@
 import fs from "fs"
 import path from "path"
-import { type RepoTreeNode } from "./github-repo-client"
+import { type ArticleTreeNode } from "./github-repo-client"
 import { shouldIgnoreDirectory, shouldIgnoreFile } from "./article-ignore"
 import { parseFrontMatter } from "./frontmatter-parser"
 
@@ -47,10 +47,10 @@ export async function getArticleContent(
   return null
 }
 
-export async function getArticleTree(): Promise<RepoTreeNode[]> {
+export async function getArticleTree(): Promise<ArticleTreeNode[]> {
   if (isSubmoduleAvailable()) {
     try {
-      return buildLocalTree(ARTICLES_DIR)
+      return buildArticleTree(ARTICLES_DIR)
     } catch {
       if (process.env.NODE_ENV === "development") {
         console.warn(
@@ -65,9 +65,9 @@ export async function getArticleTree(): Promise<RepoTreeNode[]> {
   return []
 }
 
-function buildLocalTree(dir: string, parentPath = ""): RepoTreeNode[] {
+function buildArticleTree(dir: string, parentPath = ""): ArticleTreeNode[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
-  const nodes: RepoTreeNode[] = []
+  const nodes: ArticleTreeNode[] = []
 
   for (const entry of entries) {
     if (shouldIgnoreDirectory(entry.name)) continue
@@ -76,7 +76,7 @@ function buildLocalTree(dir: string, parentPath = ""): RepoTreeNode[] {
     const entryPath = parentPath ? `${parentPath}/${entry.name}` : entry.name
 
     if (entry.isDirectory()) {
-      const children = buildLocalTree(path.join(dir, entry.name), entryPath)
+      const children = buildArticleTree(path.join(dir, entry.name), entryPath)
       nodes.push({
         id: entryPath,
         title: entry.name,
@@ -102,7 +102,7 @@ function buildLocalTree(dir: string, parentPath = ""): RepoTreeNode[] {
         nodeSlug = filePathToSlugKey[slugWithoutExt] ?? slugWithoutExt
       }
 
-      const mdNode: RepoTreeNode & {
+      const mdNode: ArticleTreeNode & {
         index: number
         isAppendix: boolean
         isPreface: boolean

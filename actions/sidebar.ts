@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-helpers"
 import { unstable_cache } from "next/cache"
 import { createDirectFile, createPR } from "@/lib/github/pr-manager"
-import { getRepoTranslations, type RepoTreeNode } from "@/lib/github/sync"
+import { getRepoTranslations, type ArticleTreeNode } from "@/lib/github/sync"
 import { getArticleTree } from "@/lib/article-loader"
 import { shouldIgnoreDirectory, shouldIgnoreFile } from "@/lib/article-ignore"
 import { statSync } from "fs"
@@ -44,7 +44,7 @@ function getSlugMapMtime(): string {
   return statSync(slugMapPath).mtime.getTime().toString()
 }
 
-const getCachedRepoTree = unstable_cache(
+const getCachedArticleTree = unstable_cache(
   async () => {
     return getArticleTree()
   },
@@ -79,10 +79,10 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
   })
 
   // 2. Get GitHub repo tree (cached)
-  let githubTree: RepoTreeNode[] = []
+  let githubTree: ArticleTreeNode[] = []
   let translations: Record<string, string> = {}
 
-  const githubTreePromise = getCachedRepoTree()
+  const githubTreePromise = getCachedArticleTree()
   const translationsPromise = getCachedTranslations()
 
   const [treeResult, translationsResult] = await Promise.allSettled([
@@ -110,9 +110,9 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
   const mergedTree: TreeNode[] = []
 
   // Add GitHub tree
-  function addGithubNodes(nodes: RepoTreeNode[], parentArray: TreeNode[]) {
+  function addGithubNodes(nodes: ArticleTreeNode[], parentArray: TreeNode[]) {
     for (const node of nodes) {
-      const nodeWithMeta = node as RepoTreeNode & Partial<TreeNode>
+      const nodeWithMeta = node as ArticleTreeNode & Partial<TreeNode>
       const clone: TreeNode = {
         ...node,
         index: nodeWithMeta.index ?? -1,
