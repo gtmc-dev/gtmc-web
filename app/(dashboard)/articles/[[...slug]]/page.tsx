@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown"
 import "katex/dist/katex.min.css"
 import type { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import matter from "gray-matter"
 import {
   calculateReadingMetrics,
@@ -10,12 +10,8 @@ import {
   getPluginsForContent,
 } from "@/lib/markdown"
 import { getCachedRehypeShiki } from "@/lib/markdown/plugins/rehype-shiki"
-import { getArticleContent } from "@/lib/article-loader"
-import {
-  resolveSlugWithIndicator,
-  getSlugForFilePath,
-  resolveSlug,
-} from "@/lib/slug-resolver"
+import { getArticleContent, getArticleTree } from "@/lib/article-loader"
+import { resolveSlug } from "@/lib/slug-resolver"
 import { getSiteUrl } from "@/lib/site-url"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
 import { ArticleMetadata } from "@/components/articles/article-metadata"
@@ -25,6 +21,7 @@ import {
   getArticleNavigation,
 } from "@/lib/article-navigation"
 import { getSidebarTree } from "@/actions/sidebar"
+import type { ArticleTreeNode as BaseArticleTreeNode } from "@/lib/github/sync"
 
 interface ArticlePageProps {
   params: Promise<{
@@ -37,13 +34,9 @@ export async function generateMetadata({
 }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params
   const slugPath = (slug ?? []).map(decodeURIComponent).join("/") || "preface"
-  let filePath = resolveSlug(slugPath)
+  const target = await resolveArticleTarget(slugPath)
 
-  if (filePath === null && /\.md$/i.test(slugPath)) {
-    filePath = resolveSlug(slugPath.replace(/\.md$/i, ""))
-  }
-
-  if (filePath === null) {
+  if (target === null) {
     return {
       title: "Article Not Found",
       description: "The requested article could not be found.",
@@ -51,7 +44,7 @@ export async function generateMetadata({
   }
 
   try {
-    const content = await getArticleContent(filePath)
+    const content = await getArticleContent(target.filePath)
     if (content === null) {
       return {
         title: "Article Not Found",
@@ -60,11 +53,11 @@ export async function generateMetadata({
     }
 
     const { data } = matter(content)
-    const title = resolveArticleTitle(data["chapter-title"], filePath)
+    const title = resolveArticleTitle(data["chapter-title"], target.filePath)
     const description = generateDescription(content)
 
     const siteUrl = getSiteUrl()
-    const canonicalSlug = getSlugForFilePath(filePath)
+    const canonicalSlug = target.canonicalSlug
     const canonicalUrl = canonicalSlug
       ? `${siteUrl}/articles/${canonicalSlug.split("/").map(encodeURIComponent).join("/")}`
       : `${siteUrl}/articles/${slugPath}`
@@ -94,24 +87,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params
 
   const slugPath = (slug ?? []).map(decodeURIComponent).join("/") || "preface"
-  let result = resolveSlugWithIndicator(slugPath)
+  const target = await resolveArticleTarget(slugPath)
 
-  if (result.filePath === null && /\.md$/i.test(slugPath)) {
-    result = resolveSlugWithIndicator(slugPath.replace(/\.md$/i, ""))
-  }
-
-  if (result.filePath === null) {
+  if (target === null) {
     notFound()
   }
 
-  if (result.isDirectFilePath) {
-    const targetSlug = getSlugForFilePath(result.filePath)
-    if (targetSlug) {
-      redirect(`/articles/${targetSlug}`)
-    }
-  }
-
-  const content = await getArticleContent(result.filePath)
+  const content = await getArticleContent(target.filePath)
 
   if (content === null) {
     notFound()
@@ -120,14 +102,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const { data, content: renderedContent } = matter(content)
   const articleTitle = resolveArticleTitle(
     data["chapter-title"],
-    result.filePath
+    target.filePath
   )
   const embeddedArticleContent = embedTitleInMarkdown(
     renderedContent,
     articleTitle
   )
 
-  const editPath = normalizeDraftTargetPath(result.filePath)
+  const editPath = normalizeDraftTargetPath(target.filePath)
 
   const { wordCount, readingTime } = calculateReadingMetrics(content)
   const shikiPlugin = await getCachedRehypeShiki(content)
@@ -135,10 +117,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     content,
     shikiPlugin
   )
-  const markdownComponents = getMarkdownComponents(result.filePath)
+  const markdownComponents = getMarkdownComponents(target.filePath)
 
   const siteUrl = getSiteUrl()
-  const canonicalSlug = getSlugForFilePath(result.filePath)
+  const canonicalSlug = target.canonicalSlug
   const canonicalUrl = canonicalSlug
     ? `${siteUrl}/articles/${canonicalSlug.split("/").map(encodeURIComponent).join("/")}`
     : `${siteUrl}/articles/${slugPath}`
@@ -172,7 +154,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           createdAt={createdAt}
           lastModified={lastModified}
           canonicalUrl={canonicalUrl}
-          filePath={result.filePath}
+          filePath={target.filePath}
           wordCount={wordCount}
           readingTime={readingTime}
           editPath={editPath}
@@ -205,6 +187,103 @@ function normalizeDraftTargetPath(filePath: string) {
   }
 
   return filePath.replace(/\.md$/, "")
+}
+
+type ArticleTreeNode = BaseArticleTreeNode & { index?: number }
+
+interface ResolvedArticleTarget {
+  filePath: string
+  canonicalSlug: string
+}
+
+async function resolveArticleTarget(
+  requestedSlugPath: string
+): Promise<ResolvedArticleTarget | null> {
+  const normalizedSlug = requestedSlugPath.replace(/\.md$/i, "")
+  const tree: ArticleTreeNode[] = await getArticleTree()
+  const targetNode = findNodeBySlug(tree, normalizedSlug)
+
+  if (!targetNode) {
+    return null
+  }
+
+  const canonicalSlug = targetNode.isFolder
+    ? (getFirstArticleInChapter(targetNode.children)?.slug ?? null)
+    : targetNode.slug
+
+  if (!canonicalSlug) {
+    return null
+  }
+
+  const filePath = resolveSlug(canonicalSlug)
+  if (!filePath) {
+    return null
+  }
+
+  return { filePath, canonicalSlug }
+}
+
+function findNodeBySlug(
+  nodes: ArticleTreeNode[],
+  targetSlug: string
+): ArticleTreeNode | null {
+  for (const node of nodes) {
+    if (node.slug === targetSlug) {
+      return node
+    }
+
+    const nested = findNodeBySlug(node.children ?? [], targetSlug)
+    if (nested) {
+      return nested
+    }
+  }
+
+  return null
+}
+
+function getFirstArticleInChapter(
+  children: ArticleTreeNode[]
+): ArticleTreeNode | null {
+  if (!children || children.length === 0) {
+    return null
+  }
+
+  const sorted = [...children].sort((a, b) => {
+    const indexCmp = compareIndex(a.index ?? -1, b.index ?? -1)
+    if (indexCmp !== 0) {
+      return indexCmp
+    }
+
+    return a.slug.localeCompare(b.slug)
+  })
+
+  for (const child of sorted) {
+    if (!child.isFolder) {
+      return child
+    }
+
+    const nested = getFirstArticleInChapter(child.children ?? [])
+    if (nested) {
+      return nested
+    }
+  }
+
+  return null
+}
+
+function compareIndex(a: number, b: number): number {
+  const aNoIndex = a === -1
+  const bNoIndex = b === -1
+
+  if (aNoIndex !== bNoIndex) {
+    return aNoIndex ? 1 : -1
+  }
+
+  if (aNoIndex && bNoIndex) {
+    return 0
+  }
+
+  return a - b
 }
 
 function resolveArticleTitle(rawTitle: unknown, fallbackPath: string): string {
