@@ -60,7 +60,7 @@ export async function generateMetadata({
     }
 
     const { data } = matter(content)
-    const title = resolveArticleTitle(data.title, filePath)
+    const title = resolveArticleTitle(data["chapter-title"], filePath)
     const description = generateDescription(content)
 
     const siteUrl = getSiteUrl()
@@ -118,7 +118,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const { data, content: renderedContent } = matter(content)
-  const articleTitle = resolveArticleTitle(data.title, result.filePath)
+  const articleTitle = resolveArticleTitle(
+    data["chapter-title"],
+    result.filePath
+  )
   const embeddedArticleContent = embedTitleInMarkdown(
     renderedContent,
     articleTitle
@@ -158,7 +161,6 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         p-6 backdrop-blur-sm
         sm:p-8
       ">
-
       <CornerBrackets size="size-4" />
 
       {/* Article Header */}
@@ -176,7 +178,6 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           editPath={editPath}
         />
       )}
-
 
       <article
         className="
