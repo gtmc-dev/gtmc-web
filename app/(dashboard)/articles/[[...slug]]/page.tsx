@@ -15,6 +15,7 @@ import { resolveSlug } from "@/lib/slug-resolver"
 import { getSiteUrl } from "@/lib/site-url"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
 import { ArticleMetadata } from "@/components/articles/article-metadata"
+import { ArticleMetadataSimple } from "@/components/articles/article-metadata-simple"
 import { ArticleNavigation } from "@/components/article-navigation"
 import {
   flattenArticleTree,
@@ -147,7 +148,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       <CornerBrackets size="size-4" />
 
       {/* Article Header */}
-      {author && createdAt && lastModified && (
+      {author && createdAt && lastModified ? (
         <ArticleMetadata
           title={articleTitle}
           author={author}
@@ -159,6 +160,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           wordCount={wordCount}
           readingTime={readingTime}
           editPath={editPath}
+        />
+      ) : (
+        <ArticleMetadataSimple
+          title={articleTitle}
+          filePath={target.filePath}
+          wordCount={wordCount}
+          readingTime={readingTime}
         />
       )}
 
