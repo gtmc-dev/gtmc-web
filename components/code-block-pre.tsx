@@ -81,7 +81,13 @@ export function CodeBlockPre({ children, ...props }: CodeBlockPreProps) {
         <div
           className="code-block-pre relative"
           data-wrapped={isWrapped}
-          style={{ "--line-num-width": lineNumWidth } as React.CSSProperties}>
+          style={
+            {
+              "--line-num-width": lineNumWidth,
+              display: "grid",
+              gridTemplateColumns: `${lineNumWidth} 1fr`,
+            } as React.CSSProperties
+          }>
           <div className="code-block-line-numbers" aria-hidden="true">
             {Array.from({ length: lineCountNum }, (_, i) => i + 1).map(
               (lineNum) => (
