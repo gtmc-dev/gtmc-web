@@ -18,6 +18,8 @@ interface TreeNode {
   isAppendix: boolean
   isPreface: boolean
   isFolder: boolean
+  isReadmeIntro?: boolean
+  introTitle?: string
   parentId: string | null
   children: TreeNode[]
 }
@@ -118,6 +120,7 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
         index: nodeWithMeta.index ?? -1,
         isAppendix: nodeWithMeta.isAppendix ?? false,
         isPreface: nodeWithMeta.isPreface ?? false,
+        introTitle: nodeWithMeta.introTitle ?? "",
         children: [],
       }
       unifiedMap.set(clone.slug.toLowerCase(), clone)
@@ -201,6 +204,10 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
         return a.isPreface ? -1 : 1
       }
 
+      if (a.isReadmeIntro !== b.isReadmeIntro) {
+        return a.isReadmeIntro ? -1 : 1
+      }
+
       if (a.isFolder !== b.isFolder) {
         return a.isFolder ? -1 : 1
       }
@@ -272,6 +279,41 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
   }
 
   const filteredTree = filterIgnoredNodes(mergedTree, true)
+
+  function injectReadmeIntroNodes(nodes: TreeNode[]) {
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
+        injectReadmeIntroNodes(node.children)
+      }
+
+      const introTitle = node.introTitle?.trim() ?? ""
+      if (!node.isFolder || node.isPreface || introTitle === "") {
+        continue
+      }
+
+      const hasInjectedIntro = node.children.some(
+        (child) => child.isReadmeIntro
+      )
+      if (hasInjectedIntro) {
+        continue
+      }
+
+      node.children.push({
+        id: `${node.slug}/readme-intro`,
+        title: introTitle,
+        slug: node.slug,
+        index: -1,
+        isFolder: false,
+        isAppendix: false,
+        isPreface: false,
+        isReadmeIntro: true,
+        parentId: node.id,
+        children: [],
+      })
+    }
+  }
+
+  injectReadmeIntroNodes(filteredTree)
   sortTree(filteredTree)
 
   return filteredTree
