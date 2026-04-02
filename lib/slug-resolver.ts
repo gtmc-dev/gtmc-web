@@ -7,6 +7,7 @@ const ARTICLES_DIR = path.join(process.cwd(), "articles")
 export interface SlugMapEntry {
   filePath: string
   slug: string
+  title?: string
   chapterTitle: string
   chapterTitleEn: string
   introTitle: string

@@ -22,6 +22,7 @@ const slugMap: Record<string, SlugMapEntry> = (() => {
       normalized[slugKey] = {
         filePath: entry.filePath,
         slug: typeof entry.slug === "string" ? entry.slug : slugKey,
+        title: typeof entry.title === "string" ? entry.title : undefined,
         chapterTitle:
           typeof entry.chapterTitle === "string" ? entry.chapterTitle : "",
         chapterTitleEn:
@@ -169,6 +170,15 @@ function compareEntries(a: SlugMapEntry, b: SlugMapEntry): number {
 }
 
 function getNodeTitle(entry: SlugMapEntry): string {
+  if (entry.isPreface) {
+    return (
+      entry.title ||
+      entry.chapterTitle ||
+      entry.slug.split("/").pop() ||
+      entry.slug
+    )
+  }
+
   if (entry.isFolder) {
     return (
       entry.introTitle ||

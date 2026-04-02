@@ -21,6 +21,7 @@ function getFrontMatterEntry(
 ): SlugMapEntry {
   const content = fs.readFileSync(filePath, "utf-8")
   const fm = parseFrontMatter(content)
+  const title = fm.title ?? ""
   const chapterTitle = fm.chapterTitle ?? ""
   const chapterTitleEn = fm.chapterTitleEn ?? ""
   const introTitle = fm.introTitle ?? ""
@@ -37,6 +38,7 @@ function getFrontMatterEntry(
   return {
     filePath: relativePath,
     slug,
+    title: title === "" ? undefined : title,
     chapterTitle,
     chapterTitleEn,
     introTitle,
