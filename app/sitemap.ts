@@ -4,13 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { listAllIssues } from "@/lib/github"
 import { getSiteUrl } from "@/lib/site-url"
 import { shouldIgnoreFile } from "@/lib/article-ignore"
+import { encodeSlug } from "@/lib/slug-utils"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 3600
-
-function encodeSlug(slug: string): string {
-  return slug.split("/").map(encodeURIComponent).join("/")
-}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = getSiteUrl()

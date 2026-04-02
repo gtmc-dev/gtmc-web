@@ -3,6 +3,7 @@
 import Link from "next/link"
 import type { TocItem } from "./use-toc"
 import { formatIndexPrefix } from "@/lib/index-formatter"
+import { encodeSlug } from "@/lib/slug-utils"
 import React from "react"
 
 export interface TreeNode {
@@ -58,7 +59,7 @@ export function SidebarTree({
   return (
     <ul className="my-1 pl-6">
       {items.map((item, index) => {
-        const fileRoute = `/articles/${item.slug.split("/").map(encodeURIComponent).join("/")}`
+        const fileRoute = `/articles/${encodeSlug(item.slug)}`
         const decodedRoute = decodeURIComponent(fileRoute)
         const isActive =
           !item.isFolder &&

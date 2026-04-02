@@ -12,6 +12,7 @@ import {
 import { getCachedRehypeShiki } from "@/lib/markdown/plugins/rehype-shiki"
 import { getArticleContent, getArticleTree } from "@/lib/article-loader"
 import { getSlugMapEntry, resolveSlug } from "@/lib/slug-resolver"
+import { decodeSlugPath, encodeSlug } from "@/lib/slug-utils"
 import { formatIndexPrefix } from "@/lib/index-formatter"
 import { getSiteUrl } from "@/lib/site-url"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
@@ -36,7 +37,7 @@ export async function generateMetadata({
   params,
 }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params
-  const slugPath = (slug ?? []).map(decodeURIComponent).join("/") || "preface"
+  const slugPath = decodeSlugPath(slug ?? []) || "preface"
   const target = await resolveArticleTarget(slugPath)
 
   if (target === null) {
@@ -74,7 +75,7 @@ export async function generateMetadata({
     const siteUrl = getSiteUrl()
     const canonicalSlug = target.canonicalSlug
     const canonicalUrl = canonicalSlug
-      ? `${siteUrl}/articles/${canonicalSlug.split("/").map(encodeURIComponent).join("/")}`
+      ? `${siteUrl}/articles/${encodeSlug(canonicalSlug)}`
       : `${siteUrl}/articles/${slugPath}`
 
     return {
@@ -101,7 +102,7 @@ export async function generateMetadata({
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params
 
-  const slugPath = (slug ?? []).map(decodeURIComponent).join("/") || "preface"
+  const slugPath = decodeSlugPath(slug ?? []) || "preface"
   const target = await resolveArticleTarget(slugPath)
 
   if (target === null) {
@@ -109,10 +110,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   }
 
   if (target.redirectToSlug) {
-    const redirectPath = target.redirectToSlug
-      .split("/")
-      .map(encodeURIComponent)
-      .join("/")
+    const redirectPath = encodeSlug(target.redirectToSlug)
     redirect(`/articles/${redirectPath}`)
   }
 
@@ -154,7 +152,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const siteUrl = getSiteUrl()
   const canonicalSlug = target.canonicalSlug
   const canonicalUrl = canonicalSlug
-    ? `${siteUrl}/articles/${canonicalSlug.split("/").map(encodeURIComponent).join("/")}`
+    ? `${siteUrl}/articles/${encodeSlug(canonicalSlug)}`
     : `${siteUrl}/articles/${slugPath}`
 
   const author = data.author as string | undefined
