@@ -81,13 +81,13 @@ export function CodeBlockPre({ children, ...props }: CodeBlockPreProps) {
         <div
           className="code-block-pre relative"
           style={{ "--line-num-width": lineNumWidth } as React.CSSProperties}>
-          <div className="custom-bottom-scrollbar overflow-x-auto px-4 sm:px-6">
+          <div className="custom-bottom-scrollbar overflow-x-auto">
             <div
               dir="ltr"
               className={
                 isWrapped
-                  ? "whitespace-pre-wrap [&_code]:!whitespace-pre-wrap [&_.line]:!whitespace-pre-wrap"
-                  : "whitespace-pre [&_code]:!whitespace-pre"
+                  ? "px-4 sm:px-6 whitespace-pre-wrap [&_code]:!whitespace-pre-wrap [&_.line]:!whitespace-pre-wrap"
+                  : "px-4 sm:px-6 whitespace-pre [&_code]:!whitespace-pre"
               }>
               {children}
             </div>
