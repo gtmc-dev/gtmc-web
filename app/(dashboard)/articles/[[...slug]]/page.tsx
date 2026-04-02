@@ -55,7 +55,11 @@ export async function generateMetadata({
     }
 
     const { data } = matter(content)
-    const title = resolveArticleTitle(data["chapter-title"], target.filePath)
+    const title = resolveDisplayedArticleTitle(
+      data["chapter-title"],
+      target.filePath,
+      target.canonicalSlug
+    )
     const description = generateDescription(content)
 
     const siteUrl = getSiteUrl()
@@ -110,9 +114,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const { data, content: renderedContent } = matter(content)
-  const articleTitle = resolveArticleTitle(
+  const articleTitle = resolveDisplayedArticleTitle(
     data["chapter-title"],
-    target.filePath
+    target.filePath,
+    target.canonicalSlug
   )
   const embeddedArticleContent = embedTitleInMarkdown(
     renderedContent,
@@ -314,6 +319,21 @@ function resolveArticleTitle(rawTitle: unknown, fallbackPath: string): string {
     "Article"
 
   return fallback
+}
+
+function resolveDisplayedArticleTitle(
+  rawTitle: unknown,
+  fallbackPath: string,
+  canonicalSlug: string
+): string {
+  const slugEntry = getSlugMapEntry(canonicalSlug)
+  const introTitle = slugEntry?.introTitle?.trim()
+
+  if (slugEntry?.isFolder && slugEntry.hasIntro && introTitle) {
+    return introTitle
+  }
+
+  return resolveArticleTitle(rawTitle, fallbackPath)
 }
 
 function embedTitleInMarkdown(content: string, title: string): string {

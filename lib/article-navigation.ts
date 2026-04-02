@@ -1,3 +1,5 @@
+import { getSlugMapEntry } from "@/lib/slug-resolver"
+
 interface TreeNode {
   id: string
   title: string
@@ -32,7 +34,9 @@ export function flattenArticleTree(tree: TreeNode[]): FlatArticle[] {
 
   function dfs(nodes: TreeNode[]): void {
     for (const node of nodes) {
-      if (!node.isFolder) {
+      const hasIntroFolder =
+        node.isFolder && Boolean(getSlugMapEntry(node.slug)?.hasIntro)
+      if (!node.isFolder || hasIntroFolder) {
         const parentPath = node.slug.split("/").slice(0, -1).join("/")
         result.push({
           slug: node.slug,
