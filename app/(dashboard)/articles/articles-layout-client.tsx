@@ -11,15 +11,7 @@ import {
   SectionRail,
   SegmentedBar,
 } from "../features/loading-shell-primitives"
-
-interface TreeNode {
-  id: string
-  title: string
-  slug: string
-  isFolder: boolean
-  parentId: string | null
-  children: TreeNode[]
-}
+import type { TreeNode } from "@/types/sidebar-tree"
 
 interface ArticlesLayoutProps {
   children: React.ReactNode

@@ -4,20 +4,10 @@ import Link from "next/link"
 import type { TocItem } from "./use-toc"
 import { formatIndexPrefix } from "@/lib/index-formatter"
 import { encodeSlug } from "@/lib/slug-utils"
+import type { TreeNode } from "@/types/sidebar-tree"
 import React from "react"
 
-export interface TreeNode {
-  id: string
-  title: string
-  slug: string
-  isFolder: boolean
-  parentId: string | null
-  children: TreeNode[]
-  index?: number
-  isAppendix?: boolean
-  isPreface?: boolean
-  isReadmeIntro?: boolean
-}
+export type { TreeNode } from "@/types/sidebar-tree"
 
 export function SidebarTree({
   items,
