@@ -45,6 +45,7 @@ export interface ArticleTreeNode {
   title: string
   slug: string
   isFolder: boolean
+  introTitle?: string
   parentId: string | null
   children: ArticleTreeNode[]
 }

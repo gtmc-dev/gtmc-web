@@ -147,6 +147,7 @@ function buildTreeNode(
     index: number
     isAppendix: boolean
     isPreface: boolean
+    introTitle?: string
   } = {
     id: entry.isFolder ? entry.slug : entry.filePath.replace(/\.md$/i, ""),
     title: getNodeTitle(entry),
@@ -155,6 +156,7 @@ function buildTreeNode(
     index: entry.index,
     isAppendix: entry.isAppendix,
     isPreface: entry.isPreface,
+    introTitle: entry.introTitle,
     parentId: entry.parentSlug ?? null,
     children,
   }
@@ -180,12 +182,7 @@ function getNodeTitle(entry: SlugMapEntry): string {
   }
 
   if (entry.isFolder) {
-    return (
-      entry.introTitle ||
-      entry.chapterTitle ||
-      entry.slug.split("/").pop() ||
-      entry.slug
-    )
+    return entry.chapterTitle || entry.slug.split("/").pop() || entry.slug
   }
 
   return (
