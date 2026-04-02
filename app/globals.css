@@ -412,32 +412,43 @@ code .line {
 
 .code-block-pre code {
   line-height: 1.625;
-  counter-reset: line-counter;
 }
 
 .code-block-pre .line {
-  counter-increment: line-counter;
   display: block;
-  padding-left: 3.5rem;
-  position: relative;
 }
 
-.code-block-pre .line::before {
-  content: counter(line-counter);
-  position: absolute;
-  left: 0;
-  width: var(--line-num-width, 2.75rem);
-  text-align: right;
-  color: var(--color-tech-main);
-  opacity: 0.4;
-  user-select: none;
-  pointer-events: none;
+.code-block-pre {
+  display: grid;
+  grid-template-columns: var(--line-num-width, 2.75rem) 1fr;
+}
+
+.code-block-line-numbers {
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
   border-right: 1px solid
     color-mix(in srgb, var(--color-tech-main) 20%, transparent);
+  user-select: none;
+  pointer-events: none;
+  align-items: flex-start;
+}
+
+.code-block-pre[data-wrapped="true"] .code-block-line-numbers {
+  align-items: stretch;
+}
+
+.code-block-line-number {
+  display: block;
+  line-height: 1.625;
+  text-align: right;
   padding-right: 0.5rem;
+  color: var(--color-tech-main);
+  opacity: 0.4;
   font-family: var(--font-mono, monospace);
   font-size: inherit;
-  line-height: inherit;
+  flex-shrink: 0;
 }
 
 code[class^="language-"] {

@@ -80,14 +80,24 @@ export function CodeBlockPre({ children, ...props }: CodeBlockPreProps) {
         />
         <div
           className="code-block-pre relative"
+          data-wrapped={isWrapped}
           style={{ "--line-num-width": lineNumWidth } as React.CSSProperties}>
+          <div className="code-block-line-numbers" aria-hidden="true">
+            {Array.from({ length: lineCountNum }, (_, i) => i + 1).map(
+              (lineNum) => (
+                <span key={lineNum} className="code-block-line-number">
+                  {lineNum}
+                </span>
+              )
+            )}
+          </div>
           <div className="custom-bottom-scrollbar overflow-x-auto">
             <div
               dir="ltr"
               className={
                 isWrapped
-                  ? "px-4 sm:px-6 whitespace-pre-wrap [&_code]:!whitespace-pre-wrap [&_.line]:!whitespace-pre-wrap"
-                  : "px-4 sm:px-6 whitespace-pre [&_code]:!whitespace-pre"
+                  ? "px-4 py-4 whitespace-pre-wrap [&_code]:!whitespace-pre-wrap [&_.line]:!whitespace-pre-wrap"
+                  : "px-4 py-4 whitespace-pre [&_code]:!whitespace-pre"
               }>
               {children}
             </div>
