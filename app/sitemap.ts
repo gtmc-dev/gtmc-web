@@ -1,6 +1,4 @@
 import type { MetadataRoute } from "next"
-import path from "path"
-import { execSync } from "child_process"
 import { prisma } from "@/lib/prisma"
 
 import { listAllIssues } from "@/lib/github"
@@ -12,19 +10,6 @@ export const revalidate = 3600
 
 function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/")
-}
-
-function getArticleLastModified(filePath: string): Date {
-  try {
-    const articlesDir = path.join(process.cwd(), "articles")
-    const result = execSync(`git log -1 --format="%ai" -- "${filePath}"`, {
-      cwd: articlesDir,
-      encoding: "utf-8",
-    })
-    return result.trim() ? new Date(result.trim()) : new Date()
-  } catch {
-    return new Date()
-  }
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -43,6 +28,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1.0,
+    },
+    {
+      url: `${BASE}/articles`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
   ]
 
