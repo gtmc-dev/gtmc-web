@@ -51,6 +51,7 @@ const slugMap: Record<string, SlugMapEntry> = (() => {
         coAuthors: Array.isArray(entry.coAuthors) ? entry.coAuthors : undefined,
         date: typeof entry.date === "string" ? entry.date : undefined,
         lastmod: typeof entry.lastmod === "string" ? entry.lastmod : undefined,
+        isAdvanced: entry.isAdvanced === true,
       }
     }
 
