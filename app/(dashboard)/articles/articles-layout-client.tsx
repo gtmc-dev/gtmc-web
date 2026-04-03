@@ -337,9 +337,10 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
         <div
           className={`
             grid transition-all duration-300 ease-out
-            ${isOpen && !isStuck
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+            ${
+              isOpen && !isStuck
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
             }
           `}>
           <div className="overflow-hidden">
@@ -405,7 +406,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
               <SidebarActions
                 internalScroll
                 onCreate={() => desktopSidebarRef.current?.openCreateModal()}
-                onCollapseAll={(e) => desktopSidebarRef.current?.collapseAll(e)}
+                onCollapseAll={() => desktopSidebarRef.current?.collapseAll()}
                 onLocate={() => desktopSidebarRef.current?.scrollToCurrent()}
               />
             </div>

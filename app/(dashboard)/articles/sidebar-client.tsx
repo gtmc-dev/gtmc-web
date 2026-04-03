@@ -7,15 +7,21 @@ import { SidebarActions } from "./sidebar/actions"
 import { CreateDocModal } from "./sidebar/create-doc-modal"
 import { SidebarTree, type TreeNode } from "./sidebar/tree-node"
 import { useBlur } from "./sidebar/use-blur"
-import { useExpandedFolders } from "./sidebar/use-expanded-folders"
+import { SidebarProvider, useSidebarContext } from "./sidebar/sidebar-context"
 import { useScrollToActive } from "./sidebar/use-scroll-to-active"
-import { useToc } from "./sidebar/use-toc"
-import { useActiveHeading } from "./sidebar/use-active-heading"
 
 export interface SidebarClientHandle {
   openCreateModal: () => void
-  collapseAll: (e: React.MouseEvent) => void
+  collapseAll: () => void
   scrollToCurrent: () => void
+}
+
+interface SidebarClientProps {
+  tree: TreeNode[]
+  onNavigate?: () => void
+  internalScroll?: boolean
+  scrollClass?: string
+  hideActions?: boolean
 }
 
 function flattenFolders(items: TreeNode[]): TreeNode[] {
@@ -32,13 +38,7 @@ function flattenFolders(items: TreeNode[]): TreeNode[] {
 
 export const SidebarClient = React.forwardRef<
   SidebarClientHandle,
-  {
-    tree: TreeNode[]
-    onNavigate?: () => void
-    internalScroll?: boolean
-    scrollClass?: string
-    hideActions?: boolean
-  }
+  SidebarClientProps
 >(function SidebarClient(
   {
     tree,
@@ -49,52 +49,50 @@ export const SidebarClient = React.forwardRef<
   },
   ref
 ) {
-  const pathname = usePathname()
+  return (
+    <SidebarProvider tree={tree}>
+      <SidebarClientInner
+        onNavigate={onNavigate}
+        internalScroll={internalScroll}
+        scrollClass={scrollClass}
+        hideActions={hideActions}
+        ref={ref}
+      />
+    </SidebarProvider>
+  )
+})
+
+const SidebarClientInner = React.forwardRef<
+  SidebarClientHandle,
+  Omit<SidebarClientProps, "tree">
+>(function SidebarClientInner(
+  { onNavigate, internalScroll = false, scrollClass = "", hideActions = false },
+  ref
+) {
   const router = useRouter()
+  const pathname = usePathname()
   const [isModalOpen, setIsModalOpen] = React.useState(false)
-  const [isFileExpanded, setIsFileExpanded] = React.useState(false)
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
   const {
+    tree,
     expandedFolders,
     setExpandedFolders,
     expandedFoldersRef,
     mounted,
-    isFolderExpanded,
-  } = useExpandedFolders()
-  const toc = useToc(pathname)
-  const activeHeadingId = useActiveHeading(toc, pathname)
-
-  React.useEffect(() => {
-    setIsFileExpanded(true)
-  }, [pathname])
-
-  const toggleFileExp = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsFileExpanded((prev) => !prev)
-  }
-
-  const toggleFolder = (id: string, e: React.MouseEvent) => {
-    e.preventDefault()
-    setExpandedFolders((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const collapseAll = React.useCallback(() => {
-    setExpandedFolders(new Set())
-    setIsFileExpanded(false)
-  }, [setExpandedFolders])
+    isFileExpanded,
+    setIsFileExpanded,
+    toc,
+    highlightActive,
+    setHighlightActive,
+    scrollContainerRef,
+    collapseAll,
+    scrollToCurrent,
+    setScrollToCurrent,
+  } = useSidebarContext()
 
   const {
-    activeItemRef,
-    folderGridRefs,
-    highlightActive,
-    getEffectivePathname,
-    scrollToCurrent,
+    scrollToCurrent: scrollToCurrentFn,
+    highlightActive: highlightActiveFromScroll,
   } = useScrollToActive({
     tree,
     pathname,
@@ -105,6 +103,14 @@ export const SidebarClient = React.forwardRef<
     scrollContainerRef,
     setIsFileExpanded,
   })
+
+  React.useEffect(() => {
+    setScrollToCurrent(scrollToCurrentFn)
+  }, [scrollToCurrentFn, setScrollToCurrent])
+
+  React.useEffect(() => {
+    setHighlightActive(highlightActiveFromScroll)
+  }, [highlightActiveFromScroll, setHighlightActive])
 
   useBlur({
     internalScroll,
@@ -124,7 +130,15 @@ export const SidebarClient = React.forwardRef<
   }))
 
   const availableFolders = useMemo(() => flattenFolders(tree), [tree])
-  const effectivePath = getEffectivePathname()
+
+  const treeContent =
+    tree.length === 0 ? (
+      <div className="mt-4 font-mono text-sm text-tech-main/40">
+        SYS.DIR_TREE_EMPTY
+      </div>
+    ) : (
+      <SidebarTree onNavigate={onNavigate} items={tree} />
+    )
 
   return (
     <>
@@ -134,7 +148,10 @@ export const SidebarClient = React.forwardRef<
             <SidebarActions
               internalScroll={internalScroll}
               onCreate={() => setIsModalOpen(true)}
-              onCollapseAll={collapseAll}
+              onCollapseAll={(e) => {
+                e.preventDefault()
+                collapseAll()
+              }}
               onLocate={scrollToCurrent}
             />
           )}
@@ -144,13 +161,7 @@ export const SidebarClient = React.forwardRef<
               custom-left-scrollbar min-h-0 flex-1 overflow-y-auto pb-12
               ${scrollClass}
             `}>
-            {tree.length === 0 ? (
-              <div className="mt-4 font-mono text-sm text-tech-main/40">
-                SYS.DIR_TREE_EMPTY
-              </div>
-            ) : (
-              <SidebarTree items={tree} onNavigate={onNavigate} />
-            )}
+            {treeContent}
           </div>
           <div
             className="
@@ -170,17 +181,14 @@ export const SidebarClient = React.forwardRef<
             <SidebarActions
               internalScroll={internalScroll}
               onCreate={() => setIsModalOpen(true)}
-              onCollapseAll={collapseAll}
+              onCollapseAll={(e) => {
+                e.preventDefault()
+                collapseAll()
+              }}
               onLocate={scrollToCurrent}
             />
           )}
-          {tree.length === 0 ? (
-            <div className="mt-4 font-mono text-sm text-tech-main/40">
-              SYS.DIR_TREE_EMPTY
-            </div>
-          ) : (
-            <SidebarTree items={tree} onNavigate={onNavigate} />
-          )}
+          {treeContent}
         </>
       )}
 
