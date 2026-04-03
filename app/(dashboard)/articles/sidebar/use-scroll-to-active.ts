@@ -23,6 +23,8 @@ export function useScrollToActive({
   setExpandedFolders,
   scrollContainerRef,
   setIsFileExpanded: _setIsFileExpanded,
+  activeItemRef,
+  folderGridRefs,
 }: {
   tree: TreeNode[]
   pathname: string
@@ -32,12 +34,12 @@ export function useScrollToActive({
   setExpandedFolders: React.Dispatch<React.SetStateAction<Set<string>>>
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
   setIsFileExpanded: React.Dispatch<React.SetStateAction<boolean>>
+  activeItemRef: React.RefObject<HTMLLIElement | null>
+  folderGridRefs: React.RefObject<Map<string, HTMLDivElement>>
 }) {
   void _setIsFileExpanded
 
   const [highlightActive, setHighlightActive] = useState(false)
-  const activeItemRef = useRef<HTMLLIElement>(null)
-  const folderGridRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const locateStateRef = useRef<LocateState>({ phase: "idle" })
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const transitionCleanupRef = useRef<(() => void) | null>(null)
@@ -138,7 +140,7 @@ export function useScrollToActive({
       setHighlightActive(false)
       highlightTimerRef.current = null
     }, HIGHLIGHT_TIMEOUT_MS)
-  }, [clearHighlightTimer, scrollContainerRef])
+  }, [clearHighlightTimer, scrollContainerRef, activeItemRef])
 
   const enterScrollingPhase = useCallback(() => {
     locateStateRef.current = { phase: "scrolling" }
@@ -249,7 +251,7 @@ export function useScrollToActive({
         transitionCleanupRef.current = null
       }
     }
-  }, [expandedFolders, finishExpansionAndScroll])
+  }, [expandedFolders, finishExpansionAndScroll, folderGridRefs])
 
   useEffect(() => {
     void pathname
@@ -269,8 +271,6 @@ export function useScrollToActive({
   }, [runLocateFlow])
 
   return {
-    activeItemRef,
-    folderGridRefs,
     highlightActive,
     getEffectivePathname,
     scrollToCurrent,

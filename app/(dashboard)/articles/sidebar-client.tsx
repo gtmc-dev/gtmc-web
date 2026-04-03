@@ -88,6 +88,8 @@ const SidebarClientInner = React.forwardRef<
     collapseAll,
     scrollToCurrent,
     setScrollToCurrent,
+    activeItemRef,
+    folderGridRefs,
   } = useSidebarContext()
 
   const {
@@ -102,6 +104,8 @@ const SidebarClientInner = React.forwardRef<
     setExpandedFolders,
     scrollContainerRef,
     setIsFileExpanded,
+    activeItemRef,
+    folderGridRefs,
   })
 
   React.useEffect(() => {
