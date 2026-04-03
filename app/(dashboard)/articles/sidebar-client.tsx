@@ -67,7 +67,6 @@ export const SidebarClient = React.forwardRef<
 
   React.useEffect(() => {
     setIsFileExpanded(true)
-     
   }, [pathname])
 
   const toggleFileExp = (e: React.MouseEvent) => {
@@ -150,21 +149,7 @@ export const SidebarClient = React.forwardRef<
                 SYS.DIR_TREE_EMPTY
               </div>
             ) : (
-              <SidebarTree
-                items={tree}
-                effectivePath={effectivePath}
-                isFileExpanded={isFileExpanded}
-                toc={toc}
-                activeHeadingId={activeHeadingId}
-                isFolderExpanded={isFolderExpanded}
-                toggleFolder={toggleFolder}
-                toggleFileExp={toggleFileExp}
-                onNavigate={onNavigate}
-                setIsFileExpanded={setIsFileExpanded}
-                highlightActive={highlightActive}
-                activeItemRef={activeItemRef}
-                folderGridRefs={folderGridRefs}
-              />
+              <SidebarTree items={tree} onNavigate={onNavigate} />
             )}
           </div>
           <div
@@ -194,21 +179,7 @@ export const SidebarClient = React.forwardRef<
               SYS.DIR_TREE_EMPTY
             </div>
           ) : (
-            <SidebarTree
-              items={tree}
-              effectivePath={effectivePath}
-              isFileExpanded={isFileExpanded}
-              toc={toc}
-              activeHeadingId={activeHeadingId}
-              isFolderExpanded={isFolderExpanded}
-              toggleFolder={toggleFolder}
-              toggleFileExp={toggleFileExp}
-              onNavigate={onNavigate}
-              setIsFileExpanded={setIsFileExpanded}
-              highlightActive={highlightActive}
-              activeItemRef={activeItemRef}
-              folderGridRefs={folderGridRefs}
-            />
+            <SidebarTree items={tree} onNavigate={onNavigate} />
           )}
         </>
       )}
