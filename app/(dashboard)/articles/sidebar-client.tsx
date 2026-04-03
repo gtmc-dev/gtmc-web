@@ -170,8 +170,9 @@ const SidebarClientInner = React.forwardRef<
           <div
             className="
               pointer-events-none absolute inset-x-0 bottom-0 z-20 -mr-4 -mb-2
-              h-12 mask-[linear-gradient(to_bottom,transparent,black)]
+              hidden h-12 mask-[linear-gradient(to_bottom,transparent,black)]
               [-webkit-mask-image:linear-gradient(to_bottom,transparent,black)]
+              sm:block
             "
             style={{
               background:
