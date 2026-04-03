@@ -1,27 +1,12 @@
-import Link from "next/link"
-import path from "path"
-import type { ReactNode } from "react"
-import { CodeCopyButton } from "@/components/code-copy-button"
-import { LazyCodeBlock } from "@/components/lazy-code-block"
-import { LazyImage } from "@/components/lazy-image"
-
-type MarkdownAstNode = {
-  type?: string
-  tagName?: string
-  value?: string
-  children?: MarkdownAstNode[]
-}
-
-type MarkdownComponentProps = {
-  children?: ReactNode
-  id?: string
-  href?: string
-  src?: string
-  alt?: string
-  className?: string
-  [key: string]: unknown
-}
-type MarkdownComponent = (props: MarkdownComponentProps) => ReactNode
+import { CodeBlockPre } from "@/components/code-block-pre"
+import { createAComponent } from "@/lib/markdown/a-component"
+import type {
+  MarkdownAstNode,
+  MarkdownComponent,
+  MarkdownComponentProps,
+} from "@/lib/markdown/component-types"
+import { HeadingAnchor } from "@/lib/markdown/heading-anchor"
+import { createImageComponent } from "@/lib/markdown/image-component"
 
 /**
  * Filter children to exclude whitespace-only text nodes.
@@ -102,6 +87,21 @@ function paragraphContainsImage(node: unknown): boolean {
 }
 
 export function getMarkdownComponents(rawPath: string) {
+  const aComponent = createAComponent(rawPath)
+  const imageComponent = createImageComponent(rawPath)
+
+  const advancedBadge = (
+    <span
+      aria-hidden="true"
+      className="
+        mx-1 inline-block shrink-0 border border-violet-400/30 bg-violet-600/5
+        px-1.5 py-0.5 align-middle font-mono text-[10px] tracking-tight
+        text-violet-400 uppercase
+      ">
+      ◈ ADV
+    </span>
+  )
+
   const makeSpan = (style: Record<string, string>) => {
     function SpanComponent({ ...props }: MarkdownComponentProps) {
       return <span style={style} {...props} />
@@ -109,77 +109,30 @@ export function getMarkdownComponents(rawPath: string) {
     SpanComponent.displayName = "makeSpan"
     return SpanComponent
   }
-  function resolveHref(initialHref: string): string {
-    let href = initialHref
-    if (href.startsWith("./") || href.startsWith("../")) {
-      const currentDir = path.dirname("/" + rawPath).replace(/^\/+/, "")
-      try {
-        const resolved = path.join(currentDir, href).replace(/\\/g, "/")
-        href = `/articles/${resolved.split("/").map(encodeURIComponent).join("/")}`
-      } catch {
-        return href
-      }
-    } else if (
-      !href.startsWith("http") &&
-      !href.startsWith("#") &&
-      !href.startsWith("/")
-    ) {
-      const currentDir = path.dirname("/" + rawPath).replace(/^\/+/, "")
-      const resolved = path.join(currentDir, href).replace(/\\/g, "/")
-      href = `/articles/${resolved.split("/").map(encodeURIComponent).join("/")}`
-    }
-    return href
-  }
 
-  function aComponent({
-    href: initialHref,
+  function hiddenComponent({
+    className,
     children,
     ...props
   }: MarkdownComponentProps) {
-    const href = resolveHref((initialHref as string) || "")
-    if (props["data-in-code"] === "true") {
-      const { "data-in-code": _inCode, ...rest } = props
-      return (
-        <Link
-          href={href}
-          className="
-            inline-block cursor-pointer bg-tech-main/10 px-1 py-[0.05rem]
-            font-mono text-[0.8em] text-tech-main underline transition-colors
-            hover:bg-tech-main/80 hover:text-white hover:no-underline
-          "
-          {...rest}>
-          {children}
-        </Link>
-      )
-    }
-    if (props["data-has-code"] === "true") {
-      const { "data-has-code": _hasCode, ...rest } = props
-      return (
-        <Link
-          href={href}
-          className="group/lc font-mono text-tech-main"
-          {...rest}>
-          {children}
-        </Link>
-      )
-    }
     return (
-      <Link
-        href={href}
-        className="
-          cursor-pointer px-0.5 font-sans text-tech-main underline
-          underline-offset-4 transition-colors
-          hover:bg-tech-main/80 hover:text-white hover:no-underline
-        "
+      <span
+        className={[
+          "inline-block rounded-xs border guide-line bg-tech-main/8 px-1.5 py-px text-tech-main/80 transition-[filter,text-shadow,color,background-color,border-color] duration-200 filter-[blur(0.18rem)] [text-shadow:0_0_0.35rem_rgba(96,112,143,0.45)] hover:border-tech-main/35 hover:bg-white/85 hover:text-slate-800 hover:filter-none hover:text-shadow-none",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
         {...props}>
         {children}
-      </Link>
+      </span>
     )
   }
 
   function codeComponent({
     className,
     children,
+    node,
     ...props
   }: MarkdownComponentProps) {
     if (props["data-linked-code"] === "true") {
@@ -225,73 +178,7 @@ export function getMarkdownComponents(rawPath: string) {
   }
 
   function preComponent({ children, ...props }: MarkdownComponentProps) {
-    const rawCode = props["data-raw-code"] as string | undefined
-    if (!rawCode) return <>{children}</>
-    const lang = (props["data-lang"] as string) || ""
-    const lineCount = (props["data-line-count"] as string) || "0"
-    return (
-      <LazyCodeBlock lang={lang} lineCount={lineCount}>
-        <div
-          className="
-            flex items-center justify-between border-b guide-line
-            bg-tech-main/10 px-4 py-1.5
-          ">
-          <div className="flex items-center gap-2">
-            <span className="size-1.5 animate-pulse bg-tech-main/40" />
-            <span className="text-xs tracking-widest text-tech-main uppercase">
-              {lang}
-            </span>
-          </div>
-          <div
-            className="
-              flex items-center gap-3 font-mono text-[10px] tracking-widest
-              text-tech-main
-            ">
-            <span>{lineCount} LINES</span>
-            <span className="text-tech-main/50">|</span>
-            <CodeCopyButton code={rawCode} />
-          </div>
-        </div>
-        <div className="relative">
-          <div
-            className="
-              pointer-events-none absolute inset-0 border border-tech-main/10
-            "
-          />
-          <div
-            className="
-              pointer-events-none absolute inset-x-0 top-1/4 h-px bg-tech-main/3
-            "
-          />
-          <div
-            className="
-              pointer-events-none absolute inset-x-0 top-3/4 h-px bg-tech-main/3
-            "
-          />
-          <div
-            className="
-              custom-bottom-scrollbar overflow-x-auto px-4
-              sm:px-6
-            ">
-            <div className="px-0" dir="ltr">
-              {children}
-            </div>
-          </div>
-        </div>
-        <div
-          className="
-            flex items-center justify-end border-t border-tech-main/10 px-4 py-1
-          ">
-          <span
-            className="
-              font-mono text-[9px] tracking-widest text-tech-main/50 uppercase
-              select-none
-            ">
-            {"//"} SYNTAX_HIGHLIGHT
-          </span>
-        </div>
-      </LazyCodeBlock>
-    )
+    return <CodeBlockPre {...props}>{children}</CodeBlockPre>
   }
 
   return {
@@ -305,7 +192,7 @@ export function getMarkdownComponents(rawPath: string) {
     heightlightnormal: makeSpan({ color: "chartreuse" }),
     nc: ({ ...props }: MarkdownComponentProps) => <span {...props} />,
     pp: ({ ...props }: MarkdownComponentProps) => <span {...props} />,
-    hidden: makeSpan({ display: "none" }),
+    hidden: hiddenComponent,
     heightlightwarning: makeSpan({ color: "crimson" }),
     heightlightadvanced: makeSpan({ color: "darkseagreen" }),
     table: ({ ...props }: MarkdownComponentProps) => (
@@ -347,7 +234,11 @@ export function getMarkdownComponents(rawPath: string) {
         {...props}
       />
     ),
-    h1: ({ id, children }: MarkdownComponentProps) => (
+    h1: ({
+      id,
+      children,
+      "data-advanced": dataAdvanced,
+    }: MarkdownComponentProps) => (
       <h1
         id={id}
         className="
@@ -357,21 +248,16 @@ export function getMarkdownComponents(rawPath: string) {
           sm:text-3xl
           lg:text-4xl
         ">
-        {id && (
-          <a
-            href={`#${id}`}
-            className="
-              absolute top-1/2 -left-6 -translate-y-1/2 text-xl font-normal
-              text-tech-main no-underline opacity-0 transition-opacity
-              group-hover:opacity-100
-            ">
-            #
-          </a>
-        )}
+        {id && <HeadingAnchor id={id} level={1} />}
         {children}
+        {dataAdvanced === "true" && advancedBadge}
       </h1>
     ),
-    h2: ({ id, children }: MarkdownComponentProps) => (
+    h2: ({
+      id,
+      children,
+      "data-advanced": dataAdvanced,
+    }: MarkdownComponentProps) => (
       <h2
         id={id}
         className="
@@ -380,21 +266,16 @@ export function getMarkdownComponents(rawPath: string) {
           text-slate-800 uppercase
           target:animate-target-blink target:border-tech-main
         ">
-        {id && (
-          <a
-            href={`#${id}`}
-            className="
-              absolute top-1/2 -left-5 -translate-y-1/2 text-lg font-normal
-              text-tech-main no-underline opacity-0 transition-opacity
-              group-hover:opacity-100
-            ">
-            #
-          </a>
-        )}
+        {id && <HeadingAnchor id={id} level={2} />}
         {children}
+        {dataAdvanced === "true" && advancedBadge}
       </h2>
     ),
-    h3: ({ id, children }: MarkdownComponentProps) => (
+    h3: ({
+      id,
+      children,
+      "data-advanced": dataAdvanced,
+    }: MarkdownComponentProps) => (
       <h3
         id={id}
         className="
@@ -402,18 +283,9 @@ export function getMarkdownComponents(rawPath: string) {
           text-slate-700 uppercase
           target:animate-target-blink
         ">
-        {id && (
-          <a
-            href={`#${id}`}
-            className="
-              absolute top-1/2 -left-4 -translate-y-1/2 text-base font-normal
-              text-tech-main no-underline opacity-0 transition-opacity
-              group-hover:opacity-100
-            ">
-            #
-          </a>
-        )}
+        {id && <HeadingAnchor id={id} level={3} />}
         {children}
+        {dataAdvanced === "true" && advancedBadge}
       </h3>
     ),
     p: ({ node, children, ...props }: MarkdownComponentProps) => {
@@ -465,19 +337,7 @@ export function getMarkdownComponents(rawPath: string) {
         {...props}
       />
     ),
-    img: ({ src: initialSrc, alt }: MarkdownComponentProps) => {
-      let src = (initialSrc as string) || ""
-      if (
-        src.startsWith("./") ||
-        src.startsWith("../") ||
-        (!src.startsWith("http") && !src.startsWith("/"))
-      ) {
-        const currentDir = path.dirname("/" + rawPath).replace(/^\/+/, "")
-        const resolved = path.join(currentDir, src).replace(/\\/g, "/")
-        src = `/api/assets?path=${encodeURIComponent(resolved)}`
-      }
-      return <LazyImage src={src} alt={(alt as string) || ""} />
-    },
+    img: imageComponent,
     hr: ({ ...props }: MarkdownComponentProps) => (
       <hr
         className="mx-auto my-8 w-4/5 border-t border-tech-main/30"
@@ -494,6 +354,57 @@ export function getMarkdownComponents(rawPath: string) {
         {...props}
       />
     ),
+    section: ({ id, children, ...props }: MarkdownComponentProps) => {
+      // Wrap footnote sections in <aside> for semantic HTML
+      if (id === "footnotes") {
+        return (
+          <aside
+            className="
+              mt-12 border-t border-tech-main/30 pt-6 font-sans text-sm
+              text-slate-700
+            "
+            {...props}>
+            <section id={id} {...props}>
+              {children}
+            </section>
+          </aside>
+        )
+      }
+
+      // Regular sections render normally
+      return (
+        <section id={id} {...props}>
+          {children}
+        </section>
+      )
+    },
+    div: ({
+      children,
+      "data-advanced-section": dataAdvancedSection,
+      ...rest
+    }: MarkdownComponentProps) => {
+      if (dataAdvancedSection === "true") {
+        return (
+          <div
+            className="my-6 overflow-hidden rounded-sm border border-violet-200"
+            {...rest}>
+            <div className="
+              flex items-center gap-2 bg-violet-600/50 px-4 py-1.5
+            ">
+              <span className="
+                font-mono text-[10px] tracking-widest text-white uppercase
+              ">
+                ◈ Advanced Content
+              </span>
+            </div>
+            <div className="bg-linear-to-b from-violet-50 to-white px-4 pb-2">
+              {children}
+            </div>
+          </div>
+        )
+      }
+      return <div {...rest}>{children}</div>
+    },
     pre: preComponent,
     code: codeComponent,
   } as Record<string, MarkdownComponent>

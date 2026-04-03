@@ -11,6 +11,7 @@ import {
 } from "react"
 import { createPortal } from "react-dom"
 import { useRouter, usePathname } from "next/navigation"
+import { articleUrl } from "@/lib/article-url"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
 
 interface SearchResult {
@@ -34,6 +35,7 @@ export function SearchCommand() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const resultsContainerRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -75,6 +77,22 @@ export function SearchCommand() {
       })
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen || results.length === 0) return
+
+    const container = resultsContainerRef.current
+    if (!container) return
+
+    const selectedItem = container.querySelector<HTMLElement>(
+      `[data-search-result-index="${selectedIndex}"]`
+    )
+
+    selectedItem?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    })
+  }, [isOpen, results, selectedIndex])
 
   // Debounced search
   useEffect(() => {
@@ -144,15 +162,11 @@ export function SearchCommand() {
       }
 
       closeModal()
-      const encodedSlug = result.slug
-        .split("/")
-        .map(encodeURIComponent)
-        .join("/")
       const highlightParam =
         result.snippet && query.trim().length >= 2
           ? `?highlight=${encodeURIComponent(query.trim())}`
           : ""
-      router.push(`/articles/${encodedSlug}${highlightParam}`)
+      router.push(`${articleUrl(result.slug)}${highlightParam}`)
     },
     [router, closeModal, query, pathname]
   )
@@ -299,8 +313,8 @@ export function SearchCommand() {
             aria-label="Search articles">
             <div
               className="
-                relative w-full max-w-xl border-2 border-tech-main bg-white
-                shadow-[8px_8px_0_0_rgba(96,112,143,1)] duration-200 animate-in
+                relative w-full max-w-xl border border-tech-main bg-white/95
+                shadow-xl backdrop-blur-md duration-200 animate-in
                 slide-in-from-top-4
               "
               onKeyDown={handleKeyDown}>
@@ -315,11 +329,11 @@ export function SearchCommand() {
                 <div
                   className="
                     flex items-center gap-2 font-mono text-xs font-bold
-                    tracking-tech-wide text-tech-main/60 uppercase
+                    tracking-tech-wide text-tech-main/80 uppercase
                   ">
                   <span
                     className="
-                      inline-block size-1.5 animate-pulse bg-tech-main/60
+                      inline-block size-1.5 animate-pulse bg-tech-main/80
                     "
                   />
                   SYS.QUERY_ENGINE
@@ -327,8 +341,8 @@ export function SearchCommand() {
                 <button
                   onClick={closeModal}
                   className="
-                    cursor-pointer border border-tech-main/30 px-2 py-0.5
-                    font-mono text-[10px] text-tech-main/50 transition-colors
+                    cursor-pointer border border-tech-main/40 px-2 py-0.5
+                    font-mono text-[10px] text-tech-main/70 transition-colors
                     hover:bg-tech-main hover:text-white
                   ">
                   ESC
@@ -344,11 +358,11 @@ export function SearchCommand() {
                   onChange={handleQueryChange}
                   placeholder="Search articles by title or content..."
                   className="
-                    w-full border border-tech-main/30 bg-white/50 px-3 py-2.5
+                    w-full border border-tech-main/40 bg-white/60 px-3 py-2.5
                     font-mono text-sm text-tech-main-dark transition-colors
                     outline-none
-                    placeholder:text-tech-main/30
-                    focus:border-tech-main
+                    placeholder:text-tech-main/50
+                    focus:border-tech-main/70 focus:bg-white/80
                   "
                   autoComplete="off"
                   spellCheck={false}
@@ -357,15 +371,14 @@ export function SearchCommand() {
 
               {/* Results area */}
               <div
-                className="
-                custom-left-scrollbar max-h-[50vh] overflow-y-auto
-              ">
+                ref={resultsContainerRef}
+                className="custom-left-scrollbar max-h-[50vh] overflow-y-auto">
                 {/* Status line */}
                 {query.length >= 2 && (
                   <div
                     className="
                       border-b guide-line px-4 py-2 font-mono text-[10px]
-                      tracking-wider text-tech-main/50 uppercase
+                      tracking-wider text-tech-main/70 uppercase
                     ">
                     {isLoading
                       ? "SCANNING\u2026"
@@ -381,8 +394,12 @@ export function SearchCommand() {
                     <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="space-y-1.5">
-                          <div className="h-4 w-3/5 animate-pulse bg-tech-main/10" />
-                          <div className="h-3 w-2/5 animate-pulse bg-tech-main/5" />
+                          <div
+                            className="h-4 w-3/5 animate-pulse bg-tech-main/10"
+                          />
+                          <div
+                            className="h-3 w-2/5 animate-pulse bg-tech-main/5"
+                          />
                         </div>
                       ))}
                     </div>
@@ -397,6 +414,7 @@ export function SearchCommand() {
                         <button
                           onClick={() => navigateToResult(result)}
                           onMouseEnter={() => setSelectedIndex(index)}
+                          data-search-result-index={index}
                           className={`
                             group relative w-full cursor-pointer px-4 py-3
                             text-left transition-colors
@@ -427,14 +445,15 @@ export function SearchCommand() {
                           <div
                             className="
                               mt-0.5 font-mono text-[10px] tracking-wider
-                              text-tech-main/40 uppercase
+                              text-tech-main/60 uppercase
                             ">
                             PATH: {slugToPath(result.slug)}
                           </div>
 
                           {/* Content snippet */}
                           {result.snippet && (
-                            <div className="mt-1 text-xs/relaxed text-tech-main/60">
+                            <div
+                              className="mt-1 text-xs/relaxed text-tech-main/70">
                               {highlightMatch(result.snippet)}
                             </div>
                           )}
@@ -443,7 +462,7 @@ export function SearchCommand() {
                           <div
                             className="
                               absolute top-3 right-4 font-mono text-[9px]
-                              tracking-wider text-tech-main/30 uppercase
+                              tracking-wider text-tech-main/50 uppercase
                             ">
                             {result.matchType === "content" ? "BODY" : "TITLE"}
                           </div>
@@ -458,12 +477,13 @@ export function SearchCommand() {
                   <div className="px-4 py-8 text-center">
                     <div
                       className="
-                        font-mono text-xs tracking-wider text-tech-main/40
+                        font-mono text-xs tracking-wider text-tech-main/60
                         uppercase
                       ">
                       NO_MATCH_FOUND
                     </div>
-                    <div className="mt-1 font-mono text-[10px] text-tech-main/30">
+                    <div
+                      className="mt-1 font-mono text-[10px] text-tech-main/40">
                       Try different keywords
                     </div>
                   </div>
@@ -474,12 +494,13 @@ export function SearchCommand() {
                   <div className="px-4 py-8 text-center">
                     <div
                       className="
-                        font-mono text-xs tracking-wider text-tech-main/30
+                        font-mono text-xs tracking-wider text-tech-main/60
                         uppercase
                       ">
                       AWAITING_INPUT
                     </div>
-                    <div className="mt-1 font-mono text-[10px] text-tech-main/25">
+                    <div
+                      className="mt-1 font-mono text-[10px] text-tech-main/40">
                       Type at least 2 characters
                     </div>
                   </div>
@@ -490,7 +511,7 @@ export function SearchCommand() {
               <footer
                 className="
                   flex items-center gap-4 border-t guide-line px-4 py-2
-                  font-mono text-[10px] text-tech-main/40
+                  font-mono text-[10px] text-tech-main/60
                 ">
                 <span>
                   <kbd className="border guide-line px-1">&#x2191;&#x2193;</kbd>{" "}

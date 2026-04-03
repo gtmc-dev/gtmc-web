@@ -8,23 +8,17 @@ import {
   ARTICLES_REPO_NAME,
 } from "@/lib/github/articles-repo"
 import { getArticleContent } from "@/lib/article-loader"
+import { resolveSlug } from "@/lib/slug-resolver"
 import { prisma } from "@/lib/prisma"
 import { shouldIgnoreFile } from "@/lib/article-ignore"
 import { parseFrontMatter } from "@/lib/frontmatter-parser"
+import type { TreeNode } from "@/types/sidebar-tree"
 
 interface IndexedArticle {
   id: string
   title: string
   slug: string
   content: string
-}
-
-interface TreeNode {
-  id: string
-  title: string
-  slug: string
-  isFolder: boolean
-  children: TreeNode[]
 }
 
 export const CJK_TOKENIZER = (text: string): string[] =>
@@ -136,13 +130,17 @@ async function buildIndex(): Promise<MiniSearch<IndexedArticle>> {
       nextIndex += 1
 
       const node = githubNodes[currentIndex]
-      const markdown = await getArticleContent(`${node.slug}.md`)
+      const filePath = resolveSlug(node.slug)
+      if (!filePath) {
+        continue
+      }
+      const markdown = await getArticleContent(filePath)
       if (!markdown) {
         continue
       }
 
       const frontMatter = parseFrontMatter(markdown)
-      const title = frontMatter.title || node.title
+      const title = frontMatter.chapterTitle || node.title
 
       articles.push({
         id: node.slug,

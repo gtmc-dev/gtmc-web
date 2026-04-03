@@ -4,23 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-helpers"
 import { unstable_cache } from "next/cache"
 import { createDirectFile, createPR } from "@/lib/github/pr-manager"
-import { getRepoTranslations, type RepoTreeNode } from "@/lib/github/sync"
+import { getRepoTranslations, type ArticleTreeNode } from "@/lib/github/sync"
 import { getArticleTree } from "@/lib/article-loader"
 import { shouldIgnoreDirectory, shouldIgnoreFile } from "@/lib/article-ignore"
+import type { TreeNode } from "@/types/sidebar-tree"
 import { statSync } from "fs"
 import { join } from "path"
-
-interface TreeNode {
-  id: string
-  title: string
-  slug: string
-  index: number
-  isAppendix: boolean
-  isPreface: boolean
-  isFolder: boolean
-  parentId: string | null
-  children: TreeNode[]
-}
 
 function isAppendixDirectoryName(name: string): boolean {
   const normalized = name.trim().toLowerCase()
@@ -44,7 +33,7 @@ function getSlugMapMtime(): string {
   return statSync(slugMapPath).mtime.getTime().toString()
 }
 
-const getCachedRepoTree = unstable_cache(
+const getCachedArticleTree = unstable_cache(
   async () => {
     return getArticleTree()
   },
@@ -79,10 +68,10 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
   })
 
   // 2. Get GitHub repo tree (cached)
-  let githubTree: RepoTreeNode[] = []
+  let githubTree: ArticleTreeNode[] = []
   let translations: Record<string, string> = {}
 
-  const githubTreePromise = getCachedRepoTree()
+  const githubTreePromise = getCachedArticleTree()
   const translationsPromise = getCachedTranslations()
 
   const [treeResult, translationsResult] = await Promise.allSettled([
@@ -110,14 +99,16 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
   const mergedTree: TreeNode[] = []
 
   // Add GitHub tree
-  function addGithubNodes(nodes: RepoTreeNode[], parentArray: TreeNode[]) {
+  function addGithubNodes(nodes: ArticleTreeNode[], parentArray: TreeNode[]) {
     for (const node of nodes) {
-      const nodeWithMeta = node as RepoTreeNode & Partial<TreeNode>
+      const nodeWithMeta = node as ArticleTreeNode & Partial<TreeNode>
       const clone: TreeNode = {
         ...node,
         index: nodeWithMeta.index ?? -1,
         isAppendix: nodeWithMeta.isAppendix ?? false,
         isPreface: nodeWithMeta.isPreface ?? false,
+        isAdvanced: nodeWithMeta.isAdvanced ?? false,
+        introTitle: nodeWithMeta.introTitle ?? "",
         children: [],
       }
       unifiedMap.set(clone.slug.toLowerCase(), clone)
@@ -144,6 +135,7 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
         index: -1,
         isAppendix: false,
         isPreface: false,
+        isAdvanced: false,
         isFolder: dbItem.isFolder, // Make sure it defaults to false if missing
         parentId: dbItem.parentId,
         children: [],
@@ -201,6 +193,10 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
         return a.isPreface ? -1 : 1
       }
 
+      if (a.isReadmeIntro !== b.isReadmeIntro) {
+        return a.isReadmeIntro ? -1 : 1
+      }
+
       if (a.isFolder !== b.isFolder) {
         return a.isFolder ? -1 : 1
       }
@@ -211,14 +207,14 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
         }
 
         const aIsReadme =
-          a.title === "<EMPTY>" || a.slug.toLowerCase().endsWith("/readme")
+          !a.title || a.title === "" || a.slug.toLowerCase().endsWith("/readme")
         const bIsReadme =
-          b.title === "<EMPTY>" || b.slug.toLowerCase().endsWith("/readme")
+          !b.title || b.title === "" || b.slug.toLowerCase().endsWith("/readme")
         if (aIsReadme !== bIsReadme) {
           return aIsReadme ? -1 : 1
         }
 
-        const indexComparison = compareIndex(a.index, b.index)
+        const indexComparison = compareIndex(a.index ?? -1, b.index ?? -1)
         if (indexComparison !== 0) {
           return indexComparison
         }
@@ -272,6 +268,42 @@ export async function getSidebarTree(): Promise<TreeNode[]> {
   }
 
   const filteredTree = filterIgnoredNodes(mergedTree, true)
+
+  function injectReadmeIntroNodes(nodes: TreeNode[]) {
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
+        injectReadmeIntroNodes(node.children)
+      }
+
+      const introTitle = node.introTitle?.trim() ?? ""
+      if (!node.isFolder || node.isPreface || introTitle === "") {
+        continue
+      }
+
+      const hasInjectedIntro = node.children.some(
+        (child) => child.isReadmeIntro
+      )
+      if (hasInjectedIntro) {
+        continue
+      }
+
+      node.children.push({
+        id: `${node.slug}/readme-intro`,
+        title: introTitle,
+        slug: node.slug,
+        index: -1,
+        isFolder: false,
+        isAppendix: false,
+        isPreface: false,
+        isAdvanced: false,
+        isReadmeIntro: true,
+        parentId: node.id,
+        children: [],
+      })
+    }
+  }
+
+  injectReadmeIntroNodes(filteredTree)
   sortTree(filteredTree)
 
   return filteredTree

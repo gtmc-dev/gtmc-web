@@ -7,7 +7,9 @@ import rehypeSlug from "rehype-slug"
 import type { Element, Root, Text } from "hast"
 import { visit } from "unist-util-visit"
 import { pangu } from "pangu"
+import { remarkAdvancedSections } from "@/lib/markdown/plugins/remark-advanced-sections"
 import { remarkNumberedHeadingsDot } from "@/lib/markdown/plugins/remark-heading-numbering"
+import { rehypeAdvancedSections } from "@/lib/markdown/plugins/rehype-advanced-sections"
 import type { createRehypeShiki } from "@/lib/markdown/plugins/rehype-shiki"
 
 export function rehypeLinkedCode() {
@@ -69,17 +71,24 @@ export function getPluginsForContent(
     | typeof remarkGfm
     | typeof remarkMath
     | typeof remarkBreaks
+    | typeof remarkAdvancedSections
     | [typeof remarkNumberedHeadingsDot, { startDepth: number }]
-  > = [remarkGfm, remarkBreaks, [remarkNumberedHeadingsDot, { startDepth: 2 }]]
+  > = [
+    remarkGfm,
+    remarkBreaks,
+    remarkAdvancedSections,
+    [remarkNumberedHeadingsDot, { startDepth: 2 }],
+  ]
 
   const rehypePlugins: Array<
     | typeof rehypeRaw
+    | typeof rehypeAdvancedSections
     | typeof rehypeKatex
     | typeof rehypeSlug
     | typeof rehypeCJKSpacing
     | typeof rehypeLinkedCode
     | Awaited<ReturnType<typeof createRehypeShiki>>
-  > = [rehypeRaw, rehypeLinkedCode, rehypeSlug]
+  > = [rehypeRaw, rehypeAdvancedSections, rehypeLinkedCode, rehypeSlug]
 
   if (
     content.includes("$") ||

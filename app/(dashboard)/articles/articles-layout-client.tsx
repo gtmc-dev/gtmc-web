@@ -11,15 +11,7 @@ import {
   SectionRail,
   SegmentedBar,
 } from "../features/loading-shell-primitives"
-
-interface TreeNode {
-  id: string
-  title: string
-  slug: string
-  isFolder: boolean
-  parentId: string | null
-  children: TreeNode[]
-}
+import type { TreeNode } from "@/types/sidebar-tree"
 
 interface ArticlesLayoutProps {
   children: React.ReactNode
@@ -215,66 +207,72 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
 
   const showTreePlaceholder = isTreeLoading && treeData.length === 0
 
+  interface SidebarTreeWrapperProps {
+    sidebarRef: React.Ref<SidebarClientHandle>
+    showPlaceholder: boolean
+    tree: TreeNode[]
+    onNavigate: () => void
+  }
+
+  function SidebarTreeWrapper({
+    sidebarRef,
+    showPlaceholder,
+    tree,
+    onNavigate,
+  }: SidebarTreeWrapperProps) {
+    return (
+      <div
+        className={`
+          w-full pb-4 font-mono text-[15px] wrap-break-word
+          [&_li]:mt-1.5
+          [&_ul]:list-none
+          [&_ul_ul]:mt-1.5 [&_ul_ul]:mb-3 [&_ul_ul]:border-l
+          [&_ul_ul]:guide-line [&_ul_ul]:pl-3
+          [&>ul]:pl-0
+          ${showPlaceholder ? "h-full min-h-full pb-0" : ""}
+        `}
+        aria-busy={showPlaceholder}>
+        {showPlaceholder ? (
+          <div className="h-full min-h-full pr-4">
+            <TreeLoadingPlaceholder />
+          </div>
+        ) : (
+          <SidebarClient
+            tree={tree}
+            onNavigate={onNavigate}
+            ref={sidebarRef}
+            internalScroll
+          />
+        )}
+      </div>
+    )
+  }
+
+  const onNavigate = () => setIsOpen(false)
+
   const fixedTreeContent = (
-    <div
-      className={`
-        w-full pb-4 font-mono text-[15px] wrap-break-word
-        [&_li]:mt-1.5
-        [&_ul]:list-none
-        [&_ul_ul]:mt-1.5 [&_ul_ul]:mb-3 [&_ul_ul]:border-l [&_ul_ul]:guide-line
-        [&_ul_ul]:pl-3
-        [&>ul]:pl-0
-        ${showTreePlaceholder ? "h-full min-h-full pb-0" : ""}
-      `}
-      aria-busy={showTreePlaceholder}>
-      {showTreePlaceholder ? (
-        <div className="h-full min-h-full pr-4">
-          <TreeLoadingPlaceholder />
-        </div>
-      ) : (
-        <SidebarClient
-          tree={treeData}
-          onNavigate={() => setIsOpen(false)}
-          ref={desktopSidebarRef}
-          internalScroll
-        />
-      )}
-    </div>
+    <SidebarTreeWrapper
+      sidebarRef={desktopSidebarRef}
+      showPlaceholder={showTreePlaceholder}
+      tree={treeData}
+      onNavigate={onNavigate}
+    />
   )
 
   const floatingTreeContent = (
-    <div
-      className={`
-        w-full pb-4 font-mono text-[15px] wrap-break-word
-        [&_li]:mt-1.5
-        [&_ul]:list-none
-        [&_ul_ul]:mt-1.5 [&_ul_ul]:mb-3 [&_ul_ul]:border-l [&_ul_ul]:guide-line
-        [&_ul_ul]:pl-3
-        [&>ul]:pl-0
-        ${showTreePlaceholder ? "h-full min-h-full pb-0" : ""}
-      `}
-      aria-busy={showTreePlaceholder}>
-      {showTreePlaceholder ? (
-        <div className="h-full min-h-full pr-4">
-          <TreeLoadingPlaceholder />
-        </div>
-      ) : (
-        <SidebarClient
-          tree={treeData}
-          onNavigate={() => setIsOpen(false)}
-          ref={floatingCardSidebarRef}
-          internalScroll
-        />
-      )}
-    </div>
+    <SidebarTreeWrapper
+      sidebarRef={floatingCardSidebarRef}
+      showPlaceholder={showTreePlaceholder}
+      tree={treeData}
+      onNavigate={onNavigate}
+    />
   )
 
   return (
     <div
       className="
-        relative isolate mx-auto flex min-h-[calc(100vh-8rem)] max-w-full
-        flex-col
-        md:flex-row
+        relative isolate mx-auto flex min-h-[calc(100vh-8rem)] flex-col
+        md:flex-row md:justify-center md:gap-8
       ">
       <div
         className="
@@ -339,10 +337,9 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
         <div
           className={`
             grid transition-all duration-300 ease-out
-            ${
-              isOpen && !isStuck
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
+            ${isOpen && !isStuck
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
             }
           `}>
           <div className="overflow-hidden">
@@ -435,10 +432,10 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
 
       <main
         className="
-          relative min-w-0 flex-1 overflow-x-hidden border-l border-transparent
-          py-6
-          md:max-w-2xl md:pl-10
-          lg:max-w-3xl lg:pl-10
+          relative my-6 w-full flex-1
+          md:max-w-2xl
+          xl:max-w-3xl
+          [1920px]:w-5xl
         ">
         {children}
       </main>
