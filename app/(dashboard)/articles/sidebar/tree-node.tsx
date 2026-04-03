@@ -74,22 +74,24 @@ export function SidebarTree({
               data-sidebar-row="1"
               ref={!item.isFolder && isActive ? activeItemRef : undefined}
               className={`
-                relative my-1.5 list-none font-mono text-[16px]
-                transition-all duration-300
+                relative my-1.5 list-none font-mono text-[16px] transition-all
+                duration-300
+                before:absolute before:top-0 before:left-0 before:h-full
+                before:w-0.5 before:transition-all before:duration-200
+                before:content-['']
                 md:text-base
-                before:absolute before:left-0 before:top-0 before:h-full before:w-0.5
-                before:transition-all before:duration-200 before:content-['']
-                ${
-                  !item.isFolder && isActive
-                    ? `before:bg-tech-main before:w-[3px]`
-                    : `before:bg-transparent hover:before:bg-tech-main/40 hover:before:w-[2px]`
+                ${!item.isFolder && isActive
+                  ? `before:w-[3px] before:bg-tech-main`
+                  : `
+                    before:bg-transparent
+                    hover:before:w-[2px] hover:before:bg-tech-main/40
+                  `
                 }
-                ${
-                  !item.isFolder && isActive && highlightActive
-                    ? `bg-tech-main/8`
-                    : !item.isFolder && isActive
-                      ? `bg-tech-main/5`
-                      : `hover:bg-tech-main/5`
+                ${!item.isFolder && isActive && highlightActive
+                  ? `bg-tech-main/8`
+                  : !item.isFolder && isActive
+                    ? `bg-tech-main/5`
+                    : `hover:bg-tech-main/5`
                 }
               `}>
               {item.isFolder ? (
@@ -114,16 +116,15 @@ export function SidebarTree({
                     className={`
                       group relative -ml-4 flex items-center py-1.5 pl-4
                       transition-colors
-                      ${
-                        isActive
-                          ? `font-bold text-tech-main`
-                          : `
+                      ${isActive
+                        ? `font-bold text-tech-main`
+                        : `
                           text-slate-700
                           hover:text-tech-main
                         `
                       }
                     `}>
-                    {isActive && toc.length > 0 ? (
+                    {isActive && toc.length > 0 && (
                       <button
                         type="button"
                         onClick={toggleFileExpanded}
@@ -138,23 +139,6 @@ export function SidebarTree({
                         title={isFileExpanded ? "收起目录" : "展开目录"}>
                         {isFileExpanded ? "▼" : "▶"}
                       </button>
-                    ) : (
-                      <span
-                        className={`
-                          absolute top-1/2 left-0 -translate-y-1/2 text-xs
-                          transition-opacity
-                          md:text-sm
-                          ${
-                            isActive
-                              ? `text-tech-main opacity-100`
-                              : `
-                              text-tech-main opacity-0
-                              group-hover:opacity-100
-                            `
-                          }
-                        `}>
-                        &gt;
-                      </span>
                     )}
 
                     <Link
@@ -167,17 +151,7 @@ export function SidebarTree({
                           onNavigate?.()
                         }
                       }}
-                      className={`
-                        block w-full border-b pb-px pl-1
-                        ${
-                          isActive
-                            ? `cursor-pointer border-tech-main/50`
-                            : `
-                            border-transparent
-                            group-hover:border-tech-main/30
-                          `
-                        }
-                      `}>
+                      className="block w-full pb-px pl-1">
                       {item.isReadmeIntro
                         ? `00 ${item.title}`
                         : !item.isFolder && item.index !== undefined
@@ -201,10 +175,9 @@ export function SidebarTree({
                     <div
                       className={`
                         grid transition-all duration-300 ease-out
-                        ${
-                          isFileExpanded
-                            ? "grid-rows-[1fr] opacity-100"
-                            : `grid-rows-[0fr] opacity-0`
+                        ${isFileExpanded
+                          ? "grid-rows-[1fr] opacity-100"
+                          : `grid-rows-[0fr] opacity-0`
                         }
                       `}>
                       <div className="overflow-hidden">
@@ -222,13 +195,12 @@ export function SidebarTree({
                                 before:content-['']
                                 hover:text-tech-main
                                 md:text-sm
-                                ${
-                                  h2.id === activeHeadingId
-                                    ? `
+                                ${h2.id === activeHeadingId
+                                  ? `
                                     font-semibold text-tech-main
                                     before:bg-tech-main
                                   `
-                                    : `
+                                  : `
                                     text-tech-main/70
                                     before:bg-tech-main/30
                                   `
@@ -239,7 +211,8 @@ export function SidebarTree({
                                 onClick={() => onNavigate?.()}
                                 className="block wrap-break-word">
                                 {item.isAdvanced && (
-                                  <span className="mr-1 text-[8px] text-violet-500">
+                                  <span
+                                    className="mr-1 text-[8px] text-violet-500">
                                     ●
                                   </span>
                                 )}
@@ -262,10 +235,9 @@ export function SidebarTree({
                   }}
                   className={`
                     grid transition-all duration-300 ease-out
-                    ${
-                      !item.isFolder || folderExpanded
-                        ? `grid-rows-[1fr] opacity-100`
-                        : `grid-rows-[0fr] opacity-0`
+                    ${!item.isFolder || folderExpanded
+                      ? `grid-rows-[1fr] opacity-100`
+                      : `grid-rows-[0fr] opacity-0`
                     }
                   `}>
                   <div className="overflow-hidden">
