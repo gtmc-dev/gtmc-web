@@ -153,18 +153,8 @@ function SidebarTreeWrapper({
 
 export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isStuck, setIsStuck] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.scrollY > 64
-    }
-    return false
-  })
-  const [showFullText, setShowFullText] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.scrollY <= 64
-    }
-    return true
-  })
+  const [isStuck, setIsStuck] = useState(false)
+  const [showFullText, setShowFullText] = useState(true)
   const [treeData, setTreeData] = useState<TreeNode[]>(tree)
   const [isTreeLoading, setIsTreeLoading] = useState(tree.length === 0)
   const pathname = usePathname()
