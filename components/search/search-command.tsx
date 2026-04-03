@@ -35,6 +35,7 @@ export function SearchCommand() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const resultsContainerRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -76,6 +77,22 @@ export function SearchCommand() {
       })
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen || results.length === 0) return
+
+    const container = resultsContainerRef.current
+    if (!container) return
+
+    const selectedItem = container.querySelector<HTMLElement>(
+      `[data-search-result-index="${selectedIndex}"]`
+    )
+
+    selectedItem?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    })
+  }, [isOpen, results, selectedIndex])
 
   // Debounced search
   useEffect(() => {
@@ -353,7 +370,9 @@ export function SearchCommand() {
               </div>
 
               {/* Results area */}
-              <div className="custom-left-scrollbar max-h-[50vh] overflow-y-auto">
+              <div
+                ref={resultsContainerRef}
+                className="custom-left-scrollbar max-h-[50vh] overflow-y-auto">
                 {/* Status line */}
                 {query.length >= 2 && (
                   <div
@@ -399,6 +418,7 @@ export function SearchCommand() {
                         <button
                           onClick={() => navigateToResult(result)}
                           onMouseEnter={() => setSelectedIndex(index)}
+                          data-search-result-index={index}
                           className={`
                             group relative w-full cursor-pointer px-4 py-3
                             text-left transition-colors
