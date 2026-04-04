@@ -160,7 +160,10 @@ export default async function DraftDashboardPage() {
           </p>
         )}
         {draft.fileCount > 1 ? (
-          <p className="mt-3 font-mono text-xs tracking-widest text-tech-main/70 uppercase">
+          <p
+            className="
+              mt-3 font-mono text-xs tracking-widest text-tech-main/70 uppercase
+            ">
             FILE_SET: {draft.fileCount}
           </p>
         ) : null}

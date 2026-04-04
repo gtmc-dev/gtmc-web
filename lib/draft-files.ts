@@ -208,7 +208,10 @@ export function serializeDraftFilesForStorage(collection: DraftFileCollection) {
   })
 
   const conflictFiles = normalized.files
-    .filter((file) => file.conflictContent !== undefined && file.conflictContent !== null)
+    .filter(
+      (file) =>
+        file.conflictContent !== undefined && file.conflictContent !== null
+    )
     .map((file) => ({
       id: file.id,
       filePath: file.filePath,
@@ -289,7 +292,10 @@ function normalizeComparablePath(filePath: string | undefined) {
   return normalizeDraftFilePath(filePath || "").toLowerCase()
 }
 
-function resolveActiveFileId(activeFileId: string | undefined, files: DraftFileRecord[]) {
+function resolveActiveFileId(
+  activeFileId: string | undefined,
+  files: DraftFileRecord[]
+) {
   return files.find((file) => file.id === activeFileId)?.id || files[0].id
 }
 
@@ -299,7 +305,9 @@ function parseStoredBundle(raw: string | null | undefined) {
   }
 
   try {
-    const parsed = JSON.parse(raw.slice(DRAFT_BUNDLE_PREFIX.length)) as Partial<DraftBundleRecord>
+    const parsed = JSON.parse(
+      raw.slice(DRAFT_BUNDLE_PREFIX.length)
+    ) as Partial<DraftBundleRecord>
 
     if (parsed.version !== 1 || !Array.isArray(parsed.files)) {
       return null

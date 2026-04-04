@@ -204,7 +204,10 @@ export default function ConflictResolver({
         ">
         {draftCollection.files.length > 1 ? (
           <aside className="border border-tech-main/30 bg-tech-main/5 p-2">
-            <div className="px-2 py-2 font-mono text-xs tracking-widest text-tech-main uppercase">
+            <div
+              className="
+                p-2 font-mono text-xs tracking-widest text-tech-main uppercase
+              ">
               CONFLICT_FILES_[{draftCollection.files.length}]
             </div>
             <div className="space-y-2">
@@ -231,15 +234,22 @@ export default function ConflictResolver({
                         isActive
                           ? `border-tech-main bg-tech-main/10`
                           : `
-                            border-tech-main/20 bg-white/70
+                            guide-line bg-white/70
                             hover:border-tech-main/50 hover:bg-white/90
                           `
                       }
                     `}>
-                    <span className="truncate font-mono text-xs tracking-widest text-tech-main uppercase">
+                    <span
+                      className="
+                        truncate font-mono text-xs tracking-widest
+                        text-tech-main uppercase
+                      ">
                       {fileLabel}
                     </span>
-                    <span className="truncate font-mono text-[11px] text-tech-main/60">
+                    <span
+                      className="
+                        truncate font-mono text-[11px] text-tech-main/60
+                      ">
                       {file.filePath || "PATH_NOT_SET"}
                     </span>
                   </button>
@@ -251,7 +261,10 @@ export default function ConflictResolver({
 
         <div className="space-y-4">
           <div className="border border-tech-main/30 bg-white/70 px-4 py-3">
-            <p className="font-mono text-xs tracking-widest text-tech-main uppercase">
+            <p
+              className="
+                font-mono text-xs tracking-widest text-tech-main uppercase
+              ">
               ACTIVE_FILE_
             </p>
             <p className="mt-1 font-mono text-sm text-tech-main-dark">
@@ -259,14 +272,17 @@ export default function ConflictResolver({
             </p>
           </div>
 
-          <div className="mb-8 space-y-2 border border-tech-main/30 bg-tech-main/5 p-2">
+          <div
+            className="
+              mb-8 space-y-2 border border-tech-main/30 bg-tech-main/5 p-2
+            ">
             {blocks.map((block) => (
               <div key={block.id}>
                 {block.type === "ok" ? (
                   <pre
                     className="
-                      p-4 font-mono text-sm whitespace-pre-wrap text-tech-main-dark
-                      opacity-70
+                      p-4 font-mono text-sm whitespace-pre-wrap
+                      text-tech-main-dark opacity-70
                     ">
                     {block.content}
                   </pre>
@@ -287,8 +303,8 @@ export default function ConflictResolver({
                       <div className="flex flex-1 flex-col bg-amber-500/5">
                         <div
                           className="
-                            border-b border-amber-500/20 bg-amber-500/10 p-2 text-xs
-                            font-bold text-amber-700
+                            border-b border-amber-500/20 bg-amber-500/10 p-2
+                            text-xs font-bold text-amber-700
                           ">
                           YOUR CHANGES (draft)
                         </div>
@@ -301,7 +317,8 @@ export default function ConflictResolver({
                         </pre>
                         <div
                           className="
-                            mt-auto border-t border-amber-500/20 bg-amber-500/5 p-2
+                            mt-auto border-t border-amber-500/20 bg-amber-500/5
+                            p-2
                           ">
                           <BrutalButton
                             type="button"
@@ -311,7 +328,9 @@ export default function ConflictResolver({
                               w-full border-amber-500 text-amber-700
                               hover:bg-amber-500 hover:text-amber-900
                             "
-                            onClick={() => handleAcceptBlock(block.id, block.ours)}>
+                            onClick={() =>
+                              handleAcceptBlock(block.id, block.ours)
+                            }>
                             ACCEPT OURS
                           </BrutalButton>
                         </div>
@@ -319,8 +338,8 @@ export default function ConflictResolver({
                       <div className="flex flex-1 flex-col bg-blue-500/5">
                         <div
                           className="
-                            border-b border-blue-500/20 bg-blue-500/10 p-2 text-xs
-                            font-bold text-blue-700
+                            border-b border-blue-500/20 bg-blue-500/10 p-2
+                            text-xs font-bold text-blue-700
                           ">
                           MAIN CHANGES
                         </div>
@@ -333,7 +352,8 @@ export default function ConflictResolver({
                         </pre>
                         <div
                           className="
-                            mt-auto border-t border-blue-500/20 bg-blue-500/5 p-2
+                            mt-auto border-t border-blue-500/20 bg-blue-500/5
+                            p-2
                           ">
                           <BrutalButton
                             type="button"
@@ -380,7 +400,9 @@ export default function ConflictResolver({
                 <textarea
                   name="content"
                   value={content}
-                  onChange={(event) => updateActiveFileContent(event.target.value)}
+                  onChange={(event) =>
+                    updateActiveFileContent(event.target.value)
+                  }
                   className="
                     min-h-[300px] w-full resize-y bg-transparent p-4 font-mono
                     text-sm text-tech-main-dark outline-none
@@ -389,7 +411,10 @@ export default function ConflictResolver({
               </div>
             </div>
 
-            <BrutalButton type="submit" variant="primary" disabled={isSubmitting}>
+            <BrutalButton
+              type="submit"
+              variant="primary"
+              disabled={isSubmitting}>
               {isSubmitting ? "RESOLVING..." : "RESOLVE & UPDATE PR"}
             </BrutalButton>
           </form>

@@ -18,9 +18,10 @@ interface DraftFileSourceDialogProps {
   isOpen: boolean
   initialFolderPath?: string
   onClose: () => void
-  onCreate: (
-    input: { content: string; filePath: string }
-  ) => boolean | Promise<boolean>
+  onCreate: (input: {
+    content: string
+    filePath: string
+  }) => boolean | Promise<boolean>
 }
 
 type SourceMode = "repo" | "upload" | "new"
@@ -216,35 +217,66 @@ export function DraftFileSourceDialog({
   }
 
   const canSubmitRepo = Boolean(selectedRepoFilePath) && !isSubmitting
-  const canSubmitNew = Boolean(buildDraftFilePath(selectedFolderPath, newFileName))
+  const canSubmitNew = Boolean(
+    buildDraftFilePath(selectedFolderPath, newFileName)
+  )
   const canSubmitUpload = Boolean(localFile) && !isSubmitting
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden border border-tech-main bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-tech-main/20 bg-tech-main/5 px-5 py-4">
+    <div
+      className="
+        fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4
+        backdrop-blur-sm
+      ">
+      <div
+        className="
+          flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden border
+          border-tech-main bg-white shadow-2xl
+        ">
+        <div
+          className="
+            flex items-center justify-between border-b guide-line bg-tech-main/5
+            px-5 py-4
+          ">
           <div>
-            <p className="font-mono text-sm tracking-widest text-tech-main uppercase">
+            <p
+              className="
+                font-mono text-sm tracking-widest text-tech-main uppercase
+              ">
               ADD_FILE_SOURCE_
             </p>
             <p className="mt-1 font-mono text-xs text-tech-main/60 uppercase">
               Pick from repo, import local text, or create a new file.
             </p>
           </div>
-          <BrutalButton type="button" variant="ghost" size="sm" onClick={onClose}>
+          <BrutalButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}>
             CLOSE
           </BrutalButton>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[20rem_minmax(0,1fr)]">
-          <aside className="flex min-h-0 flex-col border-r border-tech-main/20 bg-tech-main/5">
-            <div className="shrink-0 border-b border-tech-main/20 px-4 py-3 font-mono text-xs tracking-widest text-tech-main uppercase">
+        <div
+          className="
+            grid min-h-0 flex-1 gap-0
+            lg:grid-cols-[20rem_minmax(0,1fr)]
+          ">
+          <aside className="flex min-h-0 flex-col border-r guide-line bg-tech-main/5">
+            <div
+              className="
+                shrink-0 border-b guide-line px-4 py-3 font-mono text-xs
+                tracking-widest text-tech-main uppercase
+              ">
               DESTINATION_TREE_
             </div>
 
             <div className="flex-1 overflow-y-auto p-3">
               {isLoadingTree ? (
-                <p className="font-mono text-xs text-tech-main/60">LOADING_TREE_</p>
+                <p className="font-mono text-xs text-tech-main/60">
+                  LOADING_TREE_
+                </p>
               ) : (
                 <div className="space-y-1">
                   {treeRoots.map((node) => (
@@ -267,13 +299,32 @@ export function DraftFileSourceDialog({
 
           <div className="min-h-0 overflow-y-auto p-5">
             <div className="mb-5 flex flex-wrap gap-2">
-              <ModeButton label="REPO_FILE" mode="repo" value={mode} onChange={setMode} />
-              <ModeButton label="LOCAL_FILE" mode="upload" value={mode} onChange={setMode} />
-              <ModeButton label="NEW_FILE" mode="new" value={mode} onChange={setMode} />
+              <ModeButton
+                label="REPO_FILE"
+                mode="repo"
+                value={mode}
+                onChange={setMode}
+              />
+              <ModeButton
+                label="LOCAL_FILE"
+                mode="upload"
+                value={mode}
+                onChange={setMode}
+              />
+              <ModeButton
+                label="NEW_FILE"
+                mode="new"
+                value={mode}
+                onChange={setMode}
+              />
             </div>
 
             {treeError ? (
-              <div className="mb-4 border border-red-500/30 bg-red-500/10 px-4 py-3 font-mono text-xs text-red-700">
+              <div
+                className="
+                  mb-4 border border-red-500/30 bg-red-500/10 px-4 py-3
+                  font-mono text-xs text-red-700
+                ">
                 {treeError}
               </div>
             ) : null}
@@ -318,7 +369,9 @@ export function DraftFileSourceDialog({
                     id="draft-import-name"
                     placeholder="e.g. chapter-notes.md"
                     value={customUploadName}
-                    onChange={(event) => setCustomUploadName(event.target.value)}
+                    onChange={(event) =>
+                      setCustomUploadName(event.target.value)
+                    }
                   />
                 </div>
                 <BrutalButton
@@ -338,7 +391,9 @@ export function DraftFileSourceDialog({
                   Destination folder: {selectedFolderPath || "ROOT"}
                 </p>
                 <div className="space-y-2">
-                  <label className="section-label" htmlFor="draft-new-file-name">
+                  <label
+                    className="section-label"
+                    htmlFor="draft-new-file-name">
                     FILE_NAME_
                   </label>
                   <BrutalInput
@@ -349,7 +404,9 @@ export function DraftFileSourceDialog({
                   />
                 </div>
                 <div className="font-mono text-xs text-tech-main/60 uppercase">
-                  Result: {buildDraftFilePath(selectedFolderPath, newFileName) || "PENDING"}
+                  Result:{" "}
+                  {buildDraftFilePath(selectedFolderPath, newFileName) ||
+                    "PENDING"}
                 </div>
                 <BrutalButton
                   type="button"
@@ -388,7 +445,10 @@ function ModeButton({
         ${
           value === mode
             ? `border-tech-main bg-tech-main text-white`
-            : `border-tech-main/30 bg-tech-main/5 text-tech-main hover:bg-tech-main/10`
+            : `
+              border-tech-main/30 bg-tech-main/5 text-tech-main
+              hover:bg-tech-main/10
+            `
         }
       `}>
       {label}
@@ -438,7 +498,8 @@ function TreeNode({
             onClick={() => onTogglePath(node.path)}
             className="
               flex h-8 w-6 shrink-0 items-center justify-center font-mono
-              text-[10px] text-tech-main/50 transition-colors hover:text-tech-main
+              text-[10px] text-tech-main/50 transition-colors
+              hover:text-tech-main
             ">
             {isExpanded ? "▼" : "▶"}
           </button>
@@ -483,9 +544,7 @@ function TreeNode({
                 : `cursor-default opacity-60`
             }
           `}>
-          <span className="truncate">
-            {node.title}
-          </span>
+          <span className="truncate">{node.title}</span>
         </button>
       </div>
 
@@ -521,6 +580,8 @@ function buildDraftFilePath(folderPath: string, rawFileName: string) {
     return ""
   }
 
-  const fileName = sanitizedName.endsWith(".md") ? sanitizedName : `${sanitizedName}.md`
+  const fileName = sanitizedName.endsWith(".md")
+    ? sanitizedName
+    : `${sanitizedName}.md`
   return normalizedFolder ? `${normalizedFolder}/${fileName}` : fileName
 }

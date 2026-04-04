@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { auth } from "@/lib/auth"
 import { classifyFile, sanitizeFilename } from "@/lib/file-upload"
-import { uploadArticleAssetToGithub, ArticleAssetUploadError } from "@/lib/github/articles-assets"
+import {
+  uploadArticleAssetToGithub,
+  ArticleAssetUploadError,
+} from "@/lib/github/articles-assets"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -21,7 +24,10 @@ export async function POST(req: NextRequest) {
 
     const classification = classifyFile(file.type)
     if (!classification) {
-      return NextResponse.json({ error: "File type not allowed." }, { status: 400 })
+      return NextResponse.json(
+        { error: "File type not allowed." },
+        { status: 400 }
+      )
     }
 
     const arrayBuffer = await file.arrayBuffer()

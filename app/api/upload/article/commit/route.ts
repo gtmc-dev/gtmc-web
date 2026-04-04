@@ -3,7 +3,10 @@ import { del } from "@vercel/blob"
 
 import { auth } from "@/lib/auth"
 import { classifyFile, sanitizeFilename } from "@/lib/file-upload"
-import { uploadArticleAssetToGithub, ArticleAssetUploadError } from "@/lib/github/articles-assets"
+import {
+  uploadArticleAssetToGithub,
+  ArticleAssetUploadError,
+} from "@/lib/github/articles-assets"
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024
 
@@ -36,13 +39,19 @@ export async function POST(req: NextRequest) {
 
     const classification = classifyFile(mimeType)
     if (!classification) {
-      return NextResponse.json({ error: "File type not allowed" }, { status: 400 })
+      return NextResponse.json(
+        { error: "File type not allowed" },
+        { status: 400 }
+      )
     }
 
     const blobHostname = process.env.BLOB_STORE_HOSTNAME
     const rawBlobPathPrefix = process.env.BLOB_STORE_PATH_PREFIX || "/"
     if (!blobHostname) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Server misconfigured" },
+        { status: 500 }
+      )
     }
 
     const blobPathPrefix = rawBlobPathPrefix.startsWith("/")

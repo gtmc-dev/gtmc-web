@@ -17,10 +17,7 @@ import {
   closePRAction,
   submitWithRebaseAction,
 } from "@/actions/review"
-import {
-  createDraftFile,
-  decodeStoredDraftFiles,
-} from "@/lib/draft-files"
+import { createDraftFile, decodeStoredDraftFiles } from "@/lib/draft-files"
 import { prisma } from "@/lib/prisma"
 import type { RebaseState } from "@/types/rebase"
 import type { RebaseAnalysis } from "@/lib/article-rebase"
@@ -125,11 +122,10 @@ export default async function ReviewDetailPage({
     content: linkedDraft?.conflictContent || rawContent,
     filePath: mainFile?.filename || linkedDraft?.filePath || "",
   })
-  const conflictDraftFiles =
-    linkedDraftFiles || {
-      activeFileId: fallbackConflictFile.id,
-      files: [fallbackConflictFile],
-    }
+  const conflictDraftFiles = linkedDraftFiles || {
+    activeFileId: fallbackConflictFile.id,
+    files: [fallbackConflictFile],
+  }
   const draftFileCount = linkedDraftFiles?.files.length || 1
 
   return (
@@ -199,13 +195,11 @@ export default async function ReviewDetailPage({
         {linkedDraftFiles?.files.length && linkedDraftFiles.files.length > 1 ? (
           <div
             className="
-              mt-4 flex flex-wrap gap-2 border border-tech-main/20 bg-white/60
-              p-3 font-mono text-[11px] text-tech-main/70 uppercase
+              mt-4 flex flex-wrap gap-2 border guide-line bg-white/60 p-3
+              font-mono text-[11px] text-tech-main/70 uppercase
             ">
             {linkedDraftFiles.files.map((file) => (
-              <span
-                key={file.id}
-                className="border border-tech-main/20 px-2 py-1">
+              <span key={file.id} className="border guide-line px-2 py-1">
                 {file.filePath || "PATH_NOT_SET"}
               </span>
             ))}
@@ -312,11 +306,11 @@ export default async function ReviewDetailPage({
               CONTENT_PREVIEW
             </h2>
           </div>
-            {draftFileCount > 1 ? (
-              <p className="mt-2 font-mono text-xs text-tech-main/60 uppercase">
-                Previewing the primary markdown file from a multi-file draft.
-              </p>
-            ) : null}
+          {draftFileCount > 1 ? (
+            <p className="mt-2 font-mono text-xs text-tech-main/60 uppercase">
+              Previewing the primary markdown file from a multi-file draft.
+            </p>
+          ) : null}
 
           <div
             className="

@@ -86,7 +86,10 @@ export async function uploadArticleAssetToGithub({
   }
 }
 
-export function buildArticleAssetPath(category: FileCategory, filename: string) {
+export function buildArticleAssetPath(
+  category: FileCategory,
+  filename: string
+) {
   return `data/${category}/${filename}`
 }
 

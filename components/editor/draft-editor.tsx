@@ -183,24 +183,6 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     updateFileById(draftCollection.activeFileId, updates)
   }
 
-  const replaceTextInFile = (
-    fileId: string,
-    searchValue: string,
-    nextValue: string
-  ) => {
-    updateDraftCollection((current) => ({
-      ...current,
-      files: current.files.map((file) =>
-        file.id === fileId
-          ? {
-              ...file,
-              content: file.content.replace(searchValue, nextValue),
-            }
-          : file
-      ),
-    }))
-  }
-
   const insertTextAtCursor = (text: string) => {
     if (!textareaRef.current) {
       return
@@ -597,19 +579,24 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
         ">
         <aside
           className="
-            border border-tech-main/40 bg-tech-main/5 backdrop-blur-sm
-          ">
+          border border-tech-main/40 bg-tech-main/5 backdrop-blur-sm
+        ">
           <div
             className="
-              flex items-center justify-between gap-3 border-b border-tech-main/30
-              px-4 py-3
+              flex items-center justify-between gap-3 border-b
+              border-tech-main/30 px-4 py-3
             ">
             <div className="min-w-0 flex-1">
-              <p className="font-mono text-xs tracking-widest text-tech-main uppercase">
+              <p
+                className="
+                  font-mono text-xs tracking-widest text-tech-main uppercase
+                ">
                 FILES_[{draftCollection.files.length}]
               </p>
               <p
-                className="truncate font-mono text-[11px] text-tech-main/60 uppercase"
+                className="
+                  truncate font-mono text-[11px] text-tech-main/60 uppercase
+                "
                 title="SAVE_AND_REVIEW_APPLY_TO_ALL_FILES">
                 SAVE_AND_REVIEW_APPLY_TO_ALL_FILES
               </p>
@@ -644,8 +631,8 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                       }))
                     }
                     className={`
-                      flex min-h-11 flex-1 min-w-0 flex-col items-start gap-1 border
-                      px-3 py-2 text-left transition-colors
+                      flex min-h-11 min-w-0 flex-1 flex-col items-start gap-1
+                      border px-3 py-2 text-left transition-colors
                       ${
                         isActive
                           ? `border-tech-main bg-tech-main/10`
@@ -655,10 +642,17 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                           `
                       }
                     `}>
-                    <span className="w-full truncate font-mono text-xs tracking-widest text-tech-main uppercase">
+                    <span
+                      className="
+                        w-full truncate font-mono text-xs tracking-widest
+                        text-tech-main uppercase
+                      ">
                       {fileLabel}
                     </span>
-                    <span className="w-full truncate font-mono text-[11px] text-tech-main/60">
+                    <span
+                      className="
+                        w-full truncate font-mono text-[11px] text-tech-main/60
+                      ">
                       {file.filePath || "PATH_NOT_SET"}
                     </span>
                   </button>
@@ -669,12 +663,20 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                       onClick={() => handleRemoveFile(file.id)}
                       title="Remove file"
                       className={`
-                        flex min-w-8 shrink-0 items-center justify-center border-y border-r
-                        transition-colors
+                        flex min-w-8 shrink-0 items-center justify-center
+                        border-y border-r transition-colors
                         ${
                           isActive
-                            ? "border-tech-main bg-tech-main/5 text-tech-main/60 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30"
-                            : "guide-line bg-white/50 text-tech-main/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30"
+                            ? `
+                              border-tech-main bg-tech-main/5 text-tech-main/60
+                              hover:border-red-500/30 hover:bg-red-500/10
+                              hover:text-red-500
+                            `
+                            : `
+                              guide-line bg-white/50 text-tech-main/40
+                              hover:border-red-500/30 hover:bg-red-500/10
+                              hover:text-red-500
+                            `
                         }
                       `}>
                       <svg
@@ -710,7 +712,11 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
               ">
               <div>
                 <p className="section-label">ACTIVE_FILE_</p>
-                <p className="font-mono text-xs tracking-widest text-tech-main/70 uppercase">
+                <p
+                  className="
+                    font-mono text-xs tracking-widest text-tech-main/70
+                    uppercase
+                  ">
                   SLOT_{activeFileIndex}/{draftCollection.files.length}
                 </p>
               </div>
@@ -894,7 +900,10 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                   <button
                     type="button"
                     onClick={clearBadge}
-                    className="ml-2 text-current/80 hover:text-current"
+                    className="
+                      ml-2 text-current/80
+                      hover:text-current
+                    "
                     aria-label="Dismiss">
                     X
                   </button>
@@ -953,7 +962,11 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                     role="status"
                     aria-live="polite">
                     {badge.type === "progress" && (
-                      <span className="inline-block size-2 animate-pulse bg-tech-accent" />
+                      <span
+                        className="
+                          inline-block size-2 animate-pulse bg-tech-accent
+                        "
+                      />
                     )}
                     {badge.type === "error" && (
                       <span className="inline-block size-2 bg-red-400" />
@@ -963,7 +976,10 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                       <button
                         type="button"
                         onClick={clearBadge}
-                        className="ml-2 text-red-300 hover:text-red-100">
+                        className="
+                          ml-2 text-red-300
+                          hover:text-red-100
+                        ">
                         ✕
                       </button>
                     )}
@@ -1039,6 +1055,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface UploadResponse {
   error?: string
   fileSize?: number
