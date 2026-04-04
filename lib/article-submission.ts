@@ -34,6 +34,7 @@ interface DraftSubmissionInput {
   draftId: string
   title: string
   files: DraftFileRecord[]
+  imageEntries?: BranchFileEntry[]
   baseMainSha: string
   authorName: string
   authorEmail: string
@@ -110,6 +111,7 @@ export async function openDraftPullRequest({
   draftId,
   title,
   files,
+  imageEntries,
   baseMainSha,
   authorName,
   authorEmail,
@@ -158,6 +160,10 @@ export async function openDraftPullRequest({
       message: index === 0 ? `docs: ${title}` : `docs: update ${file.filePath}`,
       token,
     })
+  }
+
+  if (imageEntries && imageEntries.length > 0) {
+    await upsertFilesOnBranch(token as string, imageEntries, branchName)
   }
 
   const { data: pr } = await octokit.pulls.create({

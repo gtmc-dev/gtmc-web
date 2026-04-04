@@ -7,7 +7,14 @@ import { revalidatePaths } from "@/lib/revalidation"
 import {
   getMainBranchHeadSha,
   openDraftPullRequest,
+  type BranchFileEntry,
 } from "@/lib/article-submission"
+import {
+  buildMigrationTargets,
+  type MigrationAssetInput,
+  parseDraftTempImageRefs,
+  rewriteDraftTempUrls,
+} from "@/lib/draft-markdown"
 import {
   createDraftFile,
   decodeStoredDraftFiles,
@@ -16,9 +23,8 @@ import {
   normalizeDraftFileCollection,
   serializeDraftFilesForStorage,
 } from "@/lib/draft-files"
-import { deleteDraftAsset } from "@/lib/draft-storage"
+import { deleteDraftAsset, downloadDraftAsset } from "@/lib/draft-storage"
 import { requireAuth } from "@/lib/auth-helpers"
-import { formatErrorMessage } from "@/lib/error-handling"
 import { getGitHubWriteToken } from "@/lib/github/articles-repo"
 import { prisma } from "@/lib/prisma"
 
@@ -58,7 +64,7 @@ export async function saveDraftAction(formData: FormData) {
 
   const nextDraftStorage = serializeDraftFilesForStorage(draftFiles)
 
-  let savedRevision
+  let savedRevision: { id: string }
 
   if (revisionId) {
     const existing = await prisma.revision.findUnique({
@@ -170,11 +176,169 @@ export async function submitForReviewAction(revisionId: string) {
     )
   }
 
+  const tempPrefix = process.env.DRAFT_STORAGE_TEMP_PREFIX ?? "draft-temp"
+  const parsedRefsByFileId = new Map<
+    string,
+    ReturnType<typeof parseDraftTempImageRefs>
+  >()
+  const referencedStoragePaths = new Set<string>()
+  const urlToRepoPath = new Map<string, string>()
+  const migrationTargetsByRepoPath = new Map<
+    string,
+    { assetId: string; storagePath: string; repoPath: string }
+  >()
+  const migratedAssetsById = new Map<
+    string,
+    { assetId: string; repoPath: string }
+  >()
+  const allStoragePathsToDownload = new Set<string>()
+
+  for (const file of storedDraftFiles.files) {
+    const refs = parseDraftTempImageRefs(file.content, tempPrefix)
+    parsedRefsByFileId.set(file.id, refs)
+
+    for (const ref of refs) {
+      referencedStoragePaths.add(ref.storagePath)
+    }
+  }
+
+  if (referencedStoragePaths.size > 0) {
+    const draftAssets = (await (prisma as any).draftAsset.findMany({
+      where: { revisionId },
+      select: {
+        id: true,
+        storagePath: true,
+        filename: true,
+        contentHash: true,
+        mimeType: true,
+      },
+    })) as Array<{
+      id: string
+      storagePath: string
+      filename: string
+      contentHash: string | null
+      mimeType: string
+    }>
+    const draftAssetByStoragePath = new Map(
+      draftAssets.map((asset) => [asset.storagePath, asset])
+    )
+
+    for (const storagePath of referencedStoragePaths) {
+      if (!draftAssetByStoragePath.has(storagePath)) {
+        throw new Error(
+          `Referenced draft asset is missing from database: ${storagePath}`
+        )
+      }
+    }
+
+    for (const file of storedDraftFiles.files) {
+      const refs = parsedRefsByFileId.get(file.id) || []
+      if (refs.length === 0) {
+        continue
+      }
+
+      const uniqueStoragePaths = [
+        ...new Set(refs.map((ref) => ref.storagePath)),
+      ]
+      const migrationAssets: MigrationAssetInput[] = uniqueStoragePaths.map(
+        (storagePath) => {
+          const matchingAsset = draftAssetByStoragePath.get(storagePath)
+          if (!matchingAsset) {
+            throw new Error(
+              `Referenced draft asset is missing from database: ${storagePath}`
+            )
+          }
+
+          return {
+            id: matchingAsset.id,
+            storagePath: matchingAsset.storagePath,
+            filename: matchingAsset.filename,
+            contentHash: matchingAsset.contentHash,
+          }
+        }
+      )
+
+      const migrationTargets = buildMigrationTargets(
+        file.filePath,
+        migrationAssets
+      )
+      const repoPathByStoragePath = new Map(
+        migrationTargets.map((target) => [target.storagePath, target.repoPath])
+      )
+
+      for (const ref of refs) {
+        const repoPath = repoPathByStoragePath.get(ref.storagePath)
+        if (!repoPath) {
+          throw new Error(
+            `Failed to resolve migration target for storage path: ${ref.storagePath}`
+          )
+        }
+
+        urlToRepoPath.set(ref.url, repoPath)
+      }
+
+      for (const target of migrationTargets) {
+        const repoPathKey = target.repoPath.toLowerCase()
+        if (!migrationTargetsByRepoPath.has(repoPathKey)) {
+          migrationTargetsByRepoPath.set(repoPathKey, {
+            assetId: target.assetId,
+            storagePath: target.storagePath,
+            repoPath: target.repoPath,
+          })
+        }
+
+        if (!migratedAssetsById.has(target.assetId)) {
+          migratedAssetsById.set(target.assetId, {
+            assetId: target.assetId,
+            repoPath: target.repoPath,
+          })
+        }
+
+        allStoragePathsToDownload.add(target.storagePath)
+      }
+    }
+  }
+
+  const rewrittenDraftFiles =
+    urlToRepoPath.size === 0
+      ? storedDraftFiles.files
+      : storedDraftFiles.files.map((file) => ({
+          ...file,
+          content: rewriteDraftTempUrls(file.content, urlToRepoPath),
+        }))
+
+  const downloadedAssetByStoragePath = new Map<string, Buffer>()
+  if (allStoragePathsToDownload.size > 0) {
+    await Promise.all(
+      [...allStoragePathsToDownload].map(async (storagePath) => {
+        const downloaded = await downloadDraftAsset(storagePath)
+        downloadedAssetByStoragePath.set(storagePath, downloaded)
+      })
+    )
+  }
+
+  const imageEntries: BranchFileEntry[] = [
+    ...migrationTargetsByRepoPath.values(),
+  ].map((target) => {
+    const content = downloadedAssetByStoragePath.get(target.storagePath)
+    if (!content) {
+      throw new Error(
+        `Missing downloaded draft asset content: ${target.storagePath}`
+      )
+    }
+
+    return {
+      path: target.repoPath,
+      content,
+    }
+  })
+
   try {
     const result = await openDraftPullRequest({
       activeFileId: storedDraftFiles.activeFileId,
       authorEmail,
-      files: storedDraftFiles.files,
+      files: rewrittenDraftFiles,
+      ...(imageEntries.length > 0 ? { imageEntries } : {}),
       title: existing.title,
       baseMainSha,
       authorName,
@@ -187,20 +351,40 @@ export async function submitForReviewAction(revisionId: string) {
       files: result.files,
     })
 
-    await prisma.revision.update({
-      where: { id: revisionId },
-      data: {
-        baseMainSha,
-        conflictContent: syncedDraftStorage.conflictContent,
-        content: syncedDraftStorage.content,
-        filePath: syncedDraftStorage.filePath,
-        githubPrNum: result.prNumber,
-        githubPrUrl: result.prUrl,
-        prBranchName: result.branchName,
-        status: result.status,
-        submittedAt: new Date(),
-        syncedMainSha: result.syncedMainSha,
-      },
+    await prisma.$transaction(async (tx) => {
+      if (migratedAssetsById.size > 0) {
+        const migratedAt = new Date()
+
+        await Promise.all(
+          [...migratedAssetsById.values()].map((target) =>
+            (tx as any).draftAsset.update({
+              where: { id: target.assetId },
+              data: {
+                status: "migrated-to-repo",
+                migratedRepoPath: target.repoPath,
+                githubPrNum: result.prNumber,
+                migratedAt,
+              },
+            })
+          )
+        )
+      }
+
+      await tx.revision.update({
+        where: { id: revisionId },
+        data: {
+          baseMainSha,
+          conflictContent: syncedDraftStorage.conflictContent,
+          content: syncedDraftStorage.content,
+          filePath: syncedDraftStorage.filePath,
+          githubPrNum: result.prNumber,
+          githubPrUrl: result.prUrl,
+          prBranchName: result.branchName,
+          status: result.status,
+          submittedAt: new Date(),
+          syncedMainSha: result.syncedMainSha,
+        },
+      })
     })
 
     revalidatePaths(["/draft", "/review"])
@@ -212,7 +396,7 @@ export async function submitForReviewAction(revisionId: string) {
         "Failed to create PR: the configured GitHub token cannot create branches in the Articles repo. Set GITHUB_ARTICLES_WRITE_PAT with repo write access on Vercel."
       )
     }
-    throw new Error(formatErrorMessage("Failed to create PR", error))
+    throw error
   }
 }
 
