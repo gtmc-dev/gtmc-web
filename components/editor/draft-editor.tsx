@@ -31,6 +31,7 @@ import {
 import { BrutalButton } from "../ui/brutal-button"
 import { BrutalInput } from "../ui/brutal-input"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
+import { useEditorUpload } from "@/hooks/use-editor-upload"
 
 const MarkdownPreview = dynamic(
   () =>
@@ -39,11 +40,7 @@ const MarkdownPreview = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <p className="editor-panel">
-        LOADING_PREVIEW_
-      </p>
-    ),
+    loading: () => <p className="editor-panel">LOADING_PREVIEW_</p>,
   }
 )
 
@@ -106,6 +103,32 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  type BadgeType = "info" | "error" | "progress"
+  const [badge, setBadge] = React.useState<{
+    message: string
+    type: BadgeType
+  } | null>(null)
+  const badgeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
+
+  const showBadge = (
+    message: string,
+    type: BadgeType,
+    autoClearMs?: number
+  ) => {
+    if (badgeTimeoutRef.current) clearTimeout(badgeTimeoutRef.current)
+    setBadge({ message, type })
+    if (autoClearMs) {
+      badgeTimeoutRef.current = setTimeout(() => setBadge(null), autoClearMs)
+    }
+  }
+
+  const clearBadge = () => {
+    if (badgeTimeoutRef.current) clearTimeout(badgeTimeoutRef.current)
+    setBadge(null)
+  }
   const badgeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   )
@@ -121,10 +144,13 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
       ? activeFile.conflictContent || ""
       : activeFile.content
   const duplicateFilePaths = getDuplicateDraftFilePaths(draftCollection.files)
-  const hasMissingFilePath = draftCollection.files.some((file) => !file.filePath)
+  const hasMissingFilePath = draftCollection.files.some(
+    (file) => !file.filePath
+  )
   const activeFileHasDuplicatePath = duplicateFilePaths.some(
     (filePath) =>
-      normalizeDraftFilePath(filePath) === normalizeDraftFilePath(activeFile.filePath)
+      normalizeDraftFilePath(filePath) ===
+      normalizeDraftFilePath(activeFile.filePath)
   )
   const activeFileIndex =
     draftCollection.files.findIndex((file) => file.id === activeFile.id) + 1
@@ -274,6 +300,131 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     }, 0)
   }
 
+  const insertTextAtCursor = (text: string) => {
+    if (!textareaRef.current) return
+    const start = textareaRef.current.selectionStart
+    const end = textareaRef.current.selectionEnd
+    const newContent =
+      activeFileContent.substring(0, start) +
+      text +
+      activeFileContent.substring(end)
+    updateActiveFile({ content: newContent })
+
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = textareaRef.current.selectionEnd =
+          start + text.length
+        textareaRef.current.focus()
+      }
+    }, 0)
+  }
+
+  const draftUploadAdapter = React.useCallback(
+    async (file: File) => {
+      if (!revisionId) {
+        throw new Error("Save draft first before uploading files.")
+      }
+
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("revisionId", revisionId)
+
+      const res = await fetch("/api/upload/draft", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (res.status === 413) {
+        throw new Error("File too large for upload.")
+      }
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Upload failed")
+
+      return {
+        url: data.url,
+        filename: data.filename,
+        mimeType: data.mimeType,
+        fileSize: data.fileSize,
+      }
+    },
+    [revisionId]
+  )
+
+  const { uploadFile, isUploading, isCompressing } = useEditorUpload({
+    adapter: draftUploadAdapter,
+    onInsertContent: (text: string) => {
+      if (text === "") {
+        updateActiveFile({
+          content: activeFileContent.replace(
+            /<!-- UPLOAD_PENDING_[a-f0-9-]+ -->\n?/g,
+            ""
+          ),
+        })
+      } else if (text.startsWith("<!--")) {
+        insertTextAtCursor(text)
+      } else {
+        updateActiveFile({
+          content: activeFileContent.replace(
+            /<!-- UPLOAD_PENDING_[a-f0-9-]+ -->/,
+            text
+          ),
+        })
+      }
+    },
+    onShowBadge: (message: string, type: "info" | "error" | "progress") => {
+      showBadge(message, type)
+    },
+    onClearBadge: clearBadge,
+  })
+
+  const handleUploadWithAutoSave = async (file: File) => {
+    if (!revisionId) {
+      showBadge("SAVING_DRAFT_BEFORE_UPLOAD...", "progress")
+      setIsSaving(true)
+      try {
+        const normalizedDraftCollection =
+          normalizeDraftFileCollection(draftCollection)
+        const primaryFile = getActiveDraftFile(normalizedDraftCollection)
+        const formData = new FormData()
+        formData.append("title", title)
+        formData.append("activeFileId", normalizedDraftCollection.activeFileId)
+        formData.append("content", primaryFile.content)
+        formData.append(
+          "draftFiles",
+          serializeDraftFilesPayload(normalizedDraftCollection)
+        )
+        formData.append("filePath", primaryFile.filePath)
+        if (articleId) formData.append("articleId", articleId)
+
+        const result = await saveDraftAction(formData)
+        if (result.success && result.revisionId) {
+          setDraftCollection(normalizedDraftCollection)
+          setRevisionId(result.revisionId)
+          clearBadge()
+        } else {
+          showBadge("SAVE_FAILED_ Cannot upload without saved draft.", "error")
+          return
+        }
+      } catch {
+        showBadge("SAVE_FAILED_ Cannot upload without saved draft.", "error")
+        return
+      } finally {
+        setIsSaving(false)
+      }
+    }
+    uploadFile(file)
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (isReadOnly || isUploading) return
+    const items = e.clipboardData.items
+    for (const item of Array.from(items)) {
+      if (item.type.indexOf("image") !== -1) {
+        e.preventDefault()
+        const file = item.getAsFile()
+        if (file) {
+          handleUploadWithAutoSave(file)
   const uploadAsset = async (file: File) => {
     if (isUploading || isReadOnly) {
       return
@@ -470,16 +621,12 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     }
   }
 
-  const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
-    if (isReadOnly || isUploading) {
-      return
-    }
-
-    event.preventDefault()
-
-    if (event.dataTransfer.files.length > 0) {
-      const file = event.dataTransfer.files[0]
-      uploadAsset(file)
+  const handleDrop = (e: React.DragEvent) => {
+    if (isReadOnly || isUploading) return
+    e.preventDefault()
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0]
+      handleUploadWithAutoSave(file)
     }
   }
 
@@ -488,13 +635,17 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     setIsSaving(true)
 
     try {
-      const normalizedDraftCollection = normalizeDraftFileCollection(draftCollection)
+      const normalizedDraftCollection =
+        normalizeDraftFileCollection(draftCollection)
       const primaryFile = getActiveDraftFile(normalizedDraftCollection)
       const formData = new FormData()
       formData.append("title", title)
       formData.append("activeFileId", normalizedDraftCollection.activeFileId)
       formData.append("content", primaryFile.content)
-      formData.append("draftFiles", serializeDraftFilesPayload(normalizedDraftCollection))
+      formData.append(
+        "draftFiles",
+        serializeDraftFilesPayload(normalizedDraftCollection)
+      )
       formData.append("filePath", primaryFile.filePath)
       if (revisionId) formData.append("revisionId", revisionId)
       if (articleId) formData.append("articleId", articleId)
@@ -555,7 +706,17 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
       return
     }
 
-    setIsAddFileDialogOpen(true)
+    const lastSlashIndex = activeFile.filePath.lastIndexOf("/")
+    const suggestedPath =
+      lastSlashIndex >= 0
+        ? activeFile.filePath.slice(0, lastSlashIndex + 1)
+        : ""
+    const nextFile = createDraftFile({ filePath: suggestedPath })
+
+    updateDraftCollection((current) => ({
+      activeFileId: nextFile.id,
+      files: [...current.files, nextFile],
+    }))
   }
 
   const handleRemoveFile = (fileId: string) => {
@@ -618,6 +779,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   const submitDisabled =
     isSubmittingReview ||
     isSaving ||
+    isUploading ||
     !title.trim() ||
     !revisionId ||
     hasMissingFilePath ||
@@ -694,7 +856,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
       {pendingImageInsert ? (
         <div className="border border-tech-main/30 bg-tech-main/5 p-4 backdrop-blur-sm">
           <div className="flex flex-col gap-4 lg:flex-row">
-            <div className="flex w-full max-w-xs items-start justify-center border border-tech-main/20 bg-white p-3">
+            <div className="flex w-full max-w-xs items-start justify-center border guide-line bg-white p-3">
               <img
                 src={pendingImageInsert.url}
                 alt={pendingImageInsert.altText || stripUploadPrefix(pendingImageInsert.filename)}
@@ -836,7 +998,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                         isActive
                           ? `border-tech-main bg-tech-main/10`
                           : `
-                            border-tech-main/20 bg-white/70
+                            guide-line bg-white/70
                             hover:border-tech-main/50 hover:bg-white/90
                           `
                       }
@@ -855,12 +1017,12 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                       onClick={() => handleRemoveFile(file.id)}
                       title="Remove file"
                       className={`
-                        flex min-w-[32px] shrink-0 items-center justify-center border-y border-r
+                        flex min-w-8 shrink-0 items-center justify-center border-y border-r
                         transition-colors
                         ${
                           isActive
                             ? 'border-tech-main bg-tech-main/5 text-tech-main/60 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30'
-                            : 'border-tech-main/20 bg-white/50 text-tech-main/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30'
+                            : 'guide-line bg-white/50 text-tech-main/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30'
                         }
                       `}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter">
@@ -1010,33 +1172,34 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                   onInsert={insertSyntax}
                   disabled={isReadOnly || isUploading}
                   fileUploadSlot={
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isReadOnly || isUploading}
-                      className={`
-                        h-11 min-w-[44px] flex-1 border border-transparent px-3
-                        whitespace-nowrap transition-colors select-none
-                        hover:border-white/20 hover:bg-tech-accent/20
-                        sm:h-auto sm:min-w-0 sm:flex-none sm:py-1.5
-                        ${isReadOnly || isUploading ? "" : `cursor-pointer`}
-                      `}
-                      aria-busy={isUploading}>
-                      {isCompressing ? "CMP" : isUploading ? "UPL" : "ASSET"}
-                    </button>
+                    !isReadOnly ? (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className={`
+                          h-11 min-w-11 flex-1 border border-transparent px-3
+                          transition-colors select-none
+                          hover:border-white/20 hover:bg-tech-accent/20
+                          sm:h-auto sm:min-w-0 sm:flex-none sm:py-1.5
+                          ${isUploading ? "" : "cursor-pointer"}
+                        `}
+                        aria-busy={isUploading}>
+                        {isCompressing ? "CMP" : isUploading ? "UPL" : "FILES"}
+                      </button>
+                    ) : undefined
                   }
                 />
-
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,text/plain,text/csv"
                   className="hidden"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0]
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
                     if (file) {
-                      uploadAsset(file)
-                      event.target.value = ""
+                      handleUploadWithAutoSave(file)
+                      e.target.value = ""
                     }
                   }}
                 />
@@ -1097,22 +1260,54 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                   `}
                   placeholder="ENTER CONTENT... (Use Markdown)"
                   value={activeFileContent}
-                  onChange={(e) => updateActiveFile({ content: e.target.value })}
+                  onChange={(e) =>
+                    updateActiveFile({ content: e.target.value })
+                  }
                   onPaste={handlePaste}
                   onDrop={handleDrop}
-                  onDragOver={(event) => {
-                    if (!isReadOnly) {
-                      event.preventDefault()
-                    }
+                  onDragOver={(e) => {
+                    if (!isReadOnly) e.preventDefault()
                   }}
-                  onDragEnter={(event) => {
-                    if (!isReadOnly) {
-                      event.preventDefault()
-                    }
+                  onDragEnter={(e) => {
+                    if (!isReadOnly) e.preventDefault()
                   }}
                   readOnly={isReadOnly}
                   aria-busy={isSaving}
                 />
+
+                {badge && (
+                  <div
+                    className={`
+                      absolute top-4 right-4 z-20 flex items-center gap-2 border
+                      px-3 py-1.5 font-mono text-xs shadow-sm backdrop-blur-sm
+                      ${
+                        badge.type === "error"
+                          ? "border-red-400 bg-red-900 text-red-200"
+                          : `
+                            border-tech-accent bg-tech-main text-tech-accent
+                            shadow-tech-accent/20
+                          `
+                      }
+                    `}
+                    role="status"
+                    aria-live="polite">
+                    {badge.type === "progress" && (
+                      <span className="inline-block size-2 animate-pulse bg-tech-accent" />
+                    )}
+                    {badge.type === "error" && (
+                      <span className="inline-block size-2 bg-red-400" />
+                    )}
+                    {badge.message}
+                    {badge.type === "error" && (
+                      <button
+                        type="button"
+                        onClick={clearBadge}
+                        className="ml-2 text-red-300 hover:text-red-100">
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
 
