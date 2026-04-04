@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
-import { upload } from "@vercel/blob/client"
 import { useRouter } from "next/navigation"
 
 import { saveDraftAction, submitForReviewAction } from "@/actions/article"
@@ -16,13 +15,6 @@ import {
   serializeDraftFilesPayload,
   type DraftFileCollection,
 } from "@/lib/draft-files"
-import { compressImageForUpload } from "@/lib/image-compression"
-import {
-  classifyFile,
-  isImageMime,
-  sanitizeFilename,
-  VERCEL_BODY_LIMIT_BYTES,
-} from "@/lib/file-upload"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import {
   LoadingIndicator,
@@ -58,18 +50,6 @@ interface DraftEditorProps {
 
 type BadgeType = "info" | "error" | "progress"
 
-interface PendingImageInsert {
-  altText: string
-  caption: string
-  fileId: string
-  filePath: string
-  filename: string
-  mimeType: string
-  placeholder: string
-  url: string
-  width: string
-}
-
 export function DraftEditor({ initialData }: DraftEditorProps) {
   const router = useRouter()
   const initialStatus = initialData?.status || "DRAFT"
@@ -91,44 +71,14 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   const [isAddFileDialogOpen, setIsAddFileDialogOpen] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
   const [isSubmittingReview, setIsSubmittingReview] = React.useState(false)
-  const [isUploading, setIsUploading] = React.useState(false)
-  const [isCompressing, setIsCompressing] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState<"write" | "preview">("write")
   const [badge, setBadge] = React.useState<{
     message: string
     type: BadgeType
   } | null>(null)
-  const [pendingImageInsert, setPendingImageInsert] =
-    React.useState<PendingImageInsert | null>(null)
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-
-  type BadgeType = "info" | "error" | "progress"
-  const [badge, setBadge] = React.useState<{
-    message: string
-    type: BadgeType
-  } | null>(null)
-  const badgeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  )
-
-  const showBadge = (
-    message: string,
-    type: BadgeType,
-    autoClearMs?: number
-  ) => {
-    if (badgeTimeoutRef.current) clearTimeout(badgeTimeoutRef.current)
-    setBadge({ message, type })
-    if (autoClearMs) {
-      badgeTimeoutRef.current = setTimeout(() => setBadge(null), autoClearMs)
-    }
-  }
-
-  const clearBadge = () => {
-    if (badgeTimeoutRef.current) clearTimeout(badgeTimeoutRef.current)
-    setBadge(null)
-  }
   const badgeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   )
@@ -300,25 +250,6 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     }, 0)
   }
 
-  const insertTextAtCursor = (text: string) => {
-    if (!textareaRef.current) return
-    const start = textareaRef.current.selectionStart
-    const end = textareaRef.current.selectionEnd
-    const newContent =
-      activeFileContent.substring(0, start) +
-      text +
-      activeFileContent.substring(end)
-    updateActiveFile({ content: newContent })
-
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.selectionStart = textareaRef.current.selectionEnd =
-          start + text.length
-        textareaRef.current.focus()
-      }
-    }, 0)
-  }
-
   const draftUploadAdapter = React.useCallback(
     async (file: File) => {
       if (!revisionId) {
@@ -425,196 +356,6 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
         const file = item.getAsFile()
         if (file) {
           handleUploadWithAutoSave(file)
-  const uploadAsset = async (file: File) => {
-    if (isUploading || isReadOnly) {
-      return
-    }
-
-    const classification = classifyFile(file.type)
-    if (!classification) {
-      showBadge("FILE TYPE NOT ALLOWED_", "error", 4000)
-      return
-    }
-
-    if (file.size > classification.maxBytes) {
-      const maxMB = Math.round(classification.maxBytes / (1024 * 1024))
-      showBadge(`FILE TOO LARGE_ (max ${maxMB}MB)`, "error", 4000)
-      return
-    }
-
-    setIsUploading(true)
-
-    const uploadId = crypto.randomUUID()
-    const placeholder = `<!-- DRAFT_ASSET_PENDING_${uploadId} -->`
-    const uploadFileId = activeFile.id
-    insertTextAtCursor(`${placeholder}\n`)
-
-    try {
-      let resultUrl = ""
-      let resultFilename = ""
-      let resultMimeType = file.type
-      let resultFileSize = file.size
-
-      if (file.size < VERCEL_BODY_LIMIT_BYTES) {
-        if (isImageMime(file.type)) {
-          setIsCompressing(true)
-          showBadge("COMPRESSING_IMAGE...", "progress")
-
-          const compressed = await compressImageForUpload(file)
-          setIsCompressing(false)
-
-          if (compressed.error) {
-            throw new Error(compressed.error)
-          }
-
-          showBadge("UPLOADING_IMAGE...", "progress")
-
-          const formData = new FormData()
-          formData.append("file", compressed.file)
-
-          const response = await fetch("/api/upload/article", {
-            method: "POST",
-            body: formData,
-          })
-          const data = (await response.json()) as UploadResponse
-          if (!response.ok) {
-            throw new Error(data.error || "Upload failed")
-          }
-
-          resultUrl = data.url || ""
-          resultFilename = data.filename || compressed.file.name
-          resultMimeType = data.mimeType || compressed.file.type
-          resultFileSize = data.fileSize || compressed.file.size
-        } else {
-          showBadge("UPLOADING_FILE...", "progress")
-
-          const formData = new FormData()
-          formData.append("file", file)
-
-          const response = await fetch("/api/upload/article", {
-            method: "POST",
-            body: formData,
-          })
-          const data = (await response.json()) as UploadResponse
-          if (!response.ok) {
-            throw new Error(data.error || "Upload failed")
-          }
-
-          resultUrl = data.url || ""
-          resultFilename = data.filename || file.name
-          resultMimeType = data.mimeType || file.type
-          resultFileSize = data.fileSize || file.size
-        }
-      } else {
-        showBadge("UPLOADING_ 0%", "progress")
-
-        const blobResult = await upload(sanitizeFilename(file.name, file.type), file, {
-          access: "public",
-          handleUploadUrl: "/api/upload/article/token",
-          clientPayload: JSON.stringify({
-            mimeType: file.type,
-          }),
-          onUploadProgress: ({ percentage }) => {
-            showBadge(`UPLOADING_ ${Math.round(percentage)}%`, "progress")
-          },
-        })
-
-        showBadge("COMMITTING_TO_ARTICLES...", "progress")
-
-        const commitResponse = await fetch("/api/upload/article/commit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            blobUrl: blobResult.url,
-            filename: file.name,
-            mimeType: file.type,
-          }),
-        })
-        const commitData = (await commitResponse.json()) as UploadResponse
-        if (!commitResponse.ok) {
-          throw new Error(commitData.error || "Upload failed")
-        }
-
-        resultUrl = commitData.url || ""
-        resultFilename = commitData.filename || file.name
-        resultMimeType = commitData.mimeType || file.type
-        resultFileSize = commitData.fileSize || file.size
-      }
-
-      if (isImageMime(resultMimeType)) {
-        setPendingImageInsert({
-          altText: stripUploadPrefix(resultFilename),
-          caption: "",
-          fileId: uploadFileId,
-          filePath:
-            draftCollection.files.find((draftFile) => draftFile.id === uploadFileId)
-              ?.filePath || activeFile.filePath,
-          filename: resultFilename,
-          mimeType: resultMimeType,
-          placeholder,
-          url: resultUrl,
-          width: "",
-        })
-        showBadge("IMAGE_READY_FOR_INSERT_", "info", 4000)
-      } else {
-        replaceTextInFile(
-          uploadFileId,
-          `${placeholder}\n`,
-          `${buildAssetLink(resultFilename, resultUrl, resultFileSize)}\n`
-        )
-        clearBadge()
-      }
-    } catch (error) {
-      replaceTextInFile(uploadFileId, `${placeholder}\n`, "")
-      const message = error instanceof Error ? error.message : "Upload failed"
-      showBadge(`UPLOAD FAILED_ ${message}`, "error", 5000)
-    } finally {
-      setIsUploading(false)
-      setIsCompressing(false)
-    }
-  }
-
-  const finalizePendingImageInsert = () => {
-    if (!pendingImageInsert) {
-      return
-    }
-
-    const snippet = buildImageSnippet(pendingImageInsert)
-    replaceTextInFile(
-      pendingImageInsert.fileId,
-      `${pendingImageInsert.placeholder}\n`,
-      `${snippet}\n`
-    )
-    setPendingImageInsert(null)
-    clearBadge()
-  }
-
-  const cancelPendingImageInsert = () => {
-    if (!pendingImageInsert) {
-      return
-    }
-
-    replaceTextInFile(
-      pendingImageInsert.fileId,
-      `${pendingImageInsert.placeholder}\n`,
-      ""
-    )
-    setPendingImageInsert(null)
-    clearBadge()
-  }
-
-  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    if (isReadOnly || isUploading) {
-      return
-    }
-
-    const items = event.clipboardData.items
-    for (const item of Array.from(items)) {
-      if (item.type.includes("image")) {
-        event.preventDefault()
-        const file = item.getAsFile()
-        if (file) {
-          uploadAsset(file)
         }
         break
       }
@@ -738,10 +479,6 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
         files: remainingFiles,
       }
     })
-
-    if (pendingImageInsert?.fileId === fileId) {
-      setPendingImageInsert(null)
-    }
   }
 
   const handleCreateDraftFile = ({
@@ -853,93 +590,6 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
         </div>
       ) : null}
 
-      {pendingImageInsert ? (
-        <div className="border border-tech-main/30 bg-tech-main/5 p-4 backdrop-blur-sm">
-          <div className="flex flex-col gap-4 lg:flex-row">
-            <div className="flex w-full max-w-xs items-start justify-center border guide-line bg-white p-3">
-              <img
-                src={pendingImageInsert.url}
-                alt={pendingImageInsert.altText || stripUploadPrefix(pendingImageInsert.filename)}
-                className="max-h-56 max-w-full object-contain"
-              />
-            </div>
-            <div className="flex-1 space-y-4">
-              <div>
-                <p className="font-mono text-sm tracking-widest text-tech-main uppercase">
-                  IMAGE_INSERT_EDITOR_
-                </p>
-                <p className="mt-1 font-mono text-xs text-tech-main/60 uppercase">
-                  Target file: {pendingImageInsert.filePath || "CURRENT_FILE"}
-                </p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="section-label" htmlFor="draft-image-alt">
-                    ALT_TEXT_
-                  </label>
-                  <BrutalInput
-                    id="draft-image-alt"
-                    value={pendingImageInsert.altText}
-                    onChange={(event) =>
-                      setPendingImageInsert((current) =>
-                        current
-                          ? { ...current, altText: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="section-label" htmlFor="draft-image-width">
-                    WIDTH_
-                  </label>
-                  <BrutalInput
-                    id="draft-image-width"
-                    placeholder="e.g. 640 or 80%"
-                    value={pendingImageInsert.width}
-                    onChange={(event) =>
-                      setPendingImageInsert((current) =>
-                        current
-                          ? { ...current, width: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="section-label" htmlFor="draft-image-caption">
-                  CAPTION_
-                </label>
-                <BrutalInput
-                  id="draft-image-caption"
-                  placeholder="Optional caption"
-                  value={pendingImageInsert.caption}
-                  onChange={(event) =>
-                    setPendingImageInsert((current) =>
-                      current
-                        ? { ...current, caption: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <BrutalButton type="button" variant="primary" onClick={finalizePendingImageInsert}>
-                  INSERT IMAGE
-                </BrutalButton>
-                <BrutalButton type="button" variant="secondary" onClick={cancelPendingImageInsert}>
-                  REMOVE PLACEHOLDER
-                </BrutalButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       <div
         className="
           grid gap-4
@@ -958,7 +608,9 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
               <p className="font-mono text-xs tracking-widest text-tech-main uppercase">
                 FILES_[{draftCollection.files.length}]
               </p>
-              <p className="truncate font-mono text-[11px] text-tech-main/60 uppercase" title="SAVE_AND_REVIEW_APPLY_TO_ALL_FILES">
+              <p
+                className="truncate font-mono text-[11px] text-tech-main/60 uppercase"
+                title="SAVE_AND_REVIEW_APPLY_TO_ALL_FILES">
                 SAVE_AND_REVIEW_APPLY_TO_ALL_FILES
               </p>
             </div>
@@ -1021,11 +673,20 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                         transition-colors
                         ${
                           isActive
-                            ? 'border-tech-main bg-tech-main/5 text-tech-main/60 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30'
-                            : 'guide-line bg-white/50 text-tech-main/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30'
+                            ? "border-tech-main bg-tech-main/5 text-tech-main/60 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30"
+                            : "guide-line bg-white/50 text-tech-main/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30"
                         }
                       `}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="square"
+                        strokeLinejoin="miter"
+                        aria-label="Remove file">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                       </svg>
@@ -1386,62 +1047,8 @@ interface UploadResponse {
   url?: string
 }
 
-function buildAssetLink(filename: string, url: string, fileSize: number) {
-  const label = stripUploadPrefix(filename)
-  const sizeSuffix = fileSize > 0 ? ` (${formatFileSize(fileSize)})` : ""
-  return `[${label}${sizeSuffix}](${url})`
-}
-
-function buildImageSnippet(asset: PendingImageInsert) {
-  const altText = asset.altText.trim() || stripUploadPrefix(asset.filename)
-  const caption = asset.caption.trim()
-  const width = asset.width.trim()
-
-  if (!caption && !width) {
-    return `![${escapeMarkdownText(altText)}](${asset.url})`
-  }
-
-  const widthMarkup = width
-    ? /^\d+$/.test(width)
-      ? ` width="${width}"`
-      : ` style="width: ${escapeHtmlAttribute(width)};"`
-    : ""
-
-  return [
-    "<figure>",
-    `  <img src="${asset.url}" alt="${escapeHtmlAttribute(altText)}"${widthMarkup} />`,
-    ...(caption ? [`  <figcaption>${escapeHtmlText(caption)}</figcaption>`] : []),
-    "</figure>",
-  ].join("\n")
-}
-
-function stripUploadPrefix(filename: string) {
-  return filename.replace(/^\d+-/, "")
-}
-
 function getParentFolderPath(filePath: string) {
   const normalized = normalizeDraftFilePath(filePath)
   const lastSlashIndex = normalized.lastIndexOf("/")
   return lastSlashIndex >= 0 ? normalized.slice(0, lastSlashIndex) : ""
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function escapeMarkdownText(value: string) {
-  return value.replace(/[\[\]]/g, "\\$&")
-}
-
-function escapeHtmlText(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-}
-
-function escapeHtmlAttribute(value: string) {
-  return escapeHtmlText(value).replace(/"/g, "&quot;")
 }
