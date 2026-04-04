@@ -48,6 +48,7 @@ export async function mergePRAction(prNumber: number) {
       repo,
       pull_number: prNumber,
     })
+    revalidatePath("/draft")
     revalidatePath("/review")
     return { success: true }
   } catch (error) {
@@ -71,6 +72,7 @@ export async function closePRAction(prNumber: number) {
       pull_number: prNumber,
       state: "closed",
     })
+    revalidatePath("/draft")
     revalidatePath("/review")
     return { success: true }
   } catch (error) {
@@ -116,7 +118,9 @@ export async function resolveConflictAction(
           files: storedDraftFiles.files.map((file) => ({
             ...file,
             content:
-              file.id === storedDraftFiles.activeFileId ? content : file.content,
+              file.id === storedDraftFiles.activeFileId
+                ? content
+                : file.content,
           })),
         })
       : null)
@@ -156,11 +160,13 @@ export async function resolveConflictAction(
       })
       const rebasedDraftStorage = serializeDraftFilesForStorage({
         activeFileId: storedDraftFiles.activeFileId,
-        files: [{
-          ...storedFile,
-          content: result.finalContent,
-          conflictContent: undefined,
-        }],
+        files: [
+          {
+            ...storedFile,
+            content: result.finalContent,
+            conflictContent: undefined,
+          },
+        ],
       })
       await prisma.revision.update({
         where: { id: linkedDraft.id },
@@ -179,10 +185,12 @@ export async function resolveConflictAction(
     } else if (result.status === "CONFLICT") {
       const conflictDraftStorage = serializeDraftFilesForStorage({
         activeFileId: storedDraftFiles.activeFileId,
-        files: [{
-          ...storedFile,
-          conflictContent: result.conflictContent,
-        }],
+        files: [
+          {
+            ...storedFile,
+            conflictContent: result.conflictContent,
+          },
+        ],
       })
       await prisma.revision.update({
         where: { id: linkedDraft.id },
@@ -269,7 +277,9 @@ export async function submitWithRebaseAction(revisionId: string) {
   })
 
   if (storedDraftFiles.files.length !== 1) {
-    throw new Error("Fine-grained rebase is only available for single-file drafts")
+    throw new Error(
+      "Fine-grained rebase is only available for single-file drafts"
+    )
   }
 
   const draftFile = getActiveDraftFile(storedDraftFiles)
