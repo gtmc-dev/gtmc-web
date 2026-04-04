@@ -16,6 +16,7 @@ import {
   normalizeDraftFileCollection,
   serializeDraftFilesForStorage,
 } from "@/lib/draft-files"
+import { deleteDraftAsset } from "@/lib/draft-storage"
 import { requireAuth } from "@/lib/auth-helpers"
 import { formatErrorMessage } from "@/lib/error-handling"
 import { getGitHubWriteToken } from "@/lib/github/articles-repo"
@@ -237,6 +238,31 @@ export async function deleteDraftAction(revisionId: string) {
     existing.status === "SYNC_CONFLICT"
   ) {
     throw new Error("Cannot delete a draft after a PR has been opened")
+  }
+
+  const draftAssets = await (prisma as any).draftAsset.findMany({
+    where: { revisionId },
+  })
+
+  for (const asset of draftAssets) {
+    try {
+      await deleteDraftAsset(asset.storagePath)
+      await (prisma as any).draftAsset.update({
+        where: { id: asset.id },
+        data: { status: "deleted", deletedAt: new Date() },
+      })
+    } catch (error) {
+      await (prisma as any).draftAsset.update({
+        where: { id: asset.id },
+        data: {
+          status: "cleanup-failed",
+          cleanupAttempts: { increment: 1 },
+          cleanupFailedAt: new Date(),
+          cleanupFailureReason:
+            error instanceof Error ? error.message : "Unknown error",
+        },
+      })
+    }
   }
 
   await prisma.revision.delete({
