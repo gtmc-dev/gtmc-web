@@ -237,12 +237,12 @@ export function DraftFileSourceDialog({
         </div>
 
         <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[20rem_minmax(0,1fr)]">
-          <aside className="min-h-0 border-r border-tech-main/20 bg-tech-main/5">
-            <div className="border-b border-tech-main/20 px-4 py-3 font-mono text-xs tracking-widest text-tech-main uppercase">
+          <aside className="flex min-h-0 flex-col border-r border-tech-main/20 bg-tech-main/5">
+            <div className="shrink-0 border-b border-tech-main/20 px-4 py-3 font-mono text-xs tracking-widest text-tech-main uppercase">
               DESTINATION_TREE_
             </div>
 
-            <div className="overflow-y-auto p-3">
+            <div className="flex-1 overflow-y-auto p-3">
               {isLoadingTree ? (
                 <p className="font-mono text-xs text-tech-main/60">LOADING_TREE_</p>
               ) : (
@@ -430,17 +430,24 @@ function TreeNode({
   const isSelectableFile = mode === "repo"
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1">
-        {node.children.length > 0 ? (
+    <div className="space-y-0.5">
+      <div className="group relative flex items-center">
+        {node.isFolder ? (
           <button
             type="button"
             onClick={() => onTogglePath(node.path)}
-            className="flex size-7 items-center justify-center border border-tech-main/20 bg-white/70 font-mono text-xs text-tech-main hover:bg-white">
-            {isExpanded ? "-" : "+"}
+            className="
+              flex h-8 w-6 shrink-0 items-center justify-center font-mono
+              text-[10px] text-tech-main/50 transition-colors hover:text-tech-main
+            ">
+            {isExpanded ? "▼" : "▶"}
           </button>
         ) : (
-          <span className="inline-flex size-7 items-center justify-center font-mono text-xs text-tech-main/40">
+          <span
+            className="
+              inline-flex h-8 w-6 shrink-0 items-center justify-center font-mono
+              text-[10px] text-tech-main/20
+            ">
             ·
           </span>
         )}
@@ -458,32 +465,32 @@ function TreeNode({
             }
           }}
           className={`
-            flex min-h-9 flex-1 items-center border px-3 py-2 text-left
-            font-mono text-xs tracking-wide transition-colors
+            flex min-h-8 flex-1 items-center px-1 text-left font-mono
+            text-[14px] tracking-wide transition-colors
             ${
               node.isFolder
                 ? isFolderSelected
-                  ? `border-tech-main bg-tech-main/10 text-tech-main`
-                  : `border-tech-main/20 bg-white/60 text-tech-main/70`
+                  ? `bg-tech-main/10 font-bold text-tech-main`
+                  : `font-bold text-tech-main/80`
                 : isFileSelected
-                  ? `border-tech-main bg-tech-main/10 text-tech-main`
-                  : `border-tech-main/20 bg-white/60 text-tech-main/70`
+                  ? `bg-tech-main/10 font-bold text-tech-main`
+                  : `text-tech-main/70`
             }
             ${
               (node.isFolder && isSelectableFolder) ||
               (!node.isFolder && isSelectableFile)
-                ? `hover:border-tech-main/50 hover:bg-white`
+                ? `hover:bg-tech-main/5 hover:text-tech-main`
                 : `cursor-default opacity-60`
             }
           `}>
           <span className="truncate">
-            {node.isFolder ? `[DIR] ${node.title}` : node.title}
+            {node.title}
           </span>
         </button>
       </div>
 
       {node.children.length > 0 && isExpanded ? (
-        <div className="ml-4 space-y-1 border-l border-tech-main/10 pl-2">
+        <div className="ml-3 border-l border-tech-main/10 pl-2">
           {node.children.map((child) => (
             <TreeNode
               key={child.id}
