@@ -2,6 +2,7 @@ import { remark } from "remark"
 import stripMarkdown from "strip-markdown"
 
 export * from "@/lib/markdown/components"
+export * from "@/lib/markdown/markdown-renderer"
 export * from "@/lib/markdown/processor"
 
 /**
