@@ -9,7 +9,7 @@ interface ArticleMetadataSimpleProps {
   wordCount: number
   readingTime: number
   isAdvanced?: boolean
-  bannerUrl?: string | null
+  bannerPath?: string | null
   bannerAlt?: string
 }
 
@@ -19,7 +19,7 @@ export function ArticleMetadataSimple({
   wordCount,
   readingTime,
   isAdvanced,
-  bannerUrl,
+  bannerPath,
   bannerAlt,
 }: ArticleMetadataSimpleProps) {
   return (
@@ -92,7 +92,12 @@ export function ArticleMetadataSimple({
         </div>
       </div>
 
-      {bannerUrl && <ArticleBanner src={bannerUrl} alt={bannerAlt || title} />}
+      {bannerPath && (
+        <ArticleBanner
+          src={`/api/assets/banner/${bannerPath}`}
+          alt={bannerAlt || title}
+        />
+      )}
     </header>
   )
 }

@@ -241,6 +241,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   const bannerSrc = (data.banner as { src?: string } | undefined)?.src
   const bannerUrl = resolveBannerUrl(bannerSrc, target.filePath, siteUrl)
+  const bannerPath = resolveBannerPath(bannerSrc, target.filePath)
   const bannerAlt =
     (data.banner as { alt?: string } | undefined)?.alt || articleTitle
 
@@ -341,7 +342,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           readingTime={readingTime}
           editPath={editPath}
           isAdvanced={isAdvanced}
-          bannerUrl={bannerUrl}
+          bannerPath={bannerPath}
           bannerAlt={bannerAlt}
         />
       ) : (
@@ -351,7 +352,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           wordCount={wordCount}
           readingTime={readingTime}
           isAdvanced={isAdvanced}
-          bannerUrl={bannerUrl}
+          bannerPath={bannerPath}
           bannerAlt={bannerAlt}
         />
       )}
@@ -599,4 +600,15 @@ function resolveBannerUrl(
   const currentDir = path.dirname("/" + filePath).replace(/^\/+/, "")
   const resolved = path.join(currentDir, bannerSrc).replace(/\\/g, "/")
   return `${siteUrl}/api/assets?path=${encodeURIComponent(resolved)}`
+}
+
+function resolveBannerPath(
+  bannerSrc: string | undefined,
+  filePath: string
+): string | null {
+  if (!bannerSrc || typeof bannerSrc !== "string" || !bannerSrc.trim()) {
+    return null
+  }
+  const currentDir = path.dirname("/" + filePath).replace(/^\/+/, "")
+  return path.join(currentDir, bannerSrc).replace(/\\/g, "/")
 }

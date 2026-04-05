@@ -49,7 +49,7 @@ interface ArticleMetadataProps {
   readingTime: number
   editPath: string
   isAdvanced?: boolean
-  bannerUrl?: string | null
+  bannerPath?: string | null
   bannerAlt?: string
 }
 
@@ -65,7 +65,7 @@ export function ArticleMetadata({
   readingTime,
   editPath,
   isAdvanced,
-  bannerUrl,
+  bannerPath,
   bannerAlt,
 }: ArticleMetadataProps) {
   const router = useRouter()
@@ -339,7 +339,12 @@ export function ArticleMetadata({
         </div>
       </div>
 
-      {bannerUrl && <ArticleBanner src={bannerUrl} alt={bannerAlt || title} />}
+      {bannerPath && (
+        <ArticleBanner
+          src={`/api/assets/banner/${bannerPath}`}
+          alt={bannerAlt || title}
+        />
+      )}
     </header>
   )
 }
