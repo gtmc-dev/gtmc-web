@@ -159,7 +159,6 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
   const [treeData, setTreeData] = useState<TreeNode[]>(tree)
   const [isTreeLoading, setIsTreeLoading] = useState(tree.length === 0)
   const [sidebarHidden, setSidebarHidden] = useState(false)
-  const wrapperRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const desktopSidebarRef = useRef<SidebarClientHandle>(null)
   const floatingCardSidebarRef = useRef<SidebarClientHandle>(null)
@@ -169,7 +168,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
       if (localStorage.getItem(SIDEBAR_HIDDEN_KEY) === "true") {
         setSidebarHidden(true)
       }
-    } catch {}
+    } catch { }
   }, [])
 
   const toggleSidebarHidden = () => {
@@ -177,7 +176,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
       const next = !prev
       try {
         localStorage.setItem(SIDEBAR_HIDDEN_KEY, String(next))
-      } catch {}
+      } catch { }
       return next
     })
   }
@@ -360,10 +359,9 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           <div
             className={`
               grid transition-all duration-300 ease-out
-              ${
-                isOpen && !isStuck
-                  ? "grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0"
+              ${isOpen && !isStuck
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
               }
             `}>
             <div className="overflow-hidden">
@@ -471,7 +469,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
                   aria-expanded={!sidebarHidden}
                   data-sidebar-toggle=""
                   className="
-                    absolute top-0 -left-[6px] z-40 flex h-8 w-[12px]
+                    absolute top-0 -left-1.5 z-40 flex h-8 w-3
                     -translate-y-1/2 cursor-pointer items-center justify-center
                     border guide-line bg-tech-bg text-tech-main/40
                     transition-[opacity,color,background-color] duration-300
@@ -494,17 +492,16 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           className={`
             relative my-6 w-full flex-1 transition-all duration-300
             ease-[cubic-bezier(0.16,1,0.3,1)]
-            ${
-              sidebarHidden
-                ? `
-                  md:max-w-4xl
-                  xl:max-w-5xl
-                  [1920px]:max-w-7xl
+            ${sidebarHidden
+              ? `
+                  md:max-w-3xl
+                  xl:max-w-3xl
+                  [1920px]:max-w-4xl
                 `
-                : `
+              : `
                   md:max-w-2xl
                   xl:max-w-3xl
-                  [1920px]:max-w-5xl
+                  [1920px]:max-w-4xl
                 `
             }
           `}>
