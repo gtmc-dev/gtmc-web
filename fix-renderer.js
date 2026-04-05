@@ -1,5 +1,5 @@
-const fs = require('fs');
-let code = fs.readFileSync('litematica-renderer/src/renderer.ts', 'utf8');
+const fs = require("fs")
+let code = fs.readFileSync("litematica-renderer/src/renderer.ts", "utf8")
 
 const newFunc = `  private async _getGeometryAndMaterialsForBlock(blockStateName: string): Promise<{ geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[] }> {
     // blockStateName might be "minecraft:oak_log[axis=y]"
@@ -43,13 +43,19 @@ const newFunc = `  private async _getGeometryAndMaterialsForBlock(blockStateName
 
     return { geometry, material };
   }
-`;
+`
 
-code = code.replace(/  public async load\(/, newFunc + '\n  public async load(');
+code = code.replace(/  public async load\(/, newFunc + "\n  public async load(")
 
-code = code.replace(/const material = await this\._getMaterialsForBlock\(blockStateName\);\s*\n\s*\/\/ ÀûÓÃ InstancedMesh °´ palette/g, 'const { geometry, material } = await this._getGeometryAndMaterialsForBlock(blockStateName);\n\n        // ÀûÓÃ InstancedMesh °´ palette');
+code = code.replace(
+  /const material = await this\._getMaterialsForBlock\(blockStateName\);\s*\n\s*\/\/ ï¿½ï¿½ï¿½ï¿½ InstancedMesh ï¿½ï¿½ palette/g,
+  "const { geometry, material } = await this._getGeometryAndMaterialsForBlock(blockStateName);\n\n        // ï¿½ï¿½ï¿½ï¿½ InstancedMesh ï¿½ï¿½ palette"
+)
 
 // Also swap standard THREE.InstancedMesh(this.boxGeometry to dynamic geometry
-code = code.replace(/new THREE\.InstancedMesh\(this\.boxGeometry, material, count\);/g, 'new THREE.InstancedMesh(geometry, material, count);');
+code = code.replace(
+  /new THREE\.InstancedMesh\(this\.boxGeometry, material, count\);/g,
+  "new THREE.InstancedMesh(geometry, material, count);"
+)
 
-fs.writeFileSync('litematica-renderer/src/renderer.ts', code);
+fs.writeFileSync("litematica-renderer/src/renderer.ts", code)

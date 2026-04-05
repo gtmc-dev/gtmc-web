@@ -462,7 +462,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
               </div>
             </aside>
 
-            <div className="relative w-0 h-full">
+            <div className="relative h-full w-0">
               <div className="sticky top-[50vh] overflow-visible">
                 <button
                   type="button"
@@ -471,13 +471,17 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
                   aria-expanded={!sidebarHidden}
                   data-sidebar-toggle=""
                   className="
-                    absolute -left-[6px] top-0 z-40 flex h-8 w-[12px] -translate-y-1/2 cursor-pointer
-                    items-center justify-center border guide-line bg-tech-bg
-                    text-tech-main/40 transition-[opacity,color,background-color] duration-300
+                    absolute top-0 -left-[6px] z-40 flex h-8 w-[12px]
+                    -translate-y-1/2 cursor-pointer items-center justify-center
+                    border guide-line bg-tech-bg text-tech-main/40
+                    transition-[opacity,color,background-color] duration-300
                     ease-[cubic-bezier(0.16,1,0.3,1)]
                     hover:bg-tech-main/5 hover:text-tech-main
                   ">
-                  <span className="text-[8px] leading-none font-bold select-none">
+                  <span
+                    className="
+                    text-[8px] leading-none font-bold select-none
+                  ">
                     {sidebarHidden ? "▶" : "◀"}
                   </span>
                 </button>
@@ -488,11 +492,20 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
 
         <main
           className={`
-            relative my-6 w-full flex-1 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+            relative my-6 w-full flex-1 transition-all duration-300
+            ease-[cubic-bezier(0.16,1,0.3,1)]
             ${
               sidebarHidden
-                ? "md:max-w-4xl xl:max-w-5xl [1920px]:max-w-7xl"
-                : "md:max-w-2xl xl:max-w-3xl [1920px]:max-w-5xl"
+                ? `
+                  md:max-w-4xl
+                  xl:max-w-5xl
+                  [1920px]:max-w-7xl
+                `
+                : `
+                  md:max-w-2xl
+                  xl:max-w-3xl
+                  [1920px]:max-w-5xl
+                `
             }
           `}>
           {children}

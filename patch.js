@@ -1,40 +1,55 @@
-const fs = require('fs');
+const fs = require("fs")
 
-let code = fs.readFileSync('litematica-renderer/src/renderer.ts', 'utf8');
+let code = fs.readFileSync("litematica-renderer/src/renderer.ts", "utf8")
 
 // First replace the signature of _resolveGeometryAndMaterialsFromModel
-code = code.replace(/private async _resolveGeometryAndMaterialsFromModel\(targetModelName: string, fallbackName: string\): Promise<\{ geometry: THREE\.BufferGeometry, material: THREE\.Material \| THREE\.Material\[\] \}>/,
+code = code.replace(
+  /private async _resolveGeometryAndMaterialsFromModel\(targetModelName: string, fallbackName: string\): Promise<\{ geometry: THREE\.BufferGeometry, material: THREE\.Material \| THREE\.Material\[\] \}>/,
   `private async _resolveGeometryAndMaterialsFromModel(targetModelName: string, fallbackName: string, elementsList: any[] = [], overrideTintColor: number | null = null): Promise<{ geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[] }>`
-);
+)
 
 // But first, change how materials are initialized
-code = code.replace(/color: tex \? 0xffffff : 0xcccccc,/g, 'color: tex ? (overrideTintColor !== null ? overrideTintColor : 0xffffff) : 0xcccccc,');
+code = code.replace(
+  /color: tex \? 0xffffff : 0xcccccc,/g,
+  "color: tex ? (overrideTintColor !== null ? overrideTintColor : 0xffffff) : 0xcccccc,"
+)
 
 // Allow multiple merged geometries array to come from param
 // search for: if (!elements || elements.length === 0) {
-code = code.replace(/if \(\!elements \|\| elements\.length === 0\) \{/g, `if (elementsList && elementsList.length > 0) elements = elementsList;\n    if (!elements || elements.length === 0) {`);
-
+code = code.replace(
+  /if \(\!elements \|\| elements\.length === 0\) \{/g,
+  `if (elementsList && elementsList.length > 0) elements = elementsList;\n    if (!elements || elements.length === 0) {`
+)
 
 // Map rotations properly on merged elements
-code = code.replace(/const \[fX, fY, fZ\] = element\.from \|\| \[0,0,0\];/g, `const [fX, fY, fZ] = element.from || [0,0,0];\n      const rxPart = element.rx || 0;\n      const ryPart = element.ry || 0;`);
+code = code.replace(
+  /const \[fX, fY, fZ\] = element\.from \|\| \[0,0,0\];/g,
+  `const [fX, fY, fZ] = element.from || [0,0,0];\n      const rxPart = element.rx || 0;\n      const ryPart = element.ry || 0;`
+)
 
 // Inside elements apply part rotation
-code = code.replace(/if \(axis === 'z'\) subGeom\.rotateZ\(angle \* Math\.PI \/ 180\);\n      \}/g, `if (axis === 'z') subGeom.rotateZ(angle * Math.PI / 180);\n      }\n\n      if (rxPart !== 0) subGeom.rotateX(rxPart * Math.PI / 180);\n      if (ryPart !== 0) subGeom.rotateY(-ryPart * Math.PI / 180);`);
-
+code = code.replace(
+  /if \(axis === 'z'\) subGeom\.rotateZ\(angle \* Math\.PI \/ 180\);\n      \}/g,
+  `if (axis === 'z') subGeom.rotateZ(angle * Math.PI / 180);\n      }\n\n      if (rxPart !== 0) subGeom.rotateX(rxPart * Math.PI / 180);\n      if (ryPart !== 0) subGeom.rotateY(-ryPart * Math.PI / 180);`
+)
 
 // Fix the "BufferGeometryUtils merge". Since we want to merge them manually without utils without introducing bugs... Wait, Litematica blocks instances, but standard geometries can be merged by manually copying position buffer? No, if we do not have Utils, we can just push all geometries and create ONE big BufferGeometry?! Actually BufferGeometryUtils is built into Three `examples/jsm/utils/BufferGeometryUtils.js`.
 // Let's check if we can import it.
-if (!code.includes('BufferGeometryUtils')) {
-  code = `import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';\n` + code;
+if (!code.includes("BufferGeometryUtils")) {
+  code =
+    `import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';\n` +
+    code
 }
 
 // Replace the simple return finalGeometry logic
-code = code.replace(/const finalGeometry = mergedGeometries\.length > 0 \? mergedGeometries\[0\] : this\.boxGeometry;/g, `const finalGeometry = mergedGeometries.length > 1 ? BufferGeometryUtils.mergeGeometries(mergedGeometries) : (mergedGeometries.length === 1 ? mergedGeometries[0] : this.boxGeometry);`);
-
-
+code = code.replace(
+  /const finalGeometry = mergedGeometries\.length > 0 \? mergedGeometries\[0\] : this\.boxGeometry;/g,
+  `const finalGeometry = mergedGeometries.length > 1 ? BufferGeometryUtils.mergeGeometries(mergedGeometries) : (mergedGeometries.length === 1 ? mergedGeometries[0] : this.boxGeometry);`
+)
 
 // Replace _getGeometryAndMaterialsForBlock entirely
-const oldFuncRegex = /private async _getGeometryAndMaterialsForBlock[\s\S]+?return \{ geometry, material \};\n  \}/;
+const oldFuncRegex =
+  /private async _getGeometryAndMaterialsForBlock[\s\S]+?return \{ geometry, material \};\n  \}/
 
 const newFunc = `private async _getGeometryAndMaterialsForBlock(blockStateName: string): Promise<{ geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[] }> {
     const parsedBlock = blockStateName.match(/minecraft:([^[]+)(?:\\[(.*)\\])?/);
@@ -158,8 +173,8 @@ const newFunc = `private async _getGeometryAndMaterialsForBlock(blockStateName: 
     if (ry !== 0) geometry.rotateY(THREE.MathUtils.degToRad(-ry));
 
     return { geometry, material };
-  }`;
+  }`
 
-code = code.replace(oldFuncRegex, newFunc);
+code = code.replace(oldFuncRegex, newFunc)
 
-fs.writeFileSync('litematica-renderer/src/renderer.ts', code);
+fs.writeFileSync("litematica-renderer/src/renderer.ts", code)

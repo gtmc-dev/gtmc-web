@@ -37,7 +37,7 @@ export function useToc(pathname: string): TocItem[] {
     if (typeof document === "undefined") return
 
     // Initially clear or set to whatever is in DOM right now
-    // (If Next.js hasn't updated DOM yet, this might be old headings, 
+    // (If Next.js hasn't updated DOM yet, this might be old headings,
     // but the observer will catch the new ones).
     setToc(scanHeadings())
 

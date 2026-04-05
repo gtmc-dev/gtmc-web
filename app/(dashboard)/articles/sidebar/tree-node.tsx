@@ -163,9 +163,9 @@ export function SidebarTree({
                       {item.isAdvanced && (
                         <span
                           className="
-                            mx-1 inline-block shrink-0 px-[3px] 
-                            align-middle font-mono text-[9px] tracking-widest
-                            text-white bg-[#4c5b96] font-bold select-none
+                            mx-1 inline-block shrink-0 bg-[#4c5b96] px-[3px]
+                            align-middle font-mono text-[9px] font-bold
+                            tracking-widest text-white select-none
                           ">
                           ADVANCED
                         </span>
@@ -192,24 +192,43 @@ export function SidebarTree({
                             <li
                               key={h2.id}
                               className={`
-                                -ml-px border-l py-1.5 pl-4 text-[13px] transition-all duration-200
+                                -ml-px border-l py-1.5 pl-4 text-[13px]
+                                transition-all duration-200
                                 md:text-[13px]
                                 ${
                                   h2.id === activeHeadingId
-                                    ? "border-tech-main font-medium text-tech-main"
-                                    : "border-transparent text-tech-main/60 hover:border-tech-main/30 hover:text-tech-main"
+                                    ? `
+                                      border-tech-main font-medium
+                                      text-tech-main
+                                    `
+                                    : `
+                                      border-transparent text-tech-main/60
+                                      hover:border-tech-main/30
+                                      hover:text-tech-main
+                                    `
                                 }
                               `}>
                               <Link
                                 href={`#${h2.id}`}
                                 onClick={() => onNavigate?.()}
-                                className="block wrap-break-word leading-snug">
+                                className="block leading-snug wrap-break-word">
                                 {item.isAdvanced && (
-                                  <span className="mr-1.5 text-[6px] text-[#4c5b96] align-middle">
+                                  <span
+                                    className="
+                                    mr-1.5 align-middle text-[6px]
+                                    text-[#4c5b96]
+                                  ">
                                     ■
                                   </span>
                                 )}
-                                <span className={h2.id === activeHeadingId ? "font-semibold" : "opacity-90"}>
+                                <span
+                                  className={
+                                    h2.id === activeHeadingId
+                                      ? `
+                                  font-semibold
+                                `
+                                      : `opacity-90`
+                                  }>
                                   {h2.text}
                                 </span>
                               </Link>
