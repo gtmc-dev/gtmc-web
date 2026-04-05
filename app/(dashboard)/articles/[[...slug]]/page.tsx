@@ -241,6 +241,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   const bannerSrc = (data.banner as { src?: string } | undefined)?.src
   const bannerUrl = resolveBannerUrl(bannerSrc, target.filePath, siteUrl)
+  const bannerAlt =
+    (data.banner as { alt?: string } | undefined)?.alt || articleTitle
 
   const techArticleJsonLd: {
     "@context": "https://schema.org"
@@ -339,6 +341,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           readingTime={readingTime}
           editPath={editPath}
           isAdvanced={isAdvanced}
+          bannerUrl={bannerUrl}
+          bannerAlt={bannerAlt}
         />
       ) : (
         <ArticleMetadataSimple
@@ -347,6 +351,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           wordCount={wordCount}
           readingTime={readingTime}
           isAdvanced={isAdvanced}
+          bannerUrl={bannerUrl}
+          bannerAlt={bannerAlt}
         />
       )}
 
