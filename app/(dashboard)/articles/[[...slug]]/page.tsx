@@ -1,3 +1,4 @@
+import path from "path"
 import ReactMarkdown from "react-markdown"
 import { Suspense } from "react"
 import "katex/dist/katex.min.css"
@@ -121,6 +122,11 @@ export async function generateMetadata({
       data.description as string | undefined
     )
 
+    const bannerSrc = (data.banner as { src?: string } | undefined)?.src
+    const bannerUrl = resolveBannerUrl(bannerSrc, target.filePath, siteUrl)
+    const bannerAlt =
+      (data.banner as { alt?: string } | undefined)?.alt || pageTitle
+
     return {
       title: pageTitle,
       description,
@@ -134,10 +140,10 @@ export async function generateMetadata({
         url: canonicalUrl,
         images: [
           {
-            url: `${siteUrl}/og-image.png`,
+            url: bannerUrl ?? `${siteUrl}/og-image.png`,
             width: 1200,
             height: 630,
-            alt: pageTitle,
+            alt: bannerUrl ? bannerAlt : pageTitle,
           },
         ],
       },
@@ -145,7 +151,7 @@ export async function generateMetadata({
         card: "summary_large_image",
         title: pageTitle,
         description,
-        images: [`${siteUrl}/og-image.png`],
+        images: [bannerUrl ?? `${siteUrl}/og-image.png`],
       },
     }
   } catch {
@@ -233,6 +239,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const slugMapEntry = getSlugMapEntry(effectiveSlug)
   const chapterTitle = slugMapEntry?.chapterTitle
 
+  const bannerSrc = (data.banner as { src?: string } | undefined)?.src
+  const bannerUrl = resolveBannerUrl(bannerSrc, target.filePath, siteUrl)
+
   const techArticleJsonLd: {
     "@context": "https://schema.org"
     "@type": "TechArticle"
@@ -250,6 +259,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     timeRequired: string
     articleSection?: string
     proficiencyLevel: string
+    image?: string
   } = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
@@ -263,6 +273,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     timeRequired: `PT${readingTime}M`,
     ...(chapterTitle ? { articleSection: chapterTitle } : {}),
     proficiencyLevel: isAdvanced ? "Expert" : "Beginner",
+    ...(bannerUrl ? { image: bannerUrl } : {}),
   }
 
   const breadcrumbJsonLd: {
@@ -569,4 +580,17 @@ function embedTitleInMarkdown(content: string, title: string): string {
   }
 
   return `# ${title}\n\n${content}`
+}
+
+function resolveBannerUrl(
+  bannerSrc: string | undefined,
+  filePath: string,
+  siteUrl: string
+): string | null {
+  if (!bannerSrc || typeof bannerSrc !== "string" || !bannerSrc.trim()) {
+    return null
+  }
+  const currentDir = path.dirname("/" + filePath).replace(/^\/+/, "")
+  const resolved = path.join(currentDir, bannerSrc).replace(/\\/g, "/")
+  return `${siteUrl}/api/assets?path=${encodeURIComponent(resolved)}`
 }
