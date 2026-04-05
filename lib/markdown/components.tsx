@@ -26,7 +26,7 @@ function getMeaningfulChildren(
 function isImageOrIframeElement(node: MarkdownAstNode): boolean {
   return (
     node.type === "element" &&
-    (node.tagName === "img" || node.tagName === "iframe")
+    (node.tagName === "img" || node.tagName === "iframe" || node.tagName === "litematicaviewer")
   )
 }
 
@@ -88,6 +88,8 @@ function paragraphContainsMedia(node: unknown): boolean {
     containsImageOrIframeDescendant(child)
   )
 }
+
+import LitematicaViewer from "@/components/articles/litematica-viewer"
 
 export function getMarkdownComponents(rawPath: string) {
   const aComponent = createAComponent(rawPath)
@@ -198,6 +200,7 @@ export function getMarkdownComponents(rawPath: string) {
     hidden: hiddenComponent,
     heightlightwarning: makeSpan({ color: "crimson" }),
     heightlightadvanced: makeSpan({ color: "darkseagreen" }),
+    litematicaviewer: (props: any) => <LitematicaViewer {...props} />,
     table: ({ ...props }: MarkdownComponentProps) => (
       <div
         className="
