@@ -90,34 +90,45 @@ export async function generateMetadata({
     }
 
     const { data } = matter(content)
+    const siteUrl = getSiteUrl()
+    const effectiveSlug =
+      target.canonicalSlug ?? getSlugForFilePath(target.filePath) ?? slugPath
+    const canonicalUrl = articleAbsoluteUrl(effectiveSlug)
+
     const resolvedTitle = resolveDisplayedArticleTitle(
       data["chapter-title"],
       target.filePath,
       target.canonicalSlug,
       target.isReadmeIntro
     )
-    const title = formatArticleTitle(
+    const articleTitle = formatArticleTitle(
       resolvedTitle,
       target.index,
       target.isAppendix,
       target.isPreface,
       target.isReadmeIntro
     )
-    const description = generateDescription(content)
 
-    const siteUrl = getSiteUrl()
-    const effectiveSlug =
-      target.canonicalSlug ?? getSlugForFilePath(target.filePath) ?? slugPath
-    const canonicalUrl = articleAbsoluteUrl(effectiveSlug)
+    // Build page title with chapter prefix if available
+    const slugMapEntry = getSlugMapEntry(effectiveSlug)
+    const chapterTitle = slugMapEntry?.chapterTitle
+    const pageTitle = chapterTitle
+      ? `${chapterTitle} › ${articleTitle} — Graduate Texts in Minecraft`
+      : `${articleTitle} — Graduate Texts in Minecraft`
+
+    const description = generateDescription(
+      content,
+      data.description as string | undefined
+    )
 
     return {
-      title,
+      title: pageTitle,
       description,
       alternates: {
         canonical: canonicalUrl,
       },
       openGraph: {
-        title,
+        title: pageTitle,
         description,
         type: "article",
         url: canonicalUrl,
@@ -126,13 +137,13 @@ export async function generateMetadata({
             url: `${siteUrl}/og-image.png`,
             width: 1200,
             height: 630,
-            alt: title,
+            alt: pageTitle,
           },
         ],
       },
       twitter: {
         card: "summary_large_image",
-        title,
+        title: pageTitle,
         description,
         images: [`${siteUrl}/og-image.png`],
       },
@@ -199,7 +210,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const effectiveSlug =
     target.canonicalSlug ?? getSlugForFilePath(target.filePath) ?? slugPath
   const canonicalUrl = articleAbsoluteUrl(effectiveSlug)
-  const description = generateDescription(content)
+  const description = generateDescription(
+    content,
+    data.description as string | undefined
+  )
 
   const author = data.author as string | undefined
   const coAuthors = (data["co-authors"] as string[] | undefined) || []
@@ -207,34 +221,48 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const lastModified = data.lastmod as string | undefined
   const isAdvanced = data["is-advanced"] === true
 
-  const blogPostingJsonLd: {
+  const allAuthors = [
+    ...new Set([author, ...coAuthors].filter(Boolean) as string[]),
+  ]
+  const authorArray = allAuthors.map((name) => ({
+    "@type": "Person" as const,
+    name,
+    url: `https://github.com/${name}`,
+  }))
+
+  const slugMapEntry = getSlugMapEntry(effectiveSlug)
+  const chapterTitle = slugMapEntry?.chapterTitle
+
+  const techArticleJsonLd: {
     "@context": "https://schema.org"
-    "@type": "BlogPosting"
+    "@type": "TechArticle"
     headline: string
     url: string
     datePublished?: string
     dateModified?: string
-    author?: {
+    author?: Array<{
       "@type": "Person"
       name: string
-    }
+      url: string
+    }>
     description: string
+    wordCount: number
+    timeRequired: string
+    articleSection?: string
+    proficiencyLevel: string
   } = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "TechArticle",
     headline: articleTitle,
     url: canonicalUrl,
     ...(createdAt ? { datePublished: createdAt } : {}),
     ...(lastModified ? { dateModified: lastModified } : {}),
-    ...(author
-      ? {
-          author: {
-            "@type": "Person",
-            name: author,
-          },
-        }
-      : {}),
+    ...(authorArray.length > 0 ? { author: authorArray } : {}),
     description,
+    wordCount,
+    timeRequired: `PT${readingTime}M`,
+    ...(chapterTitle ? { articleSection: chapterTitle } : {}),
+    proficiencyLevel: isAdvanced ? "Expert" : "Beginner",
   }
 
   const breadcrumbJsonLd: {
@@ -259,7 +287,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Articles",
+        name: chapterTitle || "Articles",
         item: `${siteUrl}/articles`,
       },
       {
@@ -335,7 +363,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(techArticleJsonLd) }}
       />
       <script
         type="application/ld+json"
