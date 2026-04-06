@@ -12,8 +12,11 @@
   },
   "Footer": {
     "documentation": "文档",
+    "documentationNav": "文档导航",
     "community": "社区",
+    "communityNav": "社区导航",
     "legalInfo": "法律信息",
+    "legalNav": "法律",
     "preface": "前言",
     "articles": "文章"
   },
