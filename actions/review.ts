@@ -14,6 +14,7 @@ import {
   resumeRebase,
 } from "@/lib/article-rebase"
 import { requireAuth } from "@/lib/auth-helpers"
+import { requireRecentAuth } from "@/lib/admin-reauth"
 import { getGithubPatForUser, requireAdmin } from "@/lib/auth-context"
 import {
   decodeStoredDraftFiles,
@@ -38,6 +39,7 @@ const repo = ARTICLES_REPO_NAME
 export async function mergePRAction(prNumber: number) {
   const session = await requireAuth()
   await requireAdmin(session.user.id)
+  requireRecentAuth(session)
 
   const token = await getGithubPatForUser(session.user.id)
   const octokit = getOctokit(token)
@@ -70,6 +72,7 @@ export async function mergePRAction(prNumber: number) {
 export async function closePRAction(prNumber: number) {
   const session = await requireAuth()
   await requireAdmin(session.user.id)
+  requireRecentAuth(session)
 
   const token = await getGithubPatForUser(session.user.id)
   const octokit = getOctokit(token)
@@ -106,6 +109,7 @@ export async function resolveConflictAction(
 ) {
   const session = await requireAuth()
   await requireAdmin(session.user.id)
+  requireRecentAuth(session)
 
   const content = formData.get("content") as string | null
   const draftFilesPayload = formData.get("draftFiles") as string | null
@@ -273,6 +277,7 @@ export async function resolveConflictAction(
 export async function submitWithRebaseAction(revisionId: string) {
   const session = await requireAuth()
   await requireAdmin(session.user.id)
+  requireRecentAuth(session)
 
   const token = await getGithubPatForUser(session.user.id)
   const authorName = session.user.name || "GTMC Admin"
@@ -388,6 +393,7 @@ export async function submitWithRebaseAction(revisionId: string) {
 export async function abortRebaseAction(revisionId: string) {
   const session = await requireAuth()
   await requireAdmin(session.user.id)
+  requireRecentAuth(session)
 
   const token = await getGithubPatForUser(session.user.id)
 
@@ -423,6 +429,7 @@ export async function abortRebaseAction(revisionId: string) {
 export async function keepFileAction(revisionId: string) {
   const session = await requireAuth()
   await requireAdmin(session.user.id)
+  requireRecentAuth(session)
 
   const token = await getGithubPatForUser(session.user.id)
   const authorName = session.user.name || "GTMC Admin"

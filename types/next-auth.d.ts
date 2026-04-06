@@ -9,6 +9,7 @@ declare module "next-auth" {
     user: {
       id: string
     } & DefaultSession["user"]
+    lastAuthAt?: number
   }
 
   interface User extends DefaultUser {
@@ -19,5 +20,6 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     sub: string
+    lastAuthAt?: number
   }
 }

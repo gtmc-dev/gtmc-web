@@ -31,15 +31,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user?.id) {
         token.sub = user.id
       }
+
+      if (trigger === "signIn") {
+        token.lastAuthAt = Date.now()
+      }
+
       return token
     },
     async session({ session, token }) {
       if (session?.user) {
         session.user.id = token.sub ?? ""
+        session.lastAuthAt = token.lastAuthAt
       }
       return session
     },
