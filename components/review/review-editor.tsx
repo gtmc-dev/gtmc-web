@@ -6,6 +6,7 @@ import { EditorTabStrip } from "@/components/editor/editor-tab-strip"
 import { EditorTextarea } from "@/components/editor/editor-textarea"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import { LazyMarkdownPreview } from "@/components/editor/lazy-markdown-preview"
+import { ConflictBlock } from "@/components/review/conflict-block"
 import { ReviewFileList } from "@/components/review/review-file-list"
 import { ModeSelector } from "@/components/review/mode-selector"
 import { RebaseProgress } from "@/components/review/rebase-progress"
@@ -21,6 +22,91 @@ import type {
   ReviewSessionState,
 } from "@/types/review"
 import type { RebaseState } from "@/types/rebase"
+
+const CONFLICT_BLOCK_REGEX =
+  /<<<<<<< draft\n([\s\S]*?)=======\n([\s\S]*?)>>>>>>> main\n/g
+
+type EditorSegment =
+  | { type: "text"; id: string; content: string }
+  | {
+      type: "conflict"
+      id: string
+      marker: string
+      ours: string
+      theirs: string
+    }
+
+function parseEditorSegments(content: string): EditorSegment[] {
+  const segments: EditorSegment[] = []
+  let lastIndex = 0
+  let conflictIndex = 0
+
+  for (const match of content.matchAll(CONFLICT_BLOCK_REGEX)) {
+    const marker = match[0]
+    const start = match.index ?? 0
+    const precedingText = content.slice(lastIndex, start)
+
+    if (precedingText) {
+      segments.push({
+        type: "text",
+        id: `text-${conflictIndex}`,
+        content: precedingText,
+      })
+    }
+
+    segments.push({
+      type: "conflict",
+      id: `conflict-${conflictIndex}`,
+      marker,
+      ours: match[1] ?? "",
+      theirs: match[2] ?? "",
+    })
+
+    lastIndex = start + marker.length
+    conflictIndex += 1
+  }
+
+  const trailingText = content.slice(lastIndex)
+  if (trailingText || segments.length === 0) {
+    segments.push({
+      type: "text",
+      id: `text-${conflictIndex}`,
+      content: trailingText,
+    })
+  }
+
+  return segments
+}
+
+function serializeEditorSegments(segments: EditorSegment[]) {
+  return segments
+    .map((segment) =>
+      segment.type === "text" ? segment.content : segment.marker
+    )
+    .join("")
+}
+
+function fileHasConflicts(file: ReviewFile, content: string) {
+  return (
+    file.status === "conflict" ||
+    Boolean(file.conflictContent) ||
+    content.match(CONFLICT_BLOCK_REGEX) !== null
+  )
+}
+
+function resolveFileStatus(
+  file: ReviewFile,
+  content: string
+): ReviewFile["status"] {
+  const startedWithConflict =
+    file.status === "conflict" || Boolean(file.conflictContent)
+
+  if (content.match(CONFLICT_BLOCK_REGEX)) {
+    return "conflict"
+  }
+
+  return startedWithConflict ? "resolved" : "clean"
+}
 
 function inferMode(revision: {
   conflictMode: string | null
@@ -77,16 +163,73 @@ export function ReviewEditor({
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
+  const sessionFiles = React.useMemo(
+    () =>
+      reviewSession.files.map((file) => {
+        const content = fileContents[file.id] ?? file.content
+
+        return {
+          ...file,
+          content,
+          status: resolveFileStatus(file, content),
+        }
+      }),
+    [fileContents, reviewSession.files]
+  )
+
   const activeFile =
-    reviewSession.files.find((f) => f.id === reviewSession.activeFileId) ??
-    reviewSession.files[0]
+    sessionFiles.find((f) => f.id === reviewSession.activeFileId) ??
+    sessionFiles[0]
 
   const activeContent =
     fileContents[reviewSession.activeFileId] ?? activeFile?.content ?? ""
 
-  const hasConflicts = reviewSession.files.some((f) => f.status === "conflict")
+  const hasConflicts = sessionFiles.some((file) =>
+    fileHasConflicts(file, file.content)
+  )
+  const parsedSegments = React.useMemo(
+    () => parseEditorSegments(activeContent),
+    [activeContent]
+  )
+  const hasInlineConflicts =
+    activeFile !== undefined &&
+    fileHasConflicts(activeFile, activeContent) &&
+    parsedSegments.some((segment) => segment.type === "conflict")
+  const effectiveMode = reviewSession.mode ?? (!hasConflicts ? "SIMPLE" : null)
 
   const rebaseState = revision.rebaseState as RebaseState | null
+
+  React.useEffect(() => {
+    if (reviewSession.mode !== null || hasConflicts) {
+      return
+    }
+
+    let cancelled = false
+
+    const persistSimpleMode = async () => {
+      setIsSelectingMode(true)
+
+      try {
+        await selectModeAction(revision.id, "SIMPLE")
+
+        if (!cancelled) {
+          setReviewSession((prev) =>
+            prev.mode === null ? { ...prev, mode: "SIMPLE" } : prev
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSelectingMode(false)
+        }
+      }
+    }
+
+    void persistSimpleMode()
+
+    return () => {
+      cancelled = true
+    }
+  }, [hasConflicts, reviewSession.mode, revision.id])
 
   const handleSelectFile = (fileId: string) => {
     setReviewSession((prev) => ({ ...prev, activeFileId: fileId }))
@@ -98,6 +241,52 @@ export function ReviewEditor({
       [reviewSession.activeFileId]: e.target.value,
     }))
   }
+
+  const updateActiveFileContent = React.useCallback(
+    (nextContent: string) => {
+      setFileContents((prev) => ({
+        ...prev,
+        [reviewSession.activeFileId]: nextContent,
+      }))
+    },
+    [reviewSession.activeFileId]
+  )
+
+  const updateTextSegment = React.useCallback(
+    (segmentId: string, nextText: string) => {
+      updateActiveFileContent(
+        serializeEditorSegments(
+          parsedSegments.map((segment) =>
+            segment.type === "text" && segment.id === segmentId
+              ? { ...segment, content: nextText }
+              : segment
+          )
+        )
+      )
+    },
+    [parsedSegments, updateActiveFileContent]
+  )
+
+  const resolveConflictSegment = React.useCallback(
+    (segmentId: string, resolution: string) => {
+      updateActiveFileContent(
+        serializeEditorSegments(
+          parsedSegments.flatMap((segment) =>
+            segment.type === "conflict" && segment.id === segmentId
+              ? [
+                  {
+                    type: "text" as const,
+                    id: `${segment.id}-resolved`,
+                    content: resolution,
+                  },
+                ]
+              : [segment]
+          )
+        )
+      )
+    },
+    [parsedSegments, updateActiveFileContent]
+  )
 
   const insertSyntax = (prefix: string, suffix: string = "") => {
     if (!textareaRef.current) return
@@ -155,7 +344,7 @@ export function ReviewEditor({
     }
   }
 
-  const simpleFileStatuses = reviewSession.files.map((f) => ({
+  const simpleFileStatuses = sessionFiles.map((f) => ({
     filePath: f.filePath,
     status: f.status,
   }))
@@ -163,7 +352,7 @@ export function ReviewEditor({
   return (
     <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <ReviewFileList
-        files={reviewSession.files}
+        files={sessionFiles}
         activeFileId={reviewSession.activeFileId}
         onSelectFile={handleSelectFile}
       />
@@ -182,7 +371,7 @@ export function ReviewEditor({
           </a>
         </div>
 
-        {reviewSession.mode === null ? (
+        {effectiveMode === null ? (
           <div className="border border-tech-main/40 bg-white/80 p-6 backdrop-blur-sm">
             <ModeSelector
               modeAnalysis={reviewSession.modeAnalysis}
@@ -194,7 +383,7 @@ export function ReviewEditor({
         ) : (
           <>
             <RebaseProgress
-              mode={reviewSession.mode}
+              mode={effectiveMode}
               rebaseState={rebaseState}
               files={simpleFileStatuses}
               onAbort={handleAbort}
@@ -216,7 +405,7 @@ export function ReviewEditor({
                 rightSlot={activeFile?.filePath || "UNTITLED_FILE_"}
               />
 
-              {activeTab === "write" && (
+              {activeTab === "write" && !hasInlineConflicts && (
                 <EditorToolbar onInsert={insertSyntax} />
               )}
 
@@ -226,12 +415,46 @@ export function ReviewEditor({
                 className="editor-grow"
                 hidden={activeTab !== "write"}>
                 <div className="editor-surface">
-                  <EditorTextarea
-                    ref={textareaRef}
-                    value={activeContent}
-                    onChange={handleContentChange}
-                    placeholder="ENTER REVIEW CONTENT... (Use Markdown)"
-                  />
+                  {hasInlineConflicts ? (
+                    <div className="flex flex-col gap-4 p-4 sm:p-6">
+                      {parsedSegments.map((segment) =>
+                        segment.type === "conflict" ? (
+                          <ConflictBlock
+                            key={segment.id}
+                            id={segment.id}
+                            ours={segment.ours}
+                            theirs={segment.theirs}
+                            onAcceptOurs={() =>
+                              resolveConflictSegment(segment.id, segment.ours)
+                            }
+                            onAcceptTheirs={() =>
+                              resolveConflictSegment(segment.id, segment.theirs)
+                            }
+                            onManualEdit={(content) =>
+                              resolveConflictSegment(segment.id, content)
+                            }
+                          />
+                        ) : (
+                          <textarea
+                            key={segment.id}
+                            value={segment.content}
+                            onChange={(e) =>
+                              updateTextSegment(segment.id, e.target.value)
+                            }
+                            className="min-h-[7.5rem] w-full resize-y border border-tech-main/20 bg-white px-4 py-3 font-mono text-sm/relaxed text-black outline-none focus:border-tech-main"
+                            placeholder="UNCHANGED CONTENT"
+                          />
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <EditorTextarea
+                      ref={textareaRef}
+                      value={activeContent}
+                      onChange={handleContentChange}
+                      placeholder="ENTER REVIEW CONTENT... (Use Markdown)"
+                    />
+                  )}
                 </div>
               </section>
 

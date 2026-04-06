@@ -190,7 +190,9 @@ export default async function ReviewDetailPage({
         content: prFileContents[file.filePath] ?? file.content,
         originalContent: file.content,
         conflictContent: file.conflictContent ?? undefined,
-        status: "clean" as const,
+        status: file.conflictContent
+          ? ("conflict" as const)
+          : ("clean" as const),
       }))
     : []
 
