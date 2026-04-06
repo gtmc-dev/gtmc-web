@@ -30,16 +30,15 @@ export function LanguageSwitcher() {
           aria-label={`Switch to ${loc === "zh" ? "Chinese" : "English"}`}
           aria-pressed={locale === loc}
           className={`
-            touch-target flex min-h-[28px] min-w-[28px] items-center
+            flex touch-target min-h-8 min-w-7 items-center
             justify-center px-2 py-1 uppercase transition-colors duration-200
             ${i > 0 ? "border-l border-tech-main/40" : ""}
-            ${
-              locale === loc
-                ? "bg-tech-main text-white"
-                : "bg-transparent text-tech-main hover:bg-tech-accent/30"
+            ${locale === loc
+              ? "bg-tech-main text-white"
+              : "bg-transparent text-tech-main hover:bg-tech-accent/30"
             }
           `}>
-          {loc}
+          {`${loc === "en" ? "Eng" : "中文"}`}
         </button>
       ))}
     </div>

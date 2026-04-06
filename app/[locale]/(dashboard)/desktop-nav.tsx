@@ -48,9 +48,6 @@ export function DesktopNav({ navLinks }: DesktopNavProps) {
           )
         })}
       </ul>
-      <div className="mb-1.5 hidden md:flex">
-        <LanguageSwitcher />
-      </div>
     </>
   )
 }
