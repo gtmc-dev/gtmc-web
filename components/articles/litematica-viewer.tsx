@@ -3,166 +3,6 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
 
-type StyleWritable = {
-  style: {
-    setProperty: (property: string, value: string, priority?: string) => void
-  }
-}
-
-type FlyControls = {
-  overlayElement?: StyleWritable | null
-  setOverlayVisible?: () => void
-  setKeybinds?: (keybinds: { down: string }) => void
-  lock?: () => void
-}
-
-type CameraManager = {
-  flyControls?: FlyControls | null
-  disableFlyControls?: () => void
-  enableFlyControls?: () => void
-  isFlyControlsEnabled?: () => boolean
-  focusOnSchematics?: () => void
-}
-
-type SchematicRecord = {
-  id?: string
-}
-
-type SchematicDimensions = {
-  x: number
-  y: number
-  z: number
-}
-
-type SchematicManager = {
-  loadSchematic: (fileName: string, data: ArrayBuffer) => Promise<void>
-  getFirstSchematic?: () => SchematicRecord | null
-  getMaxSchematicDimensions?: () => SchematicDimensions | null
-}
-
-type RenderManager = {
-  render?: () => void
-}
-
-type RendererInstance = {
-  uiManager?: {
-    showFPVOverlay?: () => void
-    fpvOverlay?: StyleWritable | null
-  } | null
-  cameraManager?: CameraManager | null
-  schematicManager: SchematicManager
-  renderManager?: RenderManager | null
-  resetRenderingBounds: (schematicId: string, includeAll: boolean) => void
-  setRenderingBounds: (
-    schematicId: string,
-    min: [number, number, number],
-    max: [number, number, number],
-    refresh: boolean
-  ) => void
-  dispose?: () => void
-}
-
-type RendererModule = {
-  SchematicRenderer?: RendererConstructor
-  default?: RendererConstructor | { SchematicRenderer?: RendererConstructor }
-}
-
-type RendererConstructor = new (
-  canvas: HTMLCanvasElement,
-  rendererOptions: Record<string, never>,
-  packs: {
-    default: () => Promise<Blob>
-  },
-  options: {
-    showGrid: boolean
-    backgroundColor: number
-    meshBuildingMode: string
-    ffmpeg: { terminate: () => void }
-    cameraOptions: { position: [number, number, number] }
-    callbacks: {
-      onRendererInitialized: (renderer: RendererInstance) => Promise<void>
-      onSchematicFileLoadFailure: (error: unknown) => void
-    }
-  }
-) => RendererInstance
-
-function resolveRendererConstructor(moduleValue: unknown): RendererConstructor | null {
-  if (typeof moduleValue !== "object" || moduleValue === null) {
-    return null
-  }
-
-  const mod = moduleValue as RendererModule
-
-  if (typeof mod.SchematicRenderer === "function") {
-    return mod.SchematicRenderer
-  }
-
-  if (typeof mod.default === "function") {
-    return mod.default
-  }
-
-  if (
-    typeof mod.default === "object" &&
-    mod.default !== null &&
-    typeof mod.default.SchematicRenderer === "function"
-  ) {
-    return mod.default.SchematicRenderer
-  }
-
-  return null
-}
-
-function normalizeUrlInput(input: string) {
-  let value = input.replace(/\r?\n/g, "").trim().replace(/^['"]|['"]$/g, "")
-
-  for (let i = 0; i < 2; i++) {
-    try {
-      const decoded = decodeURIComponent(value)
-      if (decoded === value) break
-      value = decoded
-    } catch {
-      break
-    }
-  }
-
-  return value
-}
-
-function suppressNativeFpOverlays(instance: RendererInstance | null) {
-  const ui = instance?.uiManager
-  const cm = instance?.cameraManager
-
-  try {
-    if (ui) {
-      ui.showFPVOverlay = () => {}
-      if (ui.fpvOverlay) {
-        ui.fpvOverlay.style.setProperty("display", "none", "important")
-        ui.fpvOverlay.style.setProperty("pointer-events", "none", "important")
-        ui.fpvOverlay.style.setProperty("opacity", "0", "important")
-      }
-    }
-
-    if (cm?.flyControls) {
-      cm.flyControls.setOverlayVisible = () => {}
-      if (cm.flyControls.overlayElement) {
-        cm.flyControls.overlayElement.style.setProperty(
-          "display",
-          "none",
-          "important"
-        )
-        cm.flyControls.overlayElement.style.setProperty(
-          "pointer-events",
-          "none",
-          "important"
-        )
-        cm.flyControls.overlayElement.style.setProperty("opacity", "0", "important")
-      }
-    }
-  } catch {
-    // Keep rendering resilient even if internals change.
-  }
-}
-
 export interface LitematicaViewerProps {
   url: string
   height?: string | number
@@ -173,8 +13,10 @@ export default function LitematicaViewer({
   height = 400,
 }: LitematicaViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const rendererRef = useRef<RendererInstance | null>(null)
+  const rendererRef = useRef<any>(null)
   const schematicIdRef = useRef<string | null>(null)
+  const loadTokenRef = useRef(0)
+  const lastPointerUnlockAtRef = useRef(Number.NEGATIVE_INFINITY)
 
   const [maxLayer, setMaxLayer] = useState(0)
   const [sliderLayer, setSliderLayer] = useState(0)
@@ -182,16 +24,138 @@ export default function LitematicaViewer({
   const [layerMode, setLayerMode] = useState<"single" | "below">("below")
   const [schematicReady, setSchematicReady] = useState(false)
   const [isFlyMode, setIsFlyMode] = useState(false)
+  const [isFlyEnabled, setIsFlyEnabled] = useState(false)
+
+  const POINTER_LOCK_COOLDOWN_MS = 1200
+
+  const resolveLoadedSchematicId = (renderer: any) => {
+    const loadedSchematics = renderer?.getLoadedSchematics?.()
+
+    if (Array.isArray(loadedSchematics) && loadedSchematics.length > 0) {
+      if (
+        schematicIdRef.current &&
+        loadedSchematics.includes(schematicIdRef.current)
+      ) {
+        return schematicIdRef.current
+      }
+
+      return loadedSchematics[0]
+    }
+
+    return renderer?.schematicManager?.getFirstSchematic?.()?.id ?? null
+  }
+
+  const normalizeUrlInput = (input: string) => {
+    let value = input
+      .replace(/\r?\n/g, "")
+      .trim()
+      .replace(/^['"]|['"]$/g, "")
+
+    // Some markdown pipelines may hand us pre-encoded strings.
+    for (let i = 0; i < 2; i++) {
+      try {
+        const decoded = decodeURIComponent(value)
+        if (decoded === value) break
+        value = decoded
+      } catch {
+        break
+      }
+    }
+
+    return value
+  }
+
+  const suppressNativeFpOverlays = (instance: any) => {
+    const ui = instance?.uiManager
+    const cm = instance?.cameraManager
+
+    try {
+      if (ui) {
+        ui.showFPVOverlay = () => {}
+        if (ui.fpvOverlay) {
+          ui.fpvOverlay.style.setProperty("display", "none", "important")
+          ui.fpvOverlay.style.setProperty("pointer-events", "none", "important")
+          ui.fpvOverlay.style.setProperty("opacity", "0", "important")
+        }
+      }
+
+      if (cm?.flyControls) {
+        cm.flyControls.setOverlayVisible = () => {}
+        if (cm.flyControls.overlayElement) {
+          cm.flyControls.overlayElement.style.setProperty(
+            "display",
+            "none",
+            "important"
+          )
+          cm.flyControls.overlayElement.style.setProperty(
+            "pointer-events",
+            "none",
+            "important"
+          )
+          cm.flyControls.overlayElement.style.setProperty("opacity", "0", "important")
+        }
+      }
+    } catch {
+      // Keep rendering resilient even if internals change.
+    }
+  }
+
+  const patchFlyLockWithCooldown = (cameraManager: any) => {
+    const flyControls = cameraManager?.flyControls
+    if (!flyControls) return
+    if (flyControls.__gtmcSafeLockPatched) return
+
+    const originalLock =
+      typeof flyControls.lock === "function" ? flyControls.lock.bind(flyControls) : null
+    if (!originalLock) return
+
+    flyControls.lock = () => {
+      if (!flyControls.enabled || flyControls.isLocked) return
+
+      if (document.pointerLockElement === canvasRef.current) return
+
+      const userActivation = (navigator as any)?.userActivation
+      if (userActivation && !userActivation.isActive) {
+        return
+      }
+
+      const elapsedSinceUnlock = performance.now() - lastPointerUnlockAtRef.current
+      if (elapsedSinceUnlock < POINTER_LOCK_COOLDOWN_MS) {
+        return
+      }
+
+      try {
+        const lockResult = originalLock()
+
+        if (lockResult && typeof lockResult.catch === "function") {
+          lockResult.catch(() => {
+            // Swallow rejected pointer lock promises; state is handled by events.
+          })
+        }
+      } catch {
+        // Ignore lock failures; pointerlockerror handler updates UI state.
+      }
+    }
+
+    flyControls.__gtmcSafeLockPatched = true
+  }
 
   useEffect(() => {
     if (!canvasRef.current) return
 
+    const loadToken = ++loadTokenRef.current
+    let isActive = true
+
     setSchematicReady(false)
     schematicIdRef.current = null
+    setTargetLayer("all")
     setIsFlyMode(false)
+    setIsFlyEnabled(false)
+
+    const isCurrentLoad = () => isActive && loadToken === loadTokenRef.current
 
     const cleanUrl = normalizeUrlInput(url)
-    let renderer: RendererInstance | null = null
+    let renderer: any = null
 
     const proxyUrl = `/api/litematica-download?${new URLSearchParams({
       url: cleanUrl,
@@ -201,7 +165,12 @@ export default function LitematicaViewer({
     const initRenderer = async () => {
       try {
         const mod = await import("schematic-renderer")
-        const SR = resolveRendererConstructor(mod)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const modAny = mod as any
+        const SR =
+          modAny.SchematicRenderer ||
+          modAny.default?.SchematicRenderer ||
+          (typeof modAny.default === "function" ? modAny.default : null)
 
         if (typeof SR !== "function") {
           throw new Error("SchematicRenderer constructor not found in module exports")
@@ -220,12 +189,30 @@ export default function LitematicaViewer({
             showGrid: true,
             backgroundColor: 0xf8f9fc,
             meshBuildingMode: "incremental",
-             ffmpeg: { terminate: () => {} },
-             cameraOptions: { position: [10, 10, 10] },
-             callbacks: {
-               onRendererInitialized: async (r: RendererInstance) => {
-                 try {
-                   suppressNativeFpOverlays(r)
+            targetFPS: 120,
+            idleFPS: 120,
+            enableAdaptiveFPS: false,
+            postProcessingOptions: {
+              enabled: true,
+              enableSSAO: false,
+              enableSMAA: true,
+              enableGamma: true,
+            },
+            ffmpeg: { terminate: () => {} },
+            cameraOptions: {
+              position: [10, 10, 10],
+              autoOrbitAfterZoom: false,
+              enableZoomInOnLoad: false,
+            },
+            callbacks: {
+              onRendererInitialized: async (r: any) => {
+                if (!isCurrentLoad()) {
+                  r.dispose?.()
+                  return
+                }
+
+                try {
+                  suppressNativeFpOverlays(r)
 
                   const res = await fetch(proxyUrl, { cache: "no-store" })
                   if (!res.ok) {
@@ -236,8 +223,16 @@ export default function LitematicaViewer({
                   const fileName = cleanUrl.split("/").pop() || "schem.litematic"
                   await r.schematicManager.loadSchematic(fileName, arrayBuffer)
 
-                  const schematicObj = r.schematicManager.getFirstSchematic?.()
-                  schematicIdRef.current = schematicObj?.id || fileName
+                  if (!isCurrentLoad()) {
+                    r.dispose?.()
+                    return
+                  }
+
+                  const resolvedSchematicId = resolveLoadedSchematicId(r)
+                  if (!resolvedSchematicId) {
+                    throw new Error("No loaded schematic ID found after loadSchematic")
+                  }
+                  schematicIdRef.current = resolvedSchematicId
 
                   const dim = r.schematicManager.getMaxSchematicDimensions?.()
                   if (dim) {
@@ -246,19 +241,38 @@ export default function LitematicaViewer({
                     setSliderLayer(topLayer)
                   }
 
-                  r.cameraManager?.focusOnSchematics?.()
+                  // Avoid camera animation/auto orbit fighting with first-person controls.
+                  await r.cameraManager.focusOnSchematics?.({
+                    animationDuration: 0,
+                    skipPathFitting: true,
+                  })
+                  r.cameraManager.stopAnimation?.()
+                  r.cameraManager.stopAutoOrbit?.()
+                  r.cameraManager.setAutoOrbitAfterZoom?.(false)
+
                   suppressNativeFpOverlays(r)
+                  if (!isCurrentLoad()) return
+
+                  r.targetFPS = 120
+                  r.idleFPS = 120
+                  r.enableAdaptiveFPS = false
+
                   setSchematicReady(true)
-                 } catch (err) {
-                   console.error("Error loading schematic:", err)
-                 }
-               },
-               onSchematicFileLoadFailure: (err: unknown) => {
-                 console.error("Failed to load schematic file:", err)
-               },
-             },
+                } catch (err) {
+                  console.error("Error loading schematic:", err)
+                }
+              },
+              onSchematicFileLoadFailure: (err: any) => {
+                console.error("Failed to load schematic file:", err)
+              },
+            },
           }
         )
+
+        if (!isCurrentLoad()) {
+          renderer.dispose?.()
+          return
+        }
 
         rendererRef.current = renderer
       } catch (e) {
@@ -273,28 +287,59 @@ export default function LitematicaViewer({
       suppressNativeFpOverlays(current)
 
       const cm = current.cameraManager
-      const locked = Boolean(document.pointerLockElement)
+      const locked =
+        cm?.isFlyControlsLocked?.() ?? document.pointerLockElement === canvasRef.current
+      const flyEnabled = Boolean(cm?.isFlyControlsEnabled?.())
+
       if (!locked) {
-        if (
-          cm &&
-          typeof cm.disableFlyControls === "function" &&
-          cm.isFlyControlsEnabled?.()
-        ) {
+        lastPointerUnlockAtRef.current = performance.now()
+        if (cm && typeof cm.disableFlyControls === "function" && flyEnabled) {
           cm.disableFlyControls()
         }
       }
 
-      setIsFlyMode(locked)
+      setIsFlyEnabled(flyEnabled)
+      setIsFlyMode(Boolean(locked && flyEnabled))
+    }
+
+    const handlePointerLockError = () => {
+      lastPointerUnlockAtRef.current = performance.now()
+      const current = rendererRef.current
+      const cm = current?.cameraManager
+
+      if (cm?.isFlyControlsEnabled?.()) {
+        cm.disableFlyControls?.()
+      }
+
+      setIsFlyMode(false)
+      setIsFlyEnabled(false)
+    }
+
+    const handleEscapeKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== "Escape") return
+
+      const current = rendererRef.current
+      const cm = current?.cameraManager
+      if (cm?.isFlyControlsLocked?.()) {
+        // Mark cooldown immediately to avoid re-lock race before pointerlockchange arrives.
+        lastPointerUnlockAtRef.current = performance.now()
+      }
     }
 
     document.addEventListener("pointerlockchange", handlePointerLockChange)
+    document.addEventListener("pointerlockerror", handlePointerLockError)
+    document.addEventListener("keydown", handleEscapeKeyDown, true)
     initRenderer()
 
     return () => {
+      isActive = false
       document.removeEventListener("pointerlockchange", handlePointerLockChange)
+      document.removeEventListener("pointerlockerror", handlePointerLockError)
+      document.removeEventListener("keydown", handleEscapeKeyDown, true)
       setSchematicReady(false)
       schematicIdRef.current = null
       setIsFlyMode(false)
+      setIsFlyEnabled(false)
 
       if (
         rendererRef.current?.cameraManager?.isFlyControlsEnabled?.() &&
@@ -306,11 +351,13 @@ export default function LitematicaViewer({
       if (rendererRef.current && typeof rendererRef.current.dispose === "function") {
         rendererRef.current.dispose()
       }
+
+      rendererRef.current = null
     }
   }, [url])
 
   useEffect(() => {
-    if (!schematicReady || !rendererRef.current || !schematicIdRef.current) {
+    if (!schematicReady || !rendererRef.current) {
       return
     }
 
@@ -318,37 +365,46 @@ export default function LitematicaViewer({
     const sm = renderer.schematicManager
     if (!sm) return
 
+    const schematicId = resolveLoadedSchematicId(renderer)
+    if (!schematicId) return
+
+    schematicIdRef.current = schematicId
+    if (!sm.getSchematic?.(schematicId)) return
+
     const dim = sm.getMaxSchematicDimensions?.()
     if (!dim) return
 
-    const schematicId = schematicIdRef.current
     const maxX = Math.max(1, Math.ceil(dim.x))
     const maxY = Math.max(1, Math.ceil(dim.y))
     const maxZ = Math.max(1, Math.ceil(dim.z))
 
-    if (targetLayer === "all") {
-      renderer.resetRenderingBounds(schematicId, true)
-    } else {
-      const y = Math.max(0, Math.min(targetLayer, maxY - 1))
-
-      if (layerMode === "single") {
-        renderer.setRenderingBounds(
-          schematicId,
-          [0, y, 0],
-          [maxX, y + 1, maxZ],
-          false
-        )
+    try {
+      if (targetLayer === "all") {
+        renderer.resetRenderingBounds(schematicId, true)
       } else {
-        renderer.setRenderingBounds(
-          schematicId,
-          [0, 0, 0],
-          [maxX, y + 1, maxZ],
-          false
-        )
-      }
-    }
+        const y = Math.max(0, Math.min(targetLayer, maxY - 1))
 
-    renderer.renderManager?.render?.()
+        if (layerMode === "single") {
+          renderer.setRenderingBounds(
+            schematicId,
+            [0, y, 0],
+            [maxX, y + 1, maxZ],
+            false
+          )
+        } else {
+          renderer.setRenderingBounds(
+            schematicId,
+            [0, 0, 0],
+            [maxX, y + 1, maxZ],
+            false
+          )
+        }
+      }
+
+      renderer.renderManager?.render?.()
+    } catch (error) {
+      console.error("Failed to update rendering bounds:", error)
+    }
   }, [schematicReady, targetLayer, layerMode])
 
   const commitLayerSelection = () => {
@@ -365,17 +421,39 @@ export default function LitematicaViewer({
     const cm = current.cameraManager
     suppressNativeFpOverlays(current)
 
+    cm.stopAnimation?.()
+    cm.stopAutoOrbit?.()
+    cm.setAutoOrbitAfterZoom?.(false)
+    cm.setZoomInOnLoad?.(false)
+
     if (cm.isFlyControlsEnabled?.()) {
+      lastPointerUnlockAtRef.current = performance.now()
       cm.disableFlyControls?.()
       setIsFlyMode(false)
+      setIsFlyEnabled(false)
       return
     }
 
     cm.enableFlyControls?.()
-    if (cm.flyControls) {
-      cm.flyControls.setKeybinds?.({ down: "ShiftLeft" })
-      cm.flyControls.lock?.()
+    patchFlyLockWithCooldown(cm)
+    cm.setFlyControlsSettings?.({
+      moveSpeed: 16,
+      sprintMultiplier: 2.4,
+      keybinds: {
+        up: "Space",
+        down: "KeyC",
+        sprint: "ShiftLeft",
+      },
+    })
+    const elapsedSinceUnlock = performance.now() - lastPointerUnlockAtRef.current
+    if (elapsedSinceUnlock >= POINTER_LOCK_COOLDOWN_MS) {
+      // Try locking immediately from the button click gesture.
+      cm.flyControls?.lock?.()
     }
+
+    setIsFlyEnabled(true)
+
+    setIsFlyMode(Boolean(cm.isFlyControlsLocked?.()))
   }
 
   return (
@@ -398,16 +476,14 @@ export default function LitematicaViewer({
 
       <button
         type="button"
-        onPointerDown={(e) => e.stopPropagation()}
-        onPointerUp={(e) => e.stopPropagation()}
         onClick={toggleFlyMode}
-        className={`absolute top-4 right-4 z-20 border px-3 py-1 text-[11px] font-bold tracking-widest uppercase transition-colors ${
-          isFlyMode
+        className={`absolute right-4 top-4 z-20 border px-3 py-1 text-[11px] font-bold tracking-widest uppercase transition-colors ${
+          isFlyEnabled
             ? "border-tech-main bg-tech-main text-white"
             : "border-tech-main/60 bg-white/90 text-tech-main hover:bg-tech-main hover:text-white"
         }`}
       >
-        {isFlyMode ? "SYS.EXIT_FLY" : "SYS.FIRST_PERSON"}
+        {isFlyEnabled ? "SYS.EXIT_FLY" : "SYS.FIRST_PERSON"}
       </button>
 
       <div
@@ -436,10 +512,10 @@ export default function LitematicaViewer({
       {maxLayer > 0 && (
         <div
           className={`absolute right-4 bottom-16 z-10 w-[250px] border border-tech-main/60 bg-white/90 p-3 text-tech-main shadow-sm backdrop-blur-md transition-all ${
-            isFlyMode ? "pointer-events-none translate-x-2 opacity-0" : "opacity-100"
+            isFlyMode ? "pointer-events-none opacity-0 translate-x-2" : "opacity-100"
           }`}
         >
-          <div className="mb-2 flex items-center justify-between border-b guide-line pb-1">
+          <div className="mb-2 flex items-center justify-between border-b border-tech-main/20 pb-1">
             <span className="text-[10px] font-bold tracking-widest uppercase">
               SYS.LAYER_FILTER
             </span>
@@ -499,8 +575,7 @@ export default function LitematicaViewer({
             onMouseUp={commitLayerSelection}
             onTouchEnd={commitLayerSelection}
             onKeyUp={commitLayerSelection}
-            className="w-full cursor-ew-resize"
-            data-litematica-layer-slider="true"
+            className="style-litematica-layer-slider w-full cursor-ew-resize"
           />
 
           <div className="mt-2 flex justify-end">
@@ -512,6 +587,36 @@ export default function LitematicaViewer({
               APPLY
             </button>
           </div>
+
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+              .style-litematica-layer-slider {
+                -webkit-appearance: none;
+                appearance: none;
+                height: 2px;
+                background: rgba(71, 85, 105, 0.28);
+                outline: none;
+              }
+              .style-litematica-layer-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 8px;
+                height: 16px;
+                background: var(--color-tech-main);
+                cursor: ew-resize;
+                border-radius: 0;
+              }
+              .style-litematica-layer-slider::-moz-range-thumb {
+                width: 8px;
+                height: 16px;
+                background: var(--color-tech-main);
+                cursor: ew-resize;
+                border-radius: 0;
+                border: none;
+              }
+            `,
+            }}
+          />
         </div>
       )}
 
@@ -529,7 +634,7 @@ export default function LitematicaViewer({
           backdrop-blur-md
         "
         >
-          {isFlyMode ? (
+          {isFlyEnabled ? (
             <>
               <span className="flex items-center gap-1.5">
                 <kbd className="rounded-[2px] border border-tech-main/30 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-tech-main shadow-sm">
@@ -547,7 +652,7 @@ export default function LitematicaViewer({
               <span className="flex items-center gap-1.5 opacity-60">|</span>
               <span className="flex items-center gap-1.5">
                 <kbd className="rounded-[2px] border border-tech-main/30 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-tech-main shadow-sm">
-                  SHIFT
+                  C
                 </kbd>{" "}
                 Down
               </span>
@@ -558,6 +663,17 @@ export default function LitematicaViewer({
                 </kbd>{" "}
                 Unlock
               </span>
+              {!isFlyMode && (
+                <>
+                  <span className="flex items-center gap-1.5 opacity-60">|</span>
+                  <span className="flex items-center gap-1.5">
+                    <kbd className="rounded-[2px] border border-tech-main/30 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-tech-main shadow-sm">
+                      Click
+                    </kbd>{" "}
+                    Lock
+                  </span>
+                </>
+              )}
             </>
           ) : (
             <>
