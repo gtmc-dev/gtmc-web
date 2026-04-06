@@ -12,6 +12,13 @@ export interface RebaseCommitInfo {
   timestamp: string
 }
 
+export interface FileRebaseState {
+  filePath: string
+  status: "pending" | "in_progress" | "conflict" | "completed"
+  currentContent: string
+  originalContent: string
+}
+
 export interface RebaseState {
   status: RebaseStatus
   commitShas: string[]
@@ -20,4 +27,5 @@ export interface RebaseState {
   originalContent: string
   resolvedContent?: string
   commitInfos: RebaseCommitInfo[]
+  fileStates?: Record<string, FileRebaseState>
 }
