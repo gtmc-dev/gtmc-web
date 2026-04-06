@@ -159,13 +159,14 @@ function CalloutAside({
 
   return (
     <aside
-      className={`mb-4 border-l-2 px-3 py-2 ${styles.border} ${styles.bg}`}
+      className={`mb-4 border-l-2 px-6 py-4 ${styles.border} ${styles.bg}`}
       {...rest}>
       <div
-        className={`mb-1 font-mono text-xs font-bold uppercase tracking-widest ${styles.title}`}>
+        className={`mb-1.5 font-mono text-xs font-bold tracking-widest uppercase ${styles.title}`}>
         {t(labelKey)}
       </div>
-      <div className={`font-sans text-sm ${styles.text}`}>
+      <div
+        className={`font-sans text-sm [&_p]:mb-0 [&_p]:text-sm [&_p]:text-inherit ${styles.text}`}>
         {isEmpty && hasDefault
           ? t(`${type}_default` as Parameters<typeof t>[0])
           : children}
