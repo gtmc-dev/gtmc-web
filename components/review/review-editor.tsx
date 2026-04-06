@@ -134,6 +134,11 @@ interface ReviewEditorProps {
   files: ReviewFile[]
   modeAnalysis: ModeAnalysis
   revision: { id: string; conflictMode: string | null; rebaseState: unknown }
+  squashCommitDefaults?: {
+    title: string
+    body: string
+    coauthorLines: string[]
+  }
 }
 
 export function ReviewEditor({
@@ -141,6 +146,7 @@ export function ReviewEditor({
   files,
   modeAnalysis,
   revision,
+  squashCommitDefaults,
 }: ReviewEditorProps) {
   const [reviewSession, setReviewSession] = React.useState<ReviewSessionState>(
     () => ({
@@ -390,6 +396,9 @@ export function ReviewEditor({
               onFinalize={handleFinalize}
               isAborting={isAborting}
               isFinalizing={isFinalizing}
+              defaultCommitTitle={squashCommitDefaults?.title}
+              defaultCommitBody={squashCommitDefaults?.body}
+              coauthorLines={squashCommitDefaults?.coauthorLines}
             />
 
             <div

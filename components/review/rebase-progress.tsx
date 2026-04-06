@@ -97,6 +97,14 @@ export function RebaseProgress({
   const [commitTitle, setCommitTitle] = React.useState(defaultCommitTitle)
   const [commitBody, setCommitBody] = React.useState(defaultCommitBody)
 
+  React.useEffect(() => {
+    setCommitTitle(defaultCommitTitle)
+  }, [defaultCommitTitle])
+
+  React.useEffect(() => {
+    setCommitBody(defaultCommitBody)
+  }, [defaultCommitBody])
+
   if (mode === "FINE_GRAINED") {
     const total = rebaseState?.commitShas.length ?? 0
     const current = (rebaseState?.currentCommitIndex ?? 0) + 1

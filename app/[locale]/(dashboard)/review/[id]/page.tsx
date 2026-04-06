@@ -201,6 +201,12 @@ export default async function ReviewDetailPage({
       ? `${linkedDraftFiles.files.length} FILES`
       : primaryPrFile?.filename || linkedDraft?.filePath || "UNKNOWN"
 
+  const defaultCommitTitle = `${pr.title} (#${pr.number})`
+  const defaultCommitBody = pr.body || ""
+  const coauthorLines = defaultCommitBody
+    .split("\n")
+    .filter((line) => /^Co-authored-by: .+$/.test(line))
+
   return (
     <div
       className="
@@ -315,6 +321,11 @@ export default async function ReviewDetailPage({
             id: linkedDraft.id,
             conflictMode: effectiveConflictMode,
             rebaseState: linkedDraft.rebaseState,
+          }}
+          squashCommitDefaults={{
+            title: defaultCommitTitle,
+            body: defaultCommitBody,
+            coauthorLines,
           }}
         />
       ) : (
