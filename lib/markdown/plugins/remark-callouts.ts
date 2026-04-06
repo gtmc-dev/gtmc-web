@@ -25,15 +25,7 @@ export function remarkCallouts() {
 
       const calloutType = match[1].toLowerCase()
 
-      textNode.value = textNode.value.replace(CALLOUT_MARKER_REGEX, "")
-
-      if (textNode.value.length === 0) {
-        paragraph.children.shift()
-      }
-
-      if (paragraph.children.length === 0) {
-        node.children.shift()
-      }
+      node.children.shift()
 
       let isBodyEmpty = true
       for (const child of node.children) {
