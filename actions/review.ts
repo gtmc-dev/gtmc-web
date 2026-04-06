@@ -7,9 +7,11 @@ import { revalidatePaths } from "@/lib/revalidation"
 import {
   resolveDraftSyncConflict,
   upsertFileOnBranch,
+  upsertFilesOnBranch,
 } from "@/lib/article-submission"
 import {
   abortRebase,
+  rebaseArticleContentMultiFile,
   rebaseArticleContent,
   resumeRebase,
 } from "@/lib/article-rebase"
@@ -22,6 +24,7 @@ import {
   getActiveDraftFile,
   normalizeDraftFileCollection,
   serializeDraftFilesForStorage,
+  type DraftFileCollection,
 } from "@/lib/draft-files"
 import { formatErrorMessage } from "@/lib/error-handling"
 import {
@@ -35,6 +38,73 @@ import type { RebaseState } from "@/types/rebase"
 
 const owner = ARTICLES_REPO_OWNER
 const repo = ARTICLES_REPO_NAME
+
+function applyRebasedFilesToDraft(
+  draftFiles: DraftFileCollection,
+  rebasedFiles?: Array<{ filePath: string; content: string }>,
+  singleFileFallback?: { filePath: string; content: string },
+  conflict?: { filePath?: string; content?: string | null }
+) {
+  const rebasedFileMap = new Map(
+    (rebasedFiles ?? []).map((file) => [file.filePath, file.content])
+  )
+
+  return normalizeDraftFileCollection({
+    activeFileId: draftFiles.activeFileId,
+    files: draftFiles.files.map((file) => ({
+      ...file,
+      content:
+        rebasedFileMap.get(file.filePath) ??
+        (singleFileFallback && file.filePath === singleFileFallback.filePath
+          ? singleFileFallback.content
+          : file.content),
+      conflictContent:
+        conflict?.content && file.filePath === conflict.filePath
+          ? conflict.content
+          : undefined,
+    })),
+  })
+}
+
+async function persistRebasedBranchFiles(input: {
+  authorEmail: string
+  authorName: string
+  branchName: string
+  files: Array<{ filePath: string; content: string }>
+  message: string
+  token?: string
+}) {
+  if (input.files.length <= 1) {
+    const file = input.files[0]
+    if (!file) {
+      return
+    }
+
+    await upsertFileOnBranch({
+      authorEmail: input.authorEmail,
+      authorName: input.authorName,
+      branchName: input.branchName,
+      content: file.content,
+      filePath: file.filePath,
+      message: input.message,
+      token: input.token,
+    })
+    return
+  }
+
+  if (!input.token) {
+    throw new Error("GitHub token is required to update multiple files")
+  }
+
+  await upsertFilesOnBranch(
+    input.token,
+    input.files.map((file) => ({
+      path: file.filePath,
+      content: file.content,
+    })),
+    input.branchName
+  )
+}
 
 export async function mergePRAction(prNumber: number) {
   const session = await requireAuth()
@@ -159,38 +229,37 @@ export async function resolveConflictAction(
   const rebaseState = linkedDraft.rebaseState as RebaseState | null
 
   if (rebaseState?.status === "CONFLICT") {
-    if (resolvedDraftFiles.files.length !== 1) {
-      throw new Error("Fine-grained rebase only supports single-file drafts")
-    }
-
     const resolvedFile = getActiveDraftFile(resolvedDraftFiles)
     const storedFile = getActiveDraftFile(storedDraftFiles)
     const result = await resumeRebase({
       draftId: linkedDraft.id,
       resolvedContent: resolvedFile.content,
+      resolvedFiles: resolvedDraftFiles.files.map((file) => ({
+        filePath: file.filePath,
+        content: file.content,
+      })),
       token,
     })
 
     if (result.status === "SUCCESS") {
-      await upsertFileOnBranch({
+      const rebasedDraftFiles = applyRebasedFilesToDraft(
+        storedDraftFiles,
+        result.files,
+        { filePath: storedFile.filePath, content: result.finalContent }
+      )
+      await persistRebasedBranchFiles({
         authorEmail,
         authorName,
         branchName: linkedDraft.prBranchName,
-        content: result.finalContent,
-        filePath: storedFile.filePath,
+        files: rebasedDraftFiles.files.map((file) => ({
+          filePath: file.filePath,
+          content: file.content,
+        })),
         message: `docs: apply rebase for ${linkedDraft.title}`,
         token,
       })
-      const rebasedDraftStorage = serializeDraftFilesForStorage({
-        activeFileId: storedDraftFiles.activeFileId,
-        files: [
-          {
-            ...storedFile,
-            content: result.finalContent,
-            conflictContent: undefined,
-          },
-        ],
-      })
+      const rebasedDraftStorage =
+        serializeDraftFilesForStorage(rebasedDraftFiles)
       await prisma.revision.update({
         where: { id: linkedDraft.id },
         data: {
@@ -206,19 +275,32 @@ export async function resolveConflictAction(
         },
       })
     } else if (result.status === "CONFLICT") {
-      const conflictDraftStorage = serializeDraftFilesForStorage({
-        activeFileId: storedDraftFiles.activeFileId,
-        files: [
-          {
-            ...storedFile,
-            conflictContent: result.conflictContent,
-          },
-        ],
-      })
+      const conflictDraftStorage = serializeDraftFilesForStorage(
+        applyRebasedFilesToDraft(storedDraftFiles, result.files, undefined, {
+          filePath: result.conflictFilePath ?? storedFile.filePath,
+          content: result.conflictContent,
+        })
+      )
       await prisma.revision.update({
         where: { id: linkedDraft.id },
         data: {
+          status: "SYNC_CONFLICT",
           conflictContent: conflictDraftStorage.conflictContent,
+          content: conflictDraftStorage.content,
+          filePath: conflictDraftStorage.filePath,
+        },
+      })
+    } else if (result.status === "FILE_DELETED_CONFLICT") {
+      const deletedConflictDraftStorage = serializeDraftFilesForStorage(
+        applyRebasedFilesToDraft(storedDraftFiles, result.files)
+      )
+      await prisma.revision.update({
+        where: { id: linkedDraft.id },
+        data: {
+          status: "SYNC_CONFLICT",
+          content: deletedConflictDraftStorage.content,
+          filePath: deletedConflictDraftStorage.filePath,
+          conflictContent: deletedConflictDraftStorage.conflictContent,
         },
       })
     } else {
@@ -298,12 +380,6 @@ export async function submitWithRebaseAction(revisionId: string) {
     filePath: revision.filePath,
   })
 
-  if (storedDraftFiles.files.length !== 1) {
-    throw new Error(
-      "Fine-grained rebase is only available for single-file drafts"
-    )
-  }
-
   const draftFile = getActiveDraftFile(storedDraftFiles)
 
   if (!draftFile.filePath || !revision.prBranchName) {
@@ -314,35 +390,45 @@ export async function submitWithRebaseAction(revisionId: string) {
     throw new Error("The revision is missing main SHA metadata")
   }
 
-  const result = await rebaseArticleContent({
-    draftId: revisionId,
-    filePath: draftFile.filePath,
-    baseMainSha: revision.baseMainSha,
-    latestMainSha: revision.syncedMainSha,
-    draftContent: draftFile.content,
-    token,
-  })
+  const result =
+    storedDraftFiles.files.length === 1
+      ? await rebaseArticleContent({
+          draftId: revisionId,
+          filePath: draftFile.filePath,
+          baseMainSha: revision.baseMainSha,
+          latestMainSha: revision.syncedMainSha,
+          draftContent: draftFile.content,
+          token,
+        })
+      : await rebaseArticleContentMultiFile({
+          draftId: revisionId,
+          files: storedDraftFiles.files.map((file) => ({
+            filePath: file.filePath,
+            content: file.content,
+          })),
+          baseMainSha: revision.baseMainSha,
+          latestMainSha: revision.syncedMainSha,
+          token,
+        })
 
   if (result.status === "SUCCESS") {
-    await upsertFileOnBranch({
+    const rebasedDraftFiles = applyRebasedFilesToDraft(
+      storedDraftFiles,
+      result.files,
+      { filePath: draftFile.filePath, content: result.finalContent }
+    )
+    await persistRebasedBranchFiles({
       authorEmail,
       authorName,
       branchName: revision.prBranchName,
-      content: result.finalContent,
-      filePath: draftFile.filePath,
+      files: rebasedDraftFiles.files.map((file) => ({
+        filePath: file.filePath,
+        content: file.content,
+      })),
       message: `docs: apply fine-grained rebase for ${revision.title}`,
       token,
     })
-    const rebasedDraftStorage = serializeDraftFilesForStorage({
-      activeFileId: storedDraftFiles.activeFileId,
-      files: [
-        {
-          ...draftFile,
-          content: result.finalContent,
-          conflictContent: undefined,
-        },
-      ],
-    })
+    const rebasedDraftStorage = serializeDraftFilesForStorage(rebasedDraftFiles)
     await prisma.revision.update({
       where: { id: revisionId },
       data: {
@@ -353,28 +439,32 @@ export async function submitWithRebaseAction(revisionId: string) {
       },
     })
   } else if (result.status === "CONFLICT") {
-    const conflictDraftStorage = serializeDraftFilesForStorage({
-      activeFileId: storedDraftFiles.activeFileId,
-      files: [
-        {
-          ...draftFile,
-          conflictContent: result.conflictContent,
-        },
-      ],
-    })
+    const conflictDraftStorage = serializeDraftFilesForStorage(
+      applyRebasedFilesToDraft(storedDraftFiles, result.files, undefined, {
+        filePath: result.conflictFilePath ?? draftFile.filePath,
+        content: result.conflictContent,
+      })
+    )
     await prisma.revision.update({
       where: { id: revisionId },
       data: {
         status: "SYNC_CONFLICT",
         conflictContent: conflictDraftStorage.conflictContent,
+        content: conflictDraftStorage.content,
+        filePath: conflictDraftStorage.filePath,
       },
     })
   } else if (result.status === "FILE_DELETED_CONFLICT") {
+    const deletedConflictDraftStorage = serializeDraftFilesForStorage(
+      applyRebasedFilesToDraft(storedDraftFiles, result.files)
+    )
     await prisma.revision.update({
       where: { id: revisionId },
       data: {
         status: "SYNC_CONFLICT",
-        conflictContent: null,
+        content: deletedConflictDraftStorage.content,
+        filePath: deletedConflictDraftStorage.filePath,
+        conflictContent: deletedConflictDraftStorage.conflictContent,
       },
     })
   }

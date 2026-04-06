@@ -5,7 +5,10 @@ import {
   ARTICLES_REPO_OWNER,
   getOctokit,
 } from "@/lib/github/articles-repo"
-import { analyzeRebaseNeed } from "@/lib/article-rebase"
+import {
+  analyzeRebaseNeed,
+  analyzeRebaseNeedMultiFile,
+} from "@/lib/article-rebase"
 import type { RebaseAnalysis } from "@/lib/article-rebase"
 import {
   getActiveDraftFile,
@@ -312,7 +315,14 @@ export async function openDraftPullRequest({
           latestMainSha,
           token,
         })
-      : undefined
+      : await analyzeRebaseNeedMultiFile({
+          files: normalizedFiles.files.map((file) => ({
+            filePath: file.filePath,
+          })),
+          baseMainSha,
+          latestMainSha,
+          token,
+        })
 
   let hasConflict = false
   const mergedFiles: DraftFileRecord[] = []
