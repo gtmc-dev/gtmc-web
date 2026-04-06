@@ -8,10 +8,32 @@ import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import { LazyMarkdownPreview } from "@/components/editor/lazy-markdown-preview"
 import { ReviewFileList } from "@/components/review/review-file-list"
 import type {
+  ConflictMode,
   ModeAnalysis,
   ReviewFile,
   ReviewSessionState,
 } from "@/types/review"
+
+function inferMode(revision: {
+  conflictMode: string | null
+  rebaseState: unknown
+}): ConflictMode | null {
+  if (revision.conflictMode) {
+    return revision.conflictMode as ConflictMode
+  }
+
+  const rebaseState = revision.rebaseState as { status?: string } | null
+
+  if (
+    rebaseState?.status &&
+    rebaseState.status !== "IDLE" &&
+    rebaseState.status !== "ABORTED"
+  ) {
+    return "FINE_GRAINED"
+  }
+
+  return null
+}
 
 interface ReviewEditorProps {
   pr: { number: number; title: string; htmlUrl: string }
@@ -28,7 +50,7 @@ export function ReviewEditor({
 }: ReviewEditorProps) {
   const [reviewSession, setReviewSession] = React.useState<ReviewSessionState>(
     () => ({
-      mode: (revision.conflictMode as ReviewSessionState["mode"]) ?? null,
+      mode: inferMode(revision),
       files,
       activeFileId: files[0]?.id ?? "",
       modeAnalysis,

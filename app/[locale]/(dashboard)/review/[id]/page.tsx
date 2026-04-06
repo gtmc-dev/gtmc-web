@@ -119,6 +119,10 @@ export default async function ReviewDetailPage({
         | (typeof linkedDraft & { conflictMode?: string | null })
         | null
     )?.conflictMode ?? null
+  const effectiveConflictMode =
+    linkedDraft?.status === "SYNC_CONFLICT" && !linkedDraftConflictMode
+      ? "SIMPLE"
+      : linkedDraftConflictMode
 
   const linkedDraftFiles = linkedDraft
     ? decodeStoredDraftFiles({
@@ -298,7 +302,7 @@ export default async function ReviewDetailPage({
           modeAnalysis={modeAnalysis}
           revision={{
             id: linkedDraft.id,
-            conflictMode: linkedDraftConflictMode,
+            conflictMode: effectiveConflictMode,
             rebaseState: linkedDraft.rebaseState,
           }}
         />
