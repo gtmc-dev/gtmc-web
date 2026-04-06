@@ -2,6 +2,7 @@
 // 用于给 NextAuth 默认的 Session 和 User 类型增加自定义字段 (id)
 
 import { DefaultSession, DefaultUser } from "next-auth"
+import "next-auth/jwt"
 
 declare module "next-auth" {
   interface Session {
