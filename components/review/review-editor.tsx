@@ -163,7 +163,9 @@ export function ReviewEditor({
 
   const [fileContents, setFileContents] = React.useState<
     Record<string, string>
-  >(() => Object.fromEntries(files.map((f) => [f.id, f.content])))
+  >(() =>
+    Object.fromEntries(files.map((f) => [f.id, f.conflictContent ?? f.content]))
+  )
 
   const [isSelectingMode, setIsSelectingMode] = React.useState(false)
   const [isAborting, setIsAborting] = React.useState(false)
