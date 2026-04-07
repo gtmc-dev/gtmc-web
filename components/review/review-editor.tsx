@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { EditorTabStrip } from "@/components/editor/editor-tab-strip"
 import { EditorTextarea } from "@/components/editor/editor-textarea"
@@ -148,6 +149,7 @@ export function ReviewEditor({
   revision,
   squashCommitDefaults,
 }: ReviewEditorProps) {
+  const t = useTranslations("Review")
   const [reviewSession, setReviewSession] = React.useState<ReviewSessionState>(
     () => ({
       mode: inferMode(revision),
@@ -453,7 +455,7 @@ export function ReviewEditor({
                               updateTextSegment(segment.id, e.target.value)
                             }
                             className="min-h-30 w-full resize-y border guide-line bg-white px-4 py-3 font-mono text-sm/relaxed text-black outline-none focus:border-tech-main"
-                            placeholder="UNCHANGED CONTENT"
+                            placeholder={t("unchangedContentPlaceholder")}
                           />
                         )
                       )}
@@ -463,7 +465,7 @@ export function ReviewEditor({
                       ref={textareaRef}
                       value={activeContent}
                       onChange={handleContentChange}
-                      placeholder="ENTER REVIEW CONTENT... (Use Markdown)"
+                      placeholder={t("reviewContentPlaceholder")}
                     />
                   )}
                 </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { TechButton } from "@/components/ui/tech-button"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
 import type { RebaseState } from "@/types/rebase"
@@ -93,6 +94,7 @@ export function RebaseProgress({
   defaultCommitBody = "",
   coauthorLines = [],
 }: RebaseProgressProps) {
+  const t = useTranslations("Review")
   const [showCommitEditor, setShowCommitEditor] = React.useState(false)
   const [commitTitle, setCommitTitle] = React.useState(defaultCommitTitle)
   const [commitBody, setCommitBody] = React.useState(defaultCommitBody)
@@ -224,14 +226,14 @@ export function RebaseProgress({
         <div className="relative space-y-3 border border-tech-main/30 bg-white/80 p-4">
           <CornerBrackets color="border-tech-main/30" />
           <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/60 uppercase">
-            SQUASH_COMMIT_MESSAGE
+            {t("squashCommitMessage")}
           </p>
 
           <div className="space-y-1">
             <label
               htmlFor="commit-title"
               className="font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
-              TITLE
+              {t("commitTitleLabel")}
             </label>
             <input
               id="commit-title"
@@ -243,7 +245,7 @@ export function RebaseProgress({
                 font-mono text-xs text-tech-main placeholder:text-tech-main/30
                 focus:border-tech-main focus:outline-none
               "
-              placeholder="Commit title..."
+              placeholder={t("commitTitlePlaceholder")}
             />
           </div>
 
@@ -251,7 +253,7 @@ export function RebaseProgress({
             <label
               htmlFor="commit-body"
               className="font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
-              BODY
+              {t("commitBodyLabel")}
             </label>
             <textarea
               id="commit-body"
@@ -263,14 +265,14 @@ export function RebaseProgress({
                 py-2 font-mono text-xs text-tech-main
                 placeholder:text-tech-main/30 focus:border-tech-main focus:outline-none
               "
-              placeholder="Commit body (optional)..."
+              placeholder={t("commitBodyPlaceholder")}
             />
           </div>
 
           {coauthorLines.length > 0 && (
             <div className="space-y-1">
               <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
-                CO-AUTHORS (READ-ONLY)
+                {t("coauthorsReadonly")}
               </p>
               <pre className="overflow-x-auto border guide-line bg-tech-main/5 px-3 py-2 font-mono text-[0.6875rem] text-tech-main/60">
                 {coauthorLines.join("\n")}

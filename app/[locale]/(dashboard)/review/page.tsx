@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 import { TechCard } from "@/components/ui/tech-card"
 import { TechButton } from "@/components/ui/tech-button"
 import { Link } from "@/i18n/navigation"
@@ -85,6 +86,7 @@ async function analyzePRConflictStatus(prNumber: number, token?: string) {
 }
 
 export default async function ReviewHubPage() {
+  const t = await getTranslations("Review")
   const session = await auth()
   let isAdmin = false
 
@@ -251,7 +253,7 @@ export default async function ReviewHubPage() {
               hover:scale-[1.02]
               md:w-auto
             ">
-            {isConflict ? "RESOLVE CONFLICT \u2192" : "REVIEW CONTENT \u2192"}
+            {t("resolveButton")} →
           </TechButton>
         </Link>
       </div>
@@ -261,13 +263,13 @@ export default async function ReviewHubPage() {
   return (
     <div className="page-container">
       <PageHeader
-        title="REVIEW HUB"
+        title={t("pageTitle")}
         subtitle="APPROVE CONTENT. MERGE REBELLION."
       />
 
       <div className="grid grid-cols-1 gap-6">
         {openPRs.length === 0 ? (
-          <EmptyState message="NO PENDING REVIEWS. SILENCE IN THE COMM." />
+          <EmptyState message={t("listEmpty")} />
         ) : (
           <div className="flex flex-col gap-10">
             {groupedPRs.conflicts.length > 0 && (

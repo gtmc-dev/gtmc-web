@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { ConflictMode, ModeAnalysis } from "@/types/review"
 import { TechButton } from "@/components/ui/tech-button"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
@@ -41,6 +42,7 @@ export function ModeSelector({
   hasConflicts,
   isSelecting,
 }: ModeSelectorProps) {
+  const t = useTranslations("Review")
   const [selectedMode, setSelectedMode] = useState<ConflictMode>(
     modeAnalysis.recommendation
   )
@@ -159,7 +161,7 @@ export function ModeSelector({
           size="md"
           disabled={isSelecting}
           onClick={() => onSelectMode(selectedMode)}>
-          {isSelecting ? "INITIALIZING..." : "START RESOLUTION"}
+          {isSelecting ? "INITIALIZING..." : t("resolveButton")}
         </TechButton>
       </div>
     </div>
