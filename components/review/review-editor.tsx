@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import ReactDOM from "react-dom"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 
@@ -185,12 +186,17 @@ export function ReviewEditor({
   const [isFinalizing, setIsFinalizing] = React.useState(false)
   const [isBranchSyncing, setIsBranchSyncing] = React.useState(false)
   const [actionError, setActionError] = React.useState<string | null>(null)
+  const [mounted, setMounted] = React.useState(false)
   const abortedRef = React.useRef(false)
   const autosaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   )
 
   const textareaRef = React.useRef<any>(null)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   React.useEffect(() => {
     setReviewSession((prev) => ({ ...prev, files, modeAnalysis }))
@@ -553,22 +559,25 @@ export function ReviewEditor({
         </div>
         <div className="h-px bg-tech-main/20" />
 
-        {effectiveMode === null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="relative w-full max-w-2xl border border-tech-main/40 bg-white p-6 shadow-xl">
-              <CornerBrackets color="border-tech-main/40" />
-              <p className="mb-4 font-mono text-xs tracking-widest text-tech-main/60 uppercase">
-                RESOLUTION_METHOD_
-              </p>
-              <ModeSelector
-                modeAnalysis={reviewSession.modeAnalysis}
-                onSelectMode={handleSelectMode}
-                hasConflicts={hasConflicts}
-                isSelecting={isSelectingMode}
-              />
-            </div>
-          </div>
-        )}
+        {effectiveMode === null && mounted
+          ? ReactDOM.createPortal(
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <div className="relative w-full max-w-2xl border border-tech-main/40 bg-white p-6 shadow-xl">
+                  <CornerBrackets color="border-tech-main/40" />
+                  <p className="mb-4 font-mono text-xs tracking-widest text-tech-main/60 uppercase">
+                    RESOLUTION_METHOD_
+                  </p>
+                  <ModeSelector
+                    modeAnalysis={reviewSession.modeAnalysis}
+                    onSelectMode={handleSelectMode}
+                    hasConflicts={hasConflicts}
+                    isSelecting={isSelectingMode}
+                  />
+                </div>
+              </div>,
+              document.body
+            )
+          : null}
 
         {effectiveMode !== null ? (
           <>
