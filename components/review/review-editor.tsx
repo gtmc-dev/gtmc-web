@@ -179,9 +179,12 @@ export function ReviewEditor({
   const [isSelectingMode, setIsSelectingMode] = React.useState(false)
   const [isAborting, setIsAborting] = React.useState(false)
   const [isFinalizing, setIsFinalizing] = React.useState(false)
-  const [isSavingResolution, setIsSavingResolution] = React.useState(false)
+  const [isBranchSyncing, setIsBranchSyncing] = React.useState(false)
   const [actionError, setActionError] = React.useState<string | null>(null)
   const abortedRef = React.useRef(false)
+  const autosaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
@@ -216,6 +219,11 @@ export function ReviewEditor({
       }),
     [fileContents, reviewSession.files]
   )
+  const sessionFilesRef = React.useRef(sessionFiles)
+
+  React.useEffect(() => {
+    sessionFilesRef.current = sessionFiles
+  }, [sessionFiles])
 
   const activeFile =
     sessionFiles.find((f) => f.id === reviewSession.activeFileId) ??
@@ -238,6 +246,27 @@ export function ReviewEditor({
   const effectiveMode = reviewSession.mode ?? null
 
   const rebaseState = revision.rebaseState as RebaseState | null
+
+  React.useEffect(() => {
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (
+      effectiveMode !== "FINE_GRAINED" ||
+      rebaseState?.status !== "IN_PROGRESS"
+    ) {
+      return
+    }
+
+    const interval = window.setInterval(() => router.refresh(), 2000)
+
+    return () => window.clearInterval(interval)
+  }, [effectiveMode, rebaseState?.status, router])
 
   const rerereResolutionMap = React.useMemo(() => {
     const map = new Map<string, string>()
@@ -288,6 +317,47 @@ export function ReviewEditor({
     [parsedSegments, updateActiveFileContent]
   )
 
+  const persistSimpleResolution = React.useCallback(
+    async (options?: { keepBranchSyncing?: boolean; silent?: boolean }) => {
+      const collection = normalizeDraftFileCollection({
+        activeFileId: reviewSession.activeFileId,
+        files: sessionFilesRef.current.map((file) => ({
+          id: file.id,
+          filePath: file.filePath,
+          content: file.content,
+        })),
+      })
+
+      const formData = new FormData()
+      formData.set("draftFiles", serializeDraftFilesPayload(collection))
+
+      if (!options?.keepBranchSyncing) {
+        setIsBranchSyncing(true)
+      }
+
+      try {
+        await resolveConflictAction(pr.number, formData)
+        router.refresh()
+      } catch (error) {
+        if (!options?.silent) {
+          throw error
+        }
+
+        if (isReauthRequiredError(error)) {
+          window.location.href = getReauthLoginUrl(
+            window.location.pathname + window.location.search
+          )
+          return
+        }
+
+        setActionError(error instanceof Error ? error.message : String(error))
+      } finally {
+        setIsBranchSyncing(false)
+      }
+    },
+    [pr.number, reviewSession.activeFileId, router]
+  )
+
   const resolveConflictSegment = React.useCallback(
     (segmentId: string, resolution: string) => {
       updateActiveFileContent(
@@ -305,8 +375,28 @@ export function ReviewEditor({
           )
         )
       )
+
+      if (effectiveMode === "SIMPLE") {
+        if (autosaveTimeoutRef.current) {
+          clearTimeout(autosaveTimeoutRef.current)
+        }
+
+        setIsBranchSyncing(true)
+        autosaveTimeoutRef.current = setTimeout(() => {
+          autosaveTimeoutRef.current = null
+          void persistSimpleResolution({
+            keepBranchSyncing: true,
+            silent: true,
+          })
+        }, 500)
+      }
     },
-    [parsedSegments, updateActiveFileContent]
+    [
+      effectiveMode,
+      parsedSegments,
+      persistSimpleResolution,
+      updateActiveFileContent,
+    ]
   )
 
   const insertSyntax = (prefix: string, suffix: string = "") => {
@@ -358,6 +448,12 @@ export function ReviewEditor({
     setActionError(null)
     setIsAborting(true)
     try {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current)
+        autosaveTimeoutRef.current = null
+      }
+
+      setIsBranchSyncing(false)
       await abortResolutionAction(revision.id)
       abortedRef.current = true
       setReviewSession((prev) => ({ ...prev, mode: null }))
@@ -376,29 +472,6 @@ export function ReviewEditor({
     }
   }
 
-  const persistSimpleResolution = React.useCallback(async () => {
-    const collection = normalizeDraftFileCollection({
-      activeFileId: reviewSession.activeFileId,
-      files: sessionFiles.map((file) => ({
-        id: file.id,
-        filePath: file.filePath,
-        content: file.content,
-      })),
-    })
-
-    const formData = new FormData()
-    formData.set("draftFiles", serializeDraftFilesPayload(collection))
-
-    setIsSavingResolution(true)
-
-    try {
-      await resolveConflictAction(pr.number, formData)
-      router.refresh()
-    } finally {
-      setIsSavingResolution(false)
-    }
-  }, [pr.number, reviewSession.activeFileId, router, sessionFiles])
-
   const handleFinalize = async (options?: {
     commitTitle?: string
     commitBody?: string
@@ -406,10 +479,6 @@ export function ReviewEditor({
     setActionError(null)
     setIsFinalizing(true)
     try {
-      if (effectiveMode === "SIMPLE") {
-        await persistSimpleResolution()
-      }
-
       await finalizeReviewAction(pr.number, options)
       router.push("/review")
     } catch (error) {
@@ -430,7 +499,6 @@ export function ReviewEditor({
     filePath: f.filePath,
     status: f.status,
   }))
-  const simpleSaveLabel = hasConflicts ? "SAVE RESOLUTION" : "APPLY"
 
   return (
     <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">

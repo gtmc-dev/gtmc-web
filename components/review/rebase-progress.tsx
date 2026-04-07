@@ -4,7 +4,7 @@ import * as React from "react"
 import { useTranslations } from "next-intl"
 import { TechButton } from "@/components/ui/tech-button"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
-import type { RebaseState } from "@/types/rebase"
+import type { FileRebaseState, RebaseState } from "@/types/rebase"
 
 interface SimpleFileStatus {
   filePath: string
@@ -25,39 +25,54 @@ interface RebaseProgressProps {
 }
 
 function CommitStepDots({
-  total,
-  current,
-  isCompleted,
-  commitShas,
+  commitInfos,
+  currentCommitIndex,
+  status,
 }: {
-  total: number
-  current: number
-  isCompleted: boolean
-  commitShas?: string[]
+  commitInfos: RebaseState["commitInfos"]
+  currentCommitIndex: number
+  status?: RebaseState["status"]
 }) {
+  const total = commitInfos.length
   if (total === 0) return null
-  const dots = commitShas?.length === total ? commitShas : null
+
+  const visibleCommits = commitInfos.slice(0, 10)
+  const overflowCount = total - visibleCommits.length
+
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {(dots ?? Array.from({ length: total }, (_, i) => String(i))).map(
-        (sha, i) => {
-          const done = isCompleted ? true : i < current - 1
-          const active = !isCompleted && i === current - 1
-          return (
+      {visibleCommits.map((commit, index) => {
+        const isDone =
+          status === "COMPLETED" ? true : index < currentCommitIndex
+        const isCurrent = index === currentCommitIndex
+        const isConflict = isCurrent && status === "CONFLICT"
+        const isInProgress = isCurrent && status === "IN_PROGRESS"
+
+        return (
+          <React.Fragment key={commit.sha}>
             <span
-              key={sha}
-              title={`Commit ${i + 1}`}
-              className={`inline-block size-2 transition-all duration-300 ${
-                done
-                  ? "bg-green-500"
-                  : active
-                    ? "bg-tech-main animate-pulse"
-                    : "bg-tech-main/20"
+              title={`Commit ${index + 1}: ${commit.sha.slice(0, 7)}`}
+              className={`block size-2 border transition-all duration-300 ${
+                isConflict
+                  ? "border-red-500 bg-red-500"
+                  : isDone
+                    ? "border-tech-main bg-tech-main"
+                    : isInProgress
+                      ? "border-tech-main/70 bg-tech-main/70 animate-pulse"
+                      : "border-tech-main/30 bg-transparent"
               }`}
             />
-          )
-        }
-      )}
+            {index < visibleCommits.length - 1 ? (
+              <span className="h-px w-3 bg-tech-main/20" aria-hidden="true" />
+            ) : null}
+          </React.Fragment>
+        )
+      })}
+      {overflowCount > 0 ? (
+        <span className="ml-1 font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
+          +{overflowCount}
+        </span>
+      ) : null}
     </div>
   )
 }
@@ -71,7 +86,70 @@ function StatusDot({ status }: { status: string }) {
         : status === "in_progress"
           ? "bg-yellow-400"
           : "bg-tech-main/30"
-  return <span className={`inline-block size-1.5 shrink-0 ${color}`} />
+  return <span className={`inline-block size-2 shrink-0 ${color}`} />
+}
+
+function CurrentCommitPanel({
+  commitSha,
+  commitMessage,
+  commitAuthor,
+  fileStates,
+}: {
+  commitSha?: string
+  commitMessage?: string
+  commitAuthor?: string
+  fileStates: FileRebaseState[]
+}) {
+  if (!commitSha && !commitMessage && fileStates.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="relative space-y-3 border border-tech-main/30 bg-white/70 px-3 py-3">
+      <CornerBrackets color="border-tech-main/20" />
+      <div className="space-y-1">
+        <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
+          CURRENT_COMMIT
+        </p>
+        {commitSha ? (
+          <p className="font-mono text-sm font-bold tracking-widest text-tech-main uppercase">
+            SHA_{commitSha.slice(0, 7)}_
+          </p>
+        ) : null}
+        {commitMessage ? (
+          <p className="font-mono text-xs/relaxed text-tech-main/80">
+            {commitMessage}
+          </p>
+        ) : null}
+        {commitAuthor ? (
+          <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/40 uppercase">
+            {commitAuthor}
+          </p>
+        ) : null}
+      </div>
+
+      {fileStates.length > 0 ? (
+        <div className="space-y-1">
+          <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
+            FILE_STATES
+          </p>
+          <ul className="space-y-1">
+            {fileStates.map((fs) => (
+              <li
+                key={fs.filePath}
+                className="flex items-center gap-2 font-mono text-[0.6875rem] text-tech-main/70">
+                <StatusDot status={fs.status} />
+                <span className="truncate">{fs.filePath}</span>
+                <span className="ml-auto shrink-0 tracking-widest text-tech-main/40 uppercase">
+                  {fs.status.toUpperCase()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 function AbortButton({
@@ -151,10 +229,22 @@ export function RebaseProgress({
     const current = isCompleted
       ? total
       : Math.min((rebaseState?.currentCommitIndex ?? 0) + 1, total)
-    const currentInfo = rebaseState?.commitInfos[rebaseState.currentCommitIndex]
+    const currentCommitIndex = rebaseState?.currentCommitIndex ?? 0
+    const currentInfo =
+      rebaseState?.commitInfos[
+        Math.min(
+          currentCommitIndex,
+          Math.max((rebaseState?.commitInfos.length ?? 1) - 1, 0)
+        )
+      ]
     const fileStates = rebaseState?.fileStates
       ? Object.values(rebaseState.fileStates)
       : []
+    const conflictFile = fileStates.find((fs) => fs.status === "conflict")
+    const currentCommitSha =
+      rebaseState?.conflictedCommitSha ??
+      currentInfo?.sha ??
+      rebaseState?.commitShas[currentCommitIndex]
 
     return (
       <div className="space-y-4 border border-tech-main/40 bg-tech-main/5 p-4">
@@ -167,10 +257,9 @@ export function RebaseProgress({
               RESOLVING_COMMIT_{current}_OF_{total}_
             </p>
             <CommitStepDots
-              total={total}
-              current={current}
-              isCompleted={isCompleted}
-              commitShas={rebaseState?.commitShas}
+              commitInfos={rebaseState?.commitInfos ?? []}
+              currentCommitIndex={currentCommitIndex}
+              status={rebaseState?.status}
             />
           </div>
 
@@ -189,38 +278,25 @@ export function RebaseProgress({
           </div>
         </div>
 
-        {currentInfo && (
-          <div className="relative border guide-line bg-white/60 px-3 py-2.5">
-            <CornerBrackets color="border-tech-main/20" />
-            <p className="truncate font-mono text-xs/relaxed text-tech-main/80">
-              {currentInfo.message}
+        {rebaseState?.status === "CONFLICT" && currentCommitSha ? (
+          <div className="border border-red-500 bg-red-500/5 px-3 py-3">
+            <p className="font-mono text-[0.6875rem] font-bold tracking-widest text-red-600 uppercase">
+              CONFLICT_DETECTED_IN_COMMIT_{currentCommitSha.slice(0, 7)}_
             </p>
-            <p className="mt-1 font-mono text-[0.6875rem] tracking-widest text-tech-main/40 uppercase">
-              {currentInfo.author}
-            </p>
+            {conflictFile ? (
+              <p className="mt-2 font-mono text-[0.6875rem] tracking-widest text-red-500 uppercase">
+                FILE_{conflictFile.filePath}_
+              </p>
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        {fileStates.length > 0 && (
-          <div className="space-y-1">
-            <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/50 uppercase">
-              FILES
-            </p>
-            <ul className="space-y-1">
-              {fileStates.map((fs) => (
-                <li
-                  key={fs.filePath}
-                  className="flex items-center gap-2 font-mono text-[0.6875rem] text-tech-main/70">
-                  <StatusDot status={fs.status} />
-                  <span className="truncate">{fs.filePath}</span>
-                  <span className="ml-auto shrink-0 tracking-widest text-tech-main/40 uppercase">
-                    {fs.status.toUpperCase()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <CurrentCommitPanel
+          commitSha={currentCommitSha}
+          commitMessage={currentInfo?.message}
+          commitAuthor={currentInfo?.author}
+          fileStates={fileStates}
+        />
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           <AbortButton onAbort={onAbort} isAborting={isAborting} />
