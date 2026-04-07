@@ -36,7 +36,7 @@ import type {
 import type { RebaseState } from "@/types/rebase"
 
 const CONFLICT_BLOCK_REGEX =
-  /<<<<<<< draft\n([\s\S]*?)=======\n([\s\S]*?)>>>>>>> main\n/g
+  /<<<<<<< draft\n([\s\S]*?)=======\n([\s\S]*?)>>>>>>> main\n?/g
 
 type EditorSegment =
   | { type: "text"; id: string; content: string }
@@ -172,6 +172,7 @@ export function ReviewEditor({
   )
 
   const [activeTab, setActiveTab] = React.useState<TabType>("write")
+  const [lineWrap, setLineWrap] = React.useState(false)
 
   const [fileContents, setFileContents] = React.useState<
     Record<string, string>
@@ -605,11 +606,16 @@ export function ReviewEditor({
                 onTabChange={setActiveTab}
                 writeId="review-editor-write-panel"
                 previewId="review-editor-preview-panel"
+                showReviewTabs={true}
                 rightSlot={activeFile?.filePath || "UNTITLED_FILE_"}
               />
 
               {activeTab === "write" && !hasInlineConflicts && (
-                <EditorToolbar onInsert={insertSyntax} />
+                <EditorToolbar
+                  onInsert={insertSyntax}
+                  lineWrap={lineWrap}
+                  onWrapToggle={() => setLineWrap((v) => !v)}
+                />
               )}
 
               <section
@@ -675,6 +681,8 @@ export function ReviewEditor({
                       value={activeContent}
                       onChange={updateActiveFileContent}
                       placeholder={t("reviewContentPlaceholder")}
+                      lineWrap={lineWrap}
+                      onWrapToggle={() => setLineWrap((v) => !v)}
                     />
                   )}
                 </div>
@@ -701,6 +709,57 @@ export function ReviewEditor({
                   <p className="editor-panel">NOTHING_TO_PREVIEW_</p>
                 )}
               </section>
+
+              {activeTab === "3-way" && (
+                <section role="tabpanel" className="editor-grow">
+                  <div className="grid h-full grid-cols-3 divide-x divide-tech-main/20">
+                    <div className="flex flex-col">
+                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
+                        HEAD_
+                      </div>
+                      <textarea
+                        readOnly
+                        value={activeFile?.originalContent ?? ""}
+                        className="min-h-[24rem] w-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main/80 outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
+                        PR_
+                      </div>
+                      <textarea
+                        readOnly
+                        value={activeFile?.content ?? ""}
+                        className="min-h-[24rem] w-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main/80 outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
+                        MERGED_
+                      </div>
+                      <textarea
+                        value={activeContent}
+                        onChange={(e) =>
+                          updateActiveFileContent(e.target.value)
+                        }
+                        className="min-h-[24rem] w-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main outline-none focus:bg-tech-main/5"
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {activeTab === "diff" && (
+                <section role="tabpanel" className="editor-grow">
+                  <pre className="min-h-[24rem] overflow-auto p-6 font-mono text-xs text-tech-main/80 whitespace-pre-wrap">
+                    {activeContent || (
+                      <span className="text-tech-main/30">
+                        NOTHING_TO_DIFF_
+                      </span>
+                    )}
+                  </pre>
+                </section>
+              )}
             </div>
           </>
         ) : null}
