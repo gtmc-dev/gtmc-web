@@ -47,6 +47,9 @@ export function ArticleNavigation({ prev, next }: ArticleNavigationProps) {
                   ↗
                 </span>
               )}
+              {prev.isCrossFolder && prev.chapterTitle && (
+                <span className="text-tech-main/40">{prev.chapterTitle}</span>
+              )}
             </div>
             <div className="line-clamp-2 font-mono text-sm text-tech-main">
               {prev.title}
@@ -95,6 +98,9 @@ export function ArticleNavigation({ prev, next }: ArticleNavigationProps) {
               )}
               <span>NEXT</span>
               <span>→</span>
+              {next.isCrossFolder && next.chapterTitle && (
+                <span className="text-tech-main/40">{next.chapterTitle}</span>
+              )}
             </div>
             <div className="line-clamp-2 font-mono text-sm text-tech-main">
               {next.title}
