@@ -109,9 +109,11 @@ export function RebaseProgress({
 
   if (mode === "FINE_GRAINED") {
     const total = rebaseState?.commitShas.length ?? 0
-    const current = (rebaseState?.currentCommitIndex ?? 0) + 1
-    const currentInfo = rebaseState?.commitInfos[rebaseState.currentCommitIndex]
     const isCompleted = rebaseState?.status === "COMPLETED"
+    const current = isCompleted
+      ? total
+      : Math.min((rebaseState?.currentCommitIndex ?? 0) + 1, total)
+    const currentInfo = rebaseState?.commitInfos[rebaseState.currentCommitIndex]
     const fileStates = rebaseState?.fileStates
       ? Object.values(rebaseState.fileStates)
       : []
@@ -132,7 +134,9 @@ export function RebaseProgress({
             <div className="relative h-1 flex-1 bg-tech-main/20">
               <div
                 className="absolute inset-y-0 left-0 bg-tech-main transition-all duration-500"
-                style={{ width: `${total > 0 ? (current / total) * 100 : 0}%` }}
+                style={{
+                  width: `${total > 0 ? Math.min((current / total) * 100, 100) : 0}%`,
+                }}
               />
             </div>
             <span className="font-mono text-[0.6875rem] text-tech-main/60 tabular-nums">
@@ -292,7 +296,14 @@ export function RebaseProgress({
               size="sm"
               disabled={isFinalizing}
               className="border-green-700! bg-green-700! hover:bg-green-800!"
-              onClick={() => onFinalize({ commitTitle, commitBody })}>
+              onClick={() => {
+                const finalBody =
+                  coauthorLines.length > 0 &&
+                  !coauthorLines.some((line) => commitBody.includes(line))
+                    ? commitBody.trimEnd() + "\n\n" + coauthorLines.join("\n")
+                    : commitBody
+                onFinalize({ commitTitle, commitBody: finalBody })
+              }}>
               {isFinalizing ? "MERGING..." : "CONFIRM MERGE"}
             </TechButton>
           </div>
