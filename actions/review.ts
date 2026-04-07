@@ -379,6 +379,14 @@ export async function resolveConflictAction(
 
   const linkedDraft = await prisma.revision.findFirst({
     where: { githubPrNum: prNumber },
+    include: {
+      author: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
   })
 
   if (!linkedDraft) {
@@ -388,6 +396,9 @@ export async function resolveConflictAction(
   if (!linkedDraft.filePath || !linkedDraft.prBranchName) {
     throw new Error("The linked draft is missing PR metadata")
   }
+
+  const submitterName = linkedDraft.author?.name || authorName
+  const submitterEmail = linkedDraft.author?.email || authorEmail
 
   const storedDraftFiles = decodeStoredDraftFiles({
     content: linkedDraft.content,
@@ -500,8 +511,8 @@ export async function resolveConflictAction(
         { filePath: storedFile.filePath, content: result.finalContent }
       )
       await persistRebasedBranchFiles({
-        authorEmail,
-        authorName,
+        authorEmail: submitterEmail,
+        authorName: submitterName,
         branchName: linkedDraft.prBranchName,
         files: rebasedDraftFiles.files.map((file) => ({
           filePath: file.filePath,
@@ -834,6 +845,14 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
 
   const revision = await prisma.revision.findUnique({
     where: { id: revisionId },
+    include: {
+      author: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
   })
 
   if (!revision) {
@@ -843,6 +862,9 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
   if (!revision.prBranchName) {
     throw new Error("The revision is missing PR metadata")
   }
+
+  const submitterName = revision.author?.name || authorName
+  const submitterEmail = revision.author?.email || authorEmail
 
   const storedDraftFiles = decodeStoredDraftFiles({
     content: revision.content,
@@ -884,8 +906,8 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
         { filePath: draftFile.filePath, content: result.finalContent }
       )
       await persistRebasedBranchFiles({
-        authorEmail,
-        authorName,
+        authorEmail: submitterEmail,
+        authorName: submitterName,
         branchName: revision.prBranchName,
         files: rebasedDraftFiles.files.map((file) => ({
           filePath: file.filePath,
@@ -1027,15 +1049,26 @@ export async function finalizeReviewAction(
   prNumber: number,
   options?: { commitTitle?: string; commitBody?: string }
 ) {
-  const { token } = await requireReviewAdminContext()
+  const { token, authorName, authorEmail } = await requireReviewAdminContext()
 
   const revision = await prisma.revision.findFirst({
     where: { githubPrNum: prNumber },
+    include: {
+      author: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
   })
 
   if (!revision) {
     throw new Error("Linked draft not found")
   }
+
+  const submitterName = revision.author?.name || authorName
+  const submitterEmail = revision.author?.email || authorEmail
 
   const conflictMode = (revision as { conflictMode?: ConflictMode | null })
     .conflictMode
@@ -1067,6 +1100,8 @@ export async function finalizeReviewAction(
       prBranchName: revision.prBranchName,
       latestMainSha: revision.syncedMainSha,
       commitMessage: options?.commitTitle,
+      authorName: submitterName,
+      authorEmail: submitterEmail,
       token,
     })
 
@@ -1100,6 +1135,8 @@ export async function finalizeReviewAction(
       resolvedFiles,
       prBranchName: revision.prBranchName,
       latestMainSha,
+      authorName: submitterName,
+      authorEmail: submitterEmail,
       token,
     })
 

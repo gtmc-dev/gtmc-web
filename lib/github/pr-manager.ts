@@ -66,7 +66,7 @@ export async function createPR({
     title,
     head: branchName,
     base: "main",
-    body: `由 ${authorName} 提交审核。`,
+    body: `由 ${authorName} 提交审核。\n\nCo-authored-by: ${authorName} <${authorEmail}>`,
   })
 
   return pr.number
