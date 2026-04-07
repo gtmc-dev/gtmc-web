@@ -634,7 +634,61 @@ export function ReviewEditor({
                 hidden={activeTab !== "write"}>
                 <div className="editor-surface">
                   {hasInlineConflicts ? (
-                    <div className="flex flex-col gap-4 p-4 sm:p-6">
+                    <div className="custom-left-scrollbar overflow-auto">
+                      <pre className="p-4 font-mono text-xs/relaxed whitespace-pre-wrap sm:p-6">
+                        {(() => {
+                          type LineRegion = "normal" | "ours" | "theirs"
+                          let region: LineRegion = "normal"
+                          let charOffset = 0
+                          return activeContent.split("\n").map((line) => {
+                            const key = `co${charOffset}`
+                            charOffset += line.length + 1
+                            let cls = "text-tech-main/80"
+                            if (/^<<<<<<< draft/.test(line)) {
+                              region = "ours"
+                              cls =
+                                "border-l-2 border-red-500 pl-2 bg-red-500/10 text-red-700 font-bold"
+                            } else if (/^=======/.test(line)) {
+                              region = "theirs"
+                              cls =
+                                "border-l-2 border-gray-400 pl-2 bg-gray-100 text-gray-500"
+                            } else if (/^>>>>>>> main/.test(line)) {
+                              region = "normal"
+                              cls =
+                                "border-l-2 border-blue-500 pl-2 bg-blue-500/10 text-blue-700 font-bold"
+                            } else if (region === "ours") {
+                              cls =
+                                "bg-red-500/5 text-red-900 pl-2 border-l-2 border-red-300"
+                            } else if (region === "theirs") {
+                              cls =
+                                "bg-blue-500/5 text-blue-900 pl-2 border-l-2 border-blue-300"
+                            }
+                            return (
+                              <span key={key} className={`block ${cls}`}>
+                                {line || "\u00a0"}
+                              </span>
+                            )
+                          })
+                        })()}
+                      </pre>
+                    </div>
+                  ) : (
+                    <EditorTextarea
+                      ref={textareaRef}
+                      value={activeContent}
+                      onChange={updateActiveFileContent}
+                      placeholder={t("reviewContentPlaceholder")}
+                      lineWrap={lineWrap}
+                      onWrapToggle={() => setLineWrap((v) => !v)}
+                    />
+                  )}
+                </div>
+              </section>
+
+              {activeTab === "diff" && (
+                <section role="tabpanel" className="editor-grow">
+                  {hasInlineConflicts ? (
+                    <div className="custom-left-scrollbar flex flex-col gap-4 overflow-auto p-4 sm:p-6">
                       {(() => {
                         const conflictSegments = parsedSegments.filter(
                           (s) => s.type === "conflict"
@@ -670,39 +724,227 @@ export function ReviewEditor({
                                   : undefined
                               })()}
                             />
-                          ) : (
-                            <textarea
-                              key={`${activeFile?.id ?? ""}:${segment.id}`}
-                              value={segment.content}
-                              onChange={(e) =>
-                                updateTextSegment(segment.id, e.target.value)
-                              }
-                              className="min-h-30 w-full resize-y border guide-line bg-white px-4 py-3 font-mono text-sm/relaxed text-black outline-none focus:border-tech-main"
-                              placeholder={t("unchangedContentPlaceholder")}
-                            />
-                          )
+                          ) : null
                         )
                       })()}
                     </div>
                   ) : (
-                    <EditorTextarea
-                      ref={textareaRef}
-                      value={activeContent}
-                      onChange={updateActiveFileContent}
-                      placeholder={t("reviewContentPlaceholder")}
-                      lineWrap={lineWrap}
-                      onWrapToggle={() => setLineWrap((v) => !v)}
-                    />
+                    <div className="custom-left-scrollbar overflow-auto">
+                      <pre className="min-h-[24rem] p-6 font-mono text-xs text-tech-main/80 whitespace-pre-wrap">
+                        {(() => {
+                          const original = activeFile?.originalContent ?? ""
+                          const current = activeContent
+                          if (!original && !current)
+                            return (
+                              <span className="text-tech-main/30">
+                                NOTHING_TO_DIFF_
+                              </span>
+                            )
+                          const origLines = original.split("\n")
+                          const currLines = current.split("\n")
+                          const maxLen = Math.max(
+                            origLines.length,
+                            currLines.length
+                          )
+                          const result: React.ReactNode[] = []
+                          let diffOffset = 0
+                          for (let i = 0; i < maxLen; i++) {
+                            const o = origLines[i]
+                            const c = currLines[i]
+                            if (o === undefined) {
+                              result.push(
+                                <span
+                                  key={`d${diffOffset}a`}
+                                  className="block border-l-2 border-green-500 bg-green-500/5 pl-2 text-green-800">
+                                  + {c}
+                                </span>
+                              )
+                              diffOffset += (c?.length ?? 0) + 1
+                            } else if (c === undefined) {
+                              result.push(
+                                <span
+                                  key={`d${diffOffset}r`}
+                                  className="block border-l-2 border-red-500 bg-red-500/5 pl-2 text-red-800 line-through">
+                                  - {o}
+                                </span>
+                              )
+                              diffOffset += o.length + 1
+                            } else if (o !== c) {
+                              result.push(
+                                <span
+                                  key={`d${diffOffset}del`}
+                                  className="block border-l-2 border-red-500 bg-red-500/5 pl-2 text-red-800 line-through">
+                                  - {o}
+                                </span>
+                              )
+                              result.push(
+                                <span
+                                  key={`d${diffOffset}add`}
+                                  className="block border-l-2 border-green-500 bg-green-500/5 pl-2 text-green-800">
+                                  + {c}
+                                </span>
+                              )
+                              diffOffset += o.length + 1
+                            } else {
+                              result.push(
+                                <span
+                                  key={`d${diffOffset}eq`}
+                                  className="block pl-2 text-tech-main/50">
+                                  {"  "}
+                                  {c}
+                                </span>
+                              )
+                              diffOffset += c.length + 1
+                            }
+                          }
+                          return result
+                        })()}
+                      </pre>
+                    </div>
                   )}
-                </div>
-              </section>
+                </section>
+              )}
+
+              {activeTab === "3-way" && (
+                <section role="tabpanel" className="editor-grow flex flex-col">
+                  <div className="flex min-h-0 flex-[3] divide-x divide-tech-main/20 border-b border-tech-main/20">
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
+                        HEAD_
+                      </div>
+                      <div className="custom-left-scrollbar min-h-[16rem] flex-1 overflow-auto">
+                        {hasInlineConflicts ? (
+                          <div className="p-3 font-mono text-xs/relaxed">
+                            {parsedSegments.map((segment) => {
+                              if (segment.type === "text") {
+                                return (
+                                  <pre
+                                    key={segment.id}
+                                    className="whitespace-pre-wrap text-tech-main/70">
+                                    {segment.content}
+                                  </pre>
+                                )
+                              }
+                              return (
+                                <div
+                                  key={segment.id}
+                                  className="my-1 border border-red-300 bg-red-500/5">
+                                  <div className="flex items-center justify-between border-b border-red-300 bg-red-500/10 px-2 py-1">
+                                    <span className="font-mono text-[0.6rem] tracking-widest text-red-700 uppercase">
+                                      OURS (draft)
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        resolveConflictSegment(
+                                          segment.id,
+                                          segment.ours
+                                        )
+                                      }
+                                      className="min-h-[1.75rem] border border-red-400 bg-red-500/10 px-2 py-0.5 font-mono text-[0.6rem] tracking-widest text-red-700 uppercase hover:bg-red-500/20">
+                                      ACCEPT OURS ↓
+                                    </button>
+                                  </div>
+                                  <pre className="whitespace-pre-wrap p-2 text-red-900">
+                                    {segment.ours}
+                                  </pre>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <pre className="p-3 font-mono text-xs/relaxed whitespace-pre-wrap text-tech-main/70">
+                            {activeFile?.originalContent ?? ""}
+                          </pre>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
+                        DRAFT_
+                      </div>
+                      <div className="custom-left-scrollbar min-h-[16rem] flex-1 overflow-auto">
+                        {hasInlineConflicts ? (
+                          <div className="p-3 font-mono text-xs/relaxed">
+                            {parsedSegments.map((segment) => {
+                              if (segment.type === "text") {
+                                return (
+                                  <pre
+                                    key={segment.id}
+                                    className="whitespace-pre-wrap text-tech-main/70">
+                                    {segment.content}
+                                  </pre>
+                                )
+                              }
+                              return (
+                                <div
+                                  key={segment.id}
+                                  className="my-1 border border-blue-300 bg-blue-500/5">
+                                  <div className="flex items-center justify-between border-b border-blue-300 bg-blue-500/10 px-2 py-1">
+                                    <span className="font-mono text-[0.6rem] tracking-widest text-blue-700 uppercase">
+                                      THEIRS (main)
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        resolveConflictSegment(
+                                          segment.id,
+                                          segment.theirs
+                                        )
+                                      }
+                                      className="min-h-[1.75rem] border border-blue-400 bg-blue-500/10 px-2 py-0.5 font-mono text-[0.6rem] tracking-widest text-blue-700 uppercase hover:bg-blue-500/20">
+                                      ACCEPT THEIRS ↓
+                                    </button>
+                                  </div>
+                                  <pre className="whitespace-pre-wrap p-2 text-blue-900">
+                                    {segment.theirs}
+                                  </pre>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <pre className="p-3 font-mono text-xs/relaxed whitespace-pre-wrap text-tech-main/70">
+                            {activeFile?.content ?? ""}
+                          </pre>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex min-h-0 flex-[2] flex-col">
+                    <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
+                      RESULT_
+                    </div>
+                    <div className="custom-left-scrollbar min-h-[10rem] flex-1 overflow-auto">
+                      <textarea
+                        value={activeContent}
+                        onChange={(e) =>
+                          updateActiveFileContent(e.target.value)
+                        }
+                        className="h-full min-h-[10rem] w-full resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main outline-none focus:bg-tech-main/5"
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
 
               <section
                 id="review-editor-preview-panel"
                 role="tabpanel"
                 hidden={activeTab !== "preview"}
                 className="editor-grow">
-                {activeContent.trim() ? (
+                {hasInlineConflicts ? (
+                  <div className="p-6 space-y-3">
+                    <p className="font-mono text-xs tracking-widest text-red-600 uppercase">
+                      CONFLICTS_UNRESOLVED_
+                    </p>
+                    <p className="font-mono text-xs text-tech-main/50">
+                      Resolve all conflicts before previewing.
+                    </p>
+                  </div>
+                ) : activeContent.trim() ? (
                   <div
                     className="
                       w-full max-w-none overflow-hidden p-6 wrap-break-word
@@ -718,57 +960,6 @@ export function ReviewEditor({
                   <p className="editor-panel">NOTHING_TO_PREVIEW_</p>
                 )}
               </section>
-
-              {activeTab === "3-way" && (
-                <section role="tabpanel" className="editor-grow">
-                  <div className="grid h-full grid-cols-3 divide-x divide-tech-main/20">
-                    <div className="flex flex-col">
-                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
-                        HEAD_
-                      </div>
-                      <textarea
-                        readOnly
-                        value={activeFile?.originalContent ?? ""}
-                        className="min-h-[24rem] w-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main/80 outline-none"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
-                        PR_
-                      </div>
-                      <textarea
-                        readOnly
-                        value={activeFile?.content ?? ""}
-                        className="min-h-[24rem] w-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main/80 outline-none"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
-                        MERGED_
-                      </div>
-                      <textarea
-                        value={activeContent}
-                        onChange={(e) =>
-                          updateActiveFileContent(e.target.value)
-                        }
-                        className="min-h-[24rem] w-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-xs text-tech-main outline-none focus:bg-tech-main/5"
-                      />
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {activeTab === "diff" && (
-                <section role="tabpanel" className="editor-grow">
-                  <pre className="min-h-[24rem] overflow-auto p-6 font-mono text-xs text-tech-main/80 whitespace-pre-wrap">
-                    {activeContent || (
-                      <span className="text-tech-main/30">
-                        NOTHING_TO_DIFF_
-                      </span>
-                    )}
-                  </pre>
-                </section>
-              )}
             </div>
           </>
         ) : null}
