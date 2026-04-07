@@ -2,22 +2,56 @@
 
 import * as React from "react"
 import { useTranslations } from "next-intl"
+import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror"
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown"
+import { languages } from "@codemirror/language-data"
+import { EditorView } from "@codemirror/view"
+
+const techTheme = EditorView.theme({
+  "&": {
+    backgroundColor: "transparent",
+    color: "var(--color-tech-main, #000)",
+    fontFamily: "var(--font-mono)",
+    fontSize: "0.875rem",
+    lineHeight: "1.625",
+    height: "100%",
+  },
+  ".cm-content": {
+    padding: "1.5rem",
+  },
+  "&.cm-focused": {
+    outline: "none",
+  },
+  ".cm-cursor": {
+    borderLeftColor: "var(--color-tech-main, #000)",
+  },
+  "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
+    {
+      backgroundColor: "rgba(0,0,0,0.1)",
+    },
+  ".cm-gutters": {
+    backgroundColor: "transparent",
+    color: "rgba(0,0,0,0.5)",
+    border: "none",
+  },
+})
 
 interface EditorTextareaProps {
   value: string
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
-  onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void
-  onDrop?: (e: React.DragEvent<HTMLTextAreaElement>) => void
-  onDragOver?: (e: React.DragEvent<HTMLTextAreaElement>) => void
-  onDragEnter?: (e: React.DragEvent<HTMLTextAreaElement>) => void
+  onChange: (value: string) => void
+  onPaste?: (e: React.ClipboardEvent<HTMLDivElement>) => void
+  onDrop?: (e: React.DragEvent<HTMLDivElement>) => void
+  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void
+  onDragEnter?: (e: React.DragEvent<HTMLDivElement>) => void
   isReadOnly?: boolean
   isSaving?: boolean
   placeholder?: string
   "aria-busy"?: boolean
+  fileId?: string // to preserve state per file
 }
 
 export const EditorTextarea = React.forwardRef<
-  HTMLTextAreaElement,
+  ReactCodeMirrorRef,
   EditorTextareaProps
 >(function EditorTextarea(
   {
@@ -30,6 +64,7 @@ export const EditorTextarea = React.forwardRef<
     isReadOnly,
     isSaving,
     placeholder,
+    fileId,
     ...rest
   },
   ref
@@ -37,23 +72,37 @@ export const EditorTextarea = React.forwardRef<
   const t = useTranslations("Editor")
 
   return (
-    <textarea
-      ref={ref}
+    <div
       className={`
-        w-full grow resize-none border-none p-6 font-mono text-sm/relaxed
-        text-black placeholder-zinc-500 outline-none
+        w-full grow flex flex-col
         ${isReadOnly ? `cursor-not-allowed bg-gray-50` : `bg-transparent`}
       `}
-      placeholder={placeholder ?? t("bodyPlaceholder")}
-      value={value}
-      onChange={onChange}
       onPaste={onPaste}
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
-      readOnly={isReadOnly}
       aria-busy={isSaving}
-      {...rest}
-    />
+      {...rest}>
+      <CodeMirror
+        ref={ref}
+        value={value}
+        height="100%"
+        className="grow [&>.cm-editor]:h-full"
+        placeholder={placeholder ?? t("bodyPlaceholder")}
+        extensions={[
+          markdown({ base: markdownLanguage, codeLanguages: languages }),
+          techTheme,
+        ]}
+        onChange={onChange}
+        readOnly={isReadOnly}
+        editable={!isReadOnly}
+        basicSetup={{
+          lineNumbers: false,
+          foldGutter: false,
+          highlightActiveLine: false,
+        }}
+        theme="light"
+      />
+    </div>
   )
 })
