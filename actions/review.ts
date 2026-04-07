@@ -851,13 +851,6 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
   })
   const draftFile = getActiveDraftFile(storedDraftFiles)
 
-  await prisma.revision.update({
-    where: { id: revisionId },
-    data: {
-      conflictMode: mode,
-    } as Prisma.RevisionUpdateInput,
-  })
-
   if (mode === "FINE_GRAINED") {
     if (!revision.baseMainSha || !revision.syncedMainSha) {
       throw new Error("The revision is missing main SHA metadata")
@@ -907,6 +900,7 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
         where: { id: revisionId },
         data: {
           status: "IN_REVIEW",
+          conflictMode: mode,
           conflictContent: rebasedDraftStorage.conflictContent,
           content: rebasedDraftStorage.content,
           filePath: rebasedDraftStorage.filePath,
@@ -939,6 +933,15 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
           content: deletedConflictDraftStorage.content,
           filePath: deletedConflictDraftStorage.filePath,
           conflictContent: deletedConflictDraftStorage.conflictContent,
+        },
+      })
+    } else if (result.status === "NO_CHANGE") {
+      await prisma.revision.update({
+        where: { id: revisionId },
+        data: {
+          status: "IN_REVIEW",
+          conflictMode: mode,
+          conflictContent: null,
         },
       })
     }
@@ -1007,6 +1010,7 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
       filePath: mergedDraftStorage.filePath,
       status: result.hasConflicts ? "SYNC_CONFLICT" : "IN_REVIEW",
       syncedMainSha: latestMainSha,
+      conflictMode: mode,
     },
   })
 
@@ -1035,6 +1039,7 @@ export async function finalizeReviewAction(
 
   const conflictMode = (revision as { conflictMode?: ConflictMode | null })
     .conflictMode
+  const rebaseState = revision.rebaseState as RebaseState | null
   const storedDraftFiles = decodeStoredDraftFiles({
     content: revision.content,
     conflictContent: revision.conflictContent,
@@ -1047,9 +1052,8 @@ export async function finalizeReviewAction(
     }
 
     if (
-      storedDraftFiles.files.some(
-        (file) =>
-          file.conflictContent !== undefined && file.conflictContent !== null
+      storedDraftFiles.files.some((file) =>
+        hasSimpleConflictMarkers(file.content)
       )
     ) {
       throw new Error("Resolve all simple conflicts before finalizing review")
@@ -1076,10 +1080,35 @@ export async function finalizeReviewAction(
       token
     )
   } else {
+    if (!revision.prBranchName) {
+      throw new Error("The linked draft is missing PR metadata")
+    }
+
+    const latestMainSha = await getMainBranchHeadSha(token)
+    const resolvedFiles =
+      rebaseState?.fileStates && Object.keys(rebaseState.fileStates).length > 0
+        ? Object.values(rebaseState.fileStates).map((fileState) => ({
+            filePath: fileState.filePath,
+            content: fileState.currentContent,
+          }))
+        : storedDraftFiles.files.map((file) => ({
+            filePath: file.filePath,
+            content: file.content,
+          }))
+
+    await forcePushResolvedToPRBranch({
+      resolvedFiles,
+      prBranchName: revision.prBranchName,
+      latestMainSha,
+      token,
+    })
+
     await mergePR(
       prNumber,
       {
-        mergeMethod: "rebase",
+        mergeMethod: "squash",
+        commitTitle: options?.commitTitle,
+        commitBody: options?.commitBody,
       },
       token
     )
@@ -1126,7 +1155,8 @@ export async function abortResolutionAction(revisionId: string) {
   await prisma.revision.update({
     where: { id: revisionId },
     data: {
-      ...(conflictMode === "SIMPLE" ? { conflictContent: null } : {}),
+      ...(conflictMode === "SIMPLE" ? { conflictContent: Prisma.DbNull } : {}),
+      status: "IN_REVIEW",
       conflictMode: null,
     } as Prisma.RevisionUpdateInput,
   })
