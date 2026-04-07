@@ -11,6 +11,7 @@ import { LazyMarkdownPreview } from "@/components/editor/lazy-markdown-preview"
 import { ConflictBlock } from "@/components/review/conflict-block"
 import { ReviewFileList } from "@/components/review/review-file-list"
 import { ModeSelector } from "@/components/review/mode-selector"
+import { CornerBrackets } from "@/components/ui/corner-brackets"
 import { RebaseProgress } from "@/components/review/rebase-progress"
 import {
   selectModeAction,
@@ -214,41 +215,9 @@ export function ReviewEditor({
     activeFile !== undefined &&
     fileHasConflicts(activeFile, activeContent) &&
     parsedSegments.some((segment) => segment.type === "conflict")
-  const effectiveMode = reviewSession.mode ?? (!hasConflicts ? "SIMPLE" : null)
+  const effectiveMode = reviewSession.mode ?? null
 
   const rebaseState = revision.rebaseState as RebaseState | null
-
-  React.useEffect(() => {
-    if (reviewSession.mode !== null || hasConflicts || abortedRef.current) {
-      return
-    }
-
-    let cancelled = false
-
-    const persistSimpleMode = async () => {
-      setIsSelectingMode(true)
-
-      try {
-        await selectModeAction(revision.id, "SIMPLE")
-
-        if (!cancelled) {
-          setReviewSession((prev) =>
-            prev.mode === null ? { ...prev, mode: "SIMPLE" } : prev
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setIsSelectingMode(false)
-        }
-      }
-    }
-
-    void persistSimpleMode()
-
-    return () => {
-      cancelled = true
-    }
-  }, [hasConflicts, reviewSession.mode, revision.id])
 
   const handleSelectFile = (fileId: string) => {
     setReviewSession((prev) => ({ ...prev, activeFileId: fileId }))
@@ -419,16 +388,24 @@ export function ReviewEditor({
           </a>
         </div>
 
-        {effectiveMode === null ? (
-          <div className="border border-tech-main/40 bg-white/80 p-6 backdrop-blur-sm">
-            <ModeSelector
-              modeAnalysis={reviewSession.modeAnalysis}
-              onSelectMode={handleSelectMode}
-              hasConflicts={hasConflicts}
-              isSelecting={isSelectingMode}
-            />
+        {effectiveMode === null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="relative w-full max-w-2xl border border-tech-main/40 bg-white p-6 shadow-xl">
+              <CornerBrackets color="border-tech-main/40" />
+              <p className="mb-4 font-mono text-xs tracking-widest text-tech-main/60 uppercase">
+                RESOLUTION_METHOD_
+              </p>
+              <ModeSelector
+                modeAnalysis={reviewSession.modeAnalysis}
+                onSelectMode={handleSelectMode}
+                hasConflicts={hasConflicts}
+                isSelecting={isSelectingMode}
+              />
+            </div>
           </div>
-        ) : (
+        )}
+
+        {effectiveMode !== null ? (
           <>
             <RebaseProgress
               mode={effectiveMode}
@@ -544,7 +521,7 @@ export function ReviewEditor({
               </section>
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   )
