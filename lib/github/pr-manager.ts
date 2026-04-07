@@ -124,6 +124,24 @@ export async function getOpenPRs(token?: string) {
   return data
 }
 
+export async function getClosedPRs(
+  token: string | undefined,
+  page: number,
+  perPage = 10
+) {
+  const octokit = getOctokit(token)
+  const { data } = await octokit.pulls.list({
+    owner: ARTICLES_REPO_OWNER,
+    repo: ARTICLES_REPO_NAME,
+    state: "closed",
+    per_page: perPage,
+    page,
+    sort: "updated",
+    direction: "desc",
+  })
+  return data
+}
+
 export async function getPR(prNumber: number, token?: string) {
   const octokit = getOctokit(token)
   const { data } = await octokit.pulls.get({
