@@ -23,6 +23,7 @@ import {
   normalizeDraftFileCollection,
   serializeDraftFilesPayload,
 } from "@/lib/draft-files"
+import { getReauthLoginUrl, isReauthRequiredError } from "@/lib/admin-reauth"
 import type {
   ConflictMode,
   ModeAnalysis,
@@ -179,9 +180,28 @@ export function ReviewEditor({
   const [isAborting, setIsAborting] = React.useState(false)
   const [isFinalizing, setIsFinalizing] = React.useState(false)
   const [isSavingResolution, setIsSavingResolution] = React.useState(false)
+  const [actionError, setActionError] = React.useState<string | null>(null)
   const abortedRef = React.useRef(false)
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+  React.useEffect(() => {
+    setReviewSession((prev) => ({ ...prev, files, modeAnalysis }))
+  }, [files, modeAnalysis])
+
+  React.useEffect(() => {
+    setFileContents((prev) => {
+      const next = { ...prev }
+
+      for (const f of files) {
+        if (!(f.id in prev)) {
+          next[f.id] = f.conflictContent ?? f.content
+        }
+      }
+
+      return next
+    })
+  }, [files])
 
   const sessionFiles = React.useMemo(
     () =>
@@ -218,6 +238,19 @@ export function ReviewEditor({
   const effectiveMode = reviewSession.mode ?? null
 
   const rebaseState = revision.rebaseState as RebaseState | null
+
+  const rerereResolutionMap = React.useMemo(() => {
+    const map = new Map<string, string>()
+    if (rebaseState?.rerereApplied) {
+      for (const block of rebaseState.rerereApplied) {
+        const key = `${block.ours}|||${block.theirs}`
+        if (block.autoApplied?.resolution) {
+          map.set(key, block.autoApplied.resolution)
+        }
+      }
+    }
+    return map
+  }, [rebaseState?.rerereApplied])
 
   const handleSelectFile = (fileId: string) => {
     setReviewSession((prev) => ({ ...prev, activeFileId: fileId }))
@@ -301,21 +334,43 @@ export function ReviewEditor({
   }
 
   const handleSelectMode = async (mode: ConflictMode) => {
+    setActionError(null)
     setIsSelectingMode(true)
     try {
       await selectModeAction(revision.id, mode)
       setReviewSession((prev) => ({ ...prev, mode }))
+      router.refresh()
+    } catch (error) {
+      if (isReauthRequiredError(error)) {
+        window.location.href = getReauthLoginUrl(
+          window.location.pathname + window.location.search
+        )
+        return
+      }
+
+      setActionError(error instanceof Error ? error.message : String(error))
     } finally {
       setIsSelectingMode(false)
     }
   }
 
   const handleAbort = async () => {
+    setActionError(null)
     setIsAborting(true)
     try {
       await abortResolutionAction(revision.id)
       abortedRef.current = true
       setReviewSession((prev) => ({ ...prev, mode: null }))
+      router.refresh()
+    } catch (error) {
+      if (isReauthRequiredError(error)) {
+        window.location.href = getReauthLoginUrl(
+          window.location.pathname + window.location.search
+        )
+        return
+      }
+
+      setActionError(error instanceof Error ? error.message : String(error))
     } finally {
       setIsAborting(false)
     }
@@ -348,6 +403,7 @@ export function ReviewEditor({
     commitTitle?: string
     commitBody?: string
   }) => {
+    setActionError(null)
     setIsFinalizing(true)
     try {
       if (effectiveMode === "SIMPLE") {
@@ -355,6 +411,16 @@ export function ReviewEditor({
       }
 
       await finalizeReviewAction(pr.number, options)
+      router.push("/review")
+    } catch (error) {
+      if (isReauthRequiredError(error)) {
+        window.location.href = getReauthLoginUrl(
+          window.location.pathname + window.location.search
+        )
+        return
+      }
+
+      setActionError(error instanceof Error ? error.message : String(error))
     } finally {
       setIsFinalizing(false)
     }
@@ -407,6 +473,16 @@ export function ReviewEditor({
 
         {effectiveMode !== null ? (
           <>
+            {actionError ? (
+              <button
+                type="button"
+                onClick={() => setActionError(null)}
+                className="w-full border-l-4 border-red-500 bg-red-500/5 px-4 py-3 text-left font-mono text-xs text-red-700 transition hover:bg-red-500/10"
+                aria-label="Dismiss action error">
+                {actionError}
+              </button>
+            ) : null}
+
             <RebaseProgress
               mode={effectiveMode}
               rebaseState={rebaseState}
@@ -473,6 +549,13 @@ export function ReviewEditor({
                             onManualEdit={(content) =>
                               resolveConflictSegment(segment.id, content)
                             }
+                            autoApplied={(() => {
+                              const key = `${segment.ours}|||${segment.theirs}`
+                              const resolution = rerereResolutionMap.get(key)
+                              return resolution
+                                ? { resolution, source: "rerere" as const }
+                                : undefined
+                            })()}
                           />
                         ) : (
                           <textarea
