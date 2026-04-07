@@ -15,6 +15,7 @@ interface RebaseProgressProps {
   mode: "FINE_GRAINED" | "SIMPLE"
   rebaseState?: RebaseState | null
   files?: SimpleFileStatus[]
+  isBranchSyncing?: boolean
   onAbort: () => void
   onFinalize: (options?: { commitTitle?: string; commitBody?: string }) => void
   isAborting?: boolean
@@ -202,6 +203,7 @@ export function RebaseProgress({
   mode,
   rebaseState,
   files,
+  isBranchSyncing = false,
   onAbort,
   onFinalize,
   isAborting,
@@ -222,6 +224,12 @@ export function RebaseProgress({
   React.useEffect(() => {
     setCommitBody(defaultCommitBody)
   }, [defaultCommitBody])
+
+  React.useEffect(() => {
+    if (isBranchSyncing) {
+      setShowCommitEditor(false)
+    }
+  }, [isBranchSyncing])
 
   if (mode === "FINE_GRAINED") {
     const total = rebaseState?.commitShas.length ?? 0
@@ -328,6 +336,9 @@ export function RebaseProgress({
         <p className="font-mono text-sm font-bold tracking-widest text-tech-main uppercase">
           RESOLVING_CONFLICTS_IN_{conflictFiles.length}_FILES_
         </p>
+        <p className="font-mono text-[0.6875rem] tracking-widest text-tech-main/60 uppercase">
+          {isBranchSyncing ? "PR_BRANCH_UPDATING_" : "PR_BRANCH_SYNCED_"}
+        </p>
       </div>
 
       {(files ?? []).length > 0 && (
@@ -414,7 +425,7 @@ export function RebaseProgress({
             <TechButton
               variant="primary"
               size="sm"
-              disabled={isFinalizing}
+              disabled={isBranchSyncing || isFinalizing}
               className="border-green-700! bg-green-700! hover:bg-green-800!"
               onClick={() => {
                 const finalBody =
@@ -432,7 +443,7 @@ export function RebaseProgress({
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         <AbortButton onAbort={onAbort} isAborting={isAborting} />
-        {allResolved && !showCommitEditor && (
+        {allResolved && !isBranchSyncing && !showCommitEditor && (
           <TechButton
             variant="primary"
             size="sm"

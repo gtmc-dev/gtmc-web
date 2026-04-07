@@ -220,10 +220,15 @@ export function ReviewEditor({
     [fileContents, reviewSession.files]
   )
   const sessionFilesRef = React.useRef(sessionFiles)
+  const activeFileIdRef = React.useRef(reviewSession.activeFileId)
 
   React.useEffect(() => {
     sessionFilesRef.current = sessionFiles
   }, [sessionFiles])
+
+  React.useEffect(() => {
+    activeFileIdRef.current = reviewSession.activeFileId
+  }, [reviewSession.activeFileId])
 
   const activeFile =
     sessionFiles.find((f) => f.id === reviewSession.activeFileId) ??
@@ -320,7 +325,7 @@ export function ReviewEditor({
   const persistSimpleResolution = React.useCallback(
     async (options?: { keepBranchSyncing?: boolean; silent?: boolean }) => {
       const collection = normalizeDraftFileCollection({
-        activeFileId: reviewSession.activeFileId,
+        activeFileId: activeFileIdRef.current,
         files: sessionFilesRef.current.map((file) => ({
           id: file.id,
           filePath: file.filePath,
@@ -355,7 +360,7 @@ export function ReviewEditor({
         setIsBranchSyncing(false)
       }
     },
-    [pr.number, reviewSession.activeFileId, router]
+    [pr.number, router]
   )
 
   const resolveConflictSegment = React.useCallback(
@@ -381,6 +386,7 @@ export function ReviewEditor({
           clearTimeout(autosaveTimeoutRef.current)
         }
 
+        setActionError(null)
         setIsBranchSyncing(true)
         autosaveTimeoutRef.current = setTimeout(() => {
           autosaveTimeoutRef.current = null
@@ -576,6 +582,7 @@ export function ReviewEditor({
               mode={effectiveMode}
               rebaseState={rebaseState}
               files={simpleFileStatuses}
+              isBranchSyncing={isBranchSyncing}
               onAbort={handleAbort}
               onFinalize={handleFinalize}
               isAborting={isAborting}
@@ -584,18 +591,6 @@ export function ReviewEditor({
               defaultCommitBody={squashCommitDefaults?.body}
               coauthorLines={squashCommitDefaults?.coauthorLines}
             />
-
-            {effectiveMode === "SIMPLE" ? (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => void persistSimpleResolution()}
-                  disabled={isSavingResolution || isFinalizing}
-                  className="inline-flex min-h-11 items-center justify-center border border-tech-main/40 bg-tech-main/10 px-4 py-2 font-mono text-xs tracking-widest uppercase text-tech-main transition hover:bg-tech-main/15 disabled:cursor-not-allowed disabled:opacity-50">
-                  {isSavingResolution ? "SAVING..." : simpleSaveLabel}
-                </button>
-              </div>
-            ) : null}
 
             <div
               className="

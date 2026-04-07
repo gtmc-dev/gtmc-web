@@ -472,6 +472,21 @@ export async function resolveConflictAction(
       },
     })
 
+    const latestMainSha = await getMainBranchHeadSha(token)
+
+    await forcePushResolvedToPRBranch({
+      resolvedFiles: nextDraftFiles.files.map((file) => ({
+        filePath: file.filePath,
+        content: file.content,
+      })),
+      prBranchName: linkedDraft.prBranchName,
+      latestMainSha,
+      commitMessage: "chore(review): apply conflict resolution",
+      authorName: submitterName,
+      authorEmail: submitterEmail,
+      token,
+    })
+
     revalidatePaths(getReviewRevalidatePaths(linkedDraft.id, prNumber))
 
     return { success: true, status: nextStatus }
@@ -1001,6 +1016,20 @@ export async function selectModeAction(revisionId: string, mode: ConflictMode) {
     latestMainSha,
     token,
   })
+
+  await forcePushResolvedToPRBranch({
+    resolvedFiles: storedDraftFiles.files.map((file) => ({
+      filePath: file.filePath,
+      content: file.content,
+    })),
+    prBranchName: revision.prBranchName,
+    latestMainSha,
+    commitMessage: "chore(review): sync draft to PR branch for review",
+    authorName: submitterName,
+    authorEmail: submitterEmail,
+    token,
+  })
+
   const mergedDraftFiles = normalizeDraftFileCollection({
     activeFileId: storedDraftFiles.activeFileId,
     files: storedDraftFiles.files.map((file) => {
@@ -1091,19 +1120,6 @@ export async function finalizeReviewAction(
     ) {
       throw new Error("Resolve all simple conflicts before finalizing review")
     }
-
-    await forcePushResolvedToPRBranch({
-      resolvedFiles: storedDraftFiles.files.map((file) => ({
-        filePath: file.filePath,
-        content: file.content,
-      })),
-      prBranchName: revision.prBranchName,
-      latestMainSha: revision.syncedMainSha,
-      commitMessage: options?.commitTitle,
-      authorName: submitterName,
-      authorEmail: submitterEmail,
-      token,
-    })
 
     await mergePR(
       prNumber,
