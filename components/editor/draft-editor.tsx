@@ -29,6 +29,11 @@ import {
   LoadingIndicator,
   PENDING_LABELS,
 } from "@/components/ui/loading-indicator"
+import {
+  OperationProgress,
+  type OperationProgressStage,
+  type OperationProgressState,
+} from "@/components/ui/operation-progress"
 import { TechButton } from "../ui/tech-button"
 import { InputBox } from "../ui/input-box"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
@@ -49,6 +54,7 @@ interface DraftEditorProps {
 export function DraftEditor({ initialData }: DraftEditorProps) {
   const router = useRouter()
   const t = useTranslations("Editor")
+  const progressT = useTranslations("OperationProgress")
   const initialStatus = initialData?.status || "DRAFT"
 
   const [draftStatus, setDraftStatus] = React.useState(initialStatus)
@@ -68,11 +74,72 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   const [isAddFileDialogOpen, setIsAddFileDialogOpen] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
   const [isSubmittingReview, setIsSubmittingReview] = React.useState(false)
+  const [saveProgressState, setSaveProgressState] =
+    React.useState<OperationProgressState>("idle")
   const [activeTab, setActiveTab] = React.useState<TabType>("write")
 
   const textareaRef = React.useRef<any>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const saveProgressResetRef = React.useRef<number | null>(null)
   const { badge, showBadge, clearBadge } = useBadge()
+
+  const saveProgressStages = React.useMemo<OperationProgressStage[]>(
+    () => [
+      {
+        id: "normalize",
+        label: progressT("saveDraftStageNormalize"),
+        durationMs: 260,
+      },
+      {
+        id: "serialize",
+        label: progressT("saveDraftStageSerialize"),
+        durationMs: 300,
+      },
+      {
+        id: "persist",
+        label: progressT("saveDraftStagePersist"),
+        durationMs: 940,
+      },
+      {
+        id: "assets",
+        label: progressT("saveDraftStageAssets"),
+        durationMs: 540,
+      },
+      {
+        id: "refresh",
+        label: progressT("saveDraftStageRefresh"),
+        durationMs: 280,
+      },
+    ],
+    [progressT]
+  )
+
+  React.useEffect(() => {
+    return () => {
+      if (saveProgressResetRef.current !== null) {
+        window.clearTimeout(saveProgressResetRef.current)
+      }
+    }
+  }, [])
+
+  const updateSaveProgressState = (
+    nextState: Exclude<OperationProgressState, "idle">
+  ) => {
+    if (saveProgressResetRef.current !== null) {
+      window.clearTimeout(saveProgressResetRef.current)
+      saveProgressResetRef.current = null
+    }
+
+    setSaveProgressState(nextState)
+
+    if (nextState === "running") {
+      return
+    }
+
+    saveProgressResetRef.current = window.setTimeout(() => {
+      setSaveProgressState("idle")
+    }, nextState === "success" ? 1400 : 3200)
+  }
 
   const githubPrUrl = initialData?.githubPrUrl
   const isSyncConflict = draftStatus === "SYNC_CONFLICT"
@@ -248,6 +315,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     if (!revisionId) {
       showBadge("SAVING_DRAFT_BEFORE_UPLOAD...", "progress")
       setIsSaving(true)
+      updateSaveProgressState("running")
       try {
         const normalizedDraftCollection =
           normalizeDraftFileCollection(draftCollection)
@@ -266,12 +334,15 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
         if (result.success && result.revisionId) {
           setDraftCollection(normalizedDraftCollection)
           setRevisionId(result.revisionId)
+          updateSaveProgressState("success")
           clearBadge()
         } else {
+          updateSaveProgressState("error")
           showBadge("SAVE_FAILED_ Cannot upload without saved draft.", "error")
           return
         }
       } catch {
+        updateSaveProgressState("error")
         showBadge("SAVE_FAILED_ Cannot upload without saved draft.", "error")
         return
       } finally {
@@ -308,6 +379,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   const handleSaveDraft = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
+    updateSaveProgressState("running")
 
     try {
       const normalizedDraftCollection =
@@ -328,10 +400,12 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
       if (result.success && result.revisionId) {
         setDraftCollection(normalizedDraftCollection)
         setRevisionId(result.revisionId)
+        updateSaveProgressState("success")
         showBadge("DRAFT_SAVED_", "info", 3000)
       }
     } catch (error) {
       console.error(error)
+      updateSaveProgressState("error")
       showBadge("SAVE_FAILED_", "error")
     } finally {
       setIsSaving(false)
@@ -700,6 +774,14 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
 
       {!isReadOnly && (
         <>
+          <OperationProgress
+            state={saveProgressState}
+            title={progressT("saveDraftTitle")}
+            stages={saveProgressStages}
+            successLabel={progressT("saveDraftSuccess")}
+            errorLabel={progressT("saveDraftError")}
+          />
+
           <div
             className="
               relative mt-6 flex justify-end gap-4 border-t border-tech-main/10
@@ -713,7 +795,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
               disabled={saveDisabled}
               aria-busy={isSaving}>
               {isSaving ? (
-                <LoadingIndicator label={PENDING_LABELS.SAVING_DRAFT} />
+                t("savingLabel")
               ) : (
                 t("saveButton")
               )}

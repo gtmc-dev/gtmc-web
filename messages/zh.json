@@ -161,6 +161,23 @@
     "claimingIssue": "认领中...",
     "uploading": "上传中..."
   },
+  "OperationProgress": {
+    "saveDraftTitle": "保存流水线",
+    "saveDraftSuccess": "草稿已同步",
+    "saveDraftError": "草稿同步中断",
+    "saveDraftStageNormalize": "校验草稿",
+    "saveDraftStageSerialize": "打包文件",
+    "saveDraftStagePersist": "写入版本",
+    "saveDraftStageAssets": "同步资源引用",
+    "saveDraftStageRefresh": "刷新视图",
+    "mergeTitle": "合并流水线",
+    "mergeSuccess": "拉取请求已合并",
+    "mergeError": "合并流程中断",
+    "mergeStageAuthorize": "校验权限",
+    "mergeStageGithub": "执行 GitHub 合并",
+    "mergeStageAssets": "同步草稿资源",
+    "mergeStageRefresh": "刷新审核队列"
+  },
   "Profile": {
     "pageTitle": "个人设置",
     "usernameLabel": "用户名",

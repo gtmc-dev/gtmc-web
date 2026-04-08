@@ -161,6 +161,23 @@
     "claimingIssue": "CLAIMING_ISSUE...",
     "uploading": "UPLOADING..."
   },
+  "OperationProgress": {
+    "saveDraftTitle": "SAVE PIPELINE",
+    "saveDraftSuccess": "Draft synchronized",
+    "saveDraftError": "Draft sync interrupted",
+    "saveDraftStageNormalize": "Validate draft",
+    "saveDraftStageSerialize": "Bundle files",
+    "saveDraftStagePersist": "Write revision",
+    "saveDraftStageAssets": "Reconcile assets",
+    "saveDraftStageRefresh": "Refresh views",
+    "mergeTitle": "MERGE PIPELINE",
+    "mergeSuccess": "Pull request merged",
+    "mergeError": "Merge pipeline interrupted",
+    "mergeStageAuthorize": "Authorize merge",
+    "mergeStageGithub": "Merge on GitHub",
+    "mergeStageAssets": "Reconcile assets",
+    "mergeStageRefresh": "Refresh queues"
+  },
   "Profile": {
     "pageTitle": "Profile Settings",
     "usernameLabel": "Username",
