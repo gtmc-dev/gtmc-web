@@ -167,7 +167,6 @@ function inferMode(revision: {
 interface ReviewEditorProps {
   pr: { number: number; title: string; htmlUrl: string }
   files: ReviewFile[]
-  initialHasConflicts?: boolean
   initialActiveFileId?: string
   modeAnalysis: ModeAnalysis
   revision: { id: string; conflictMode: string | null; rebaseState: unknown }
@@ -191,7 +190,6 @@ interface ReviewActionDraftSnapshot {
 export function ReviewEditor({
   pr,
   files,
-  initialHasConflicts = false,
   initialActiveFileId,
   modeAnalysis,
   revision,
@@ -322,7 +320,6 @@ export function ReviewEditor({
   const hasConflicts = sessionFiles.some((file) =>
     fileHasConflicts(file, file.content)
   )
-  const hasKnownConflicts = initialHasConflicts || hasConflicts
   const firstConflictedFile = React.useMemo(
     () => getFirstConflictedFile(sessionFiles, fileContents),
     [fileContents, sessionFiles]
@@ -957,7 +954,7 @@ export function ReviewEditor({
                 <ModeSelector
                   modeAnalysis={reviewSession.modeAnalysis}
                   onSelectMode={handleSelectMode}
-                  hasConflicts={hasKnownConflicts}
+                  hasConflicts={hasConflicts}
                   isSelecting={isSelectingMode}
                 />
               </div>
