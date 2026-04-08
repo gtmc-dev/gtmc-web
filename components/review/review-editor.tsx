@@ -122,6 +122,17 @@ function resolveFileStatus(
   return startedWithConflict ? "resolved" : "clean"
 }
 
+function getFirstConflictedFile(
+  files: ReviewFile[],
+  fileContents: Record<string, string>
+) {
+  return (
+    files.find((file) =>
+      fileHasConflicts(file, fileContents[file.id] ?? file.content)
+    ) ?? null
+  )
+}
+
 function inferMode(revision: {
   conflictMode: string | null
   rebaseState: unknown
@@ -146,6 +157,7 @@ function inferMode(revision: {
 interface ReviewEditorProps {
   pr: { number: number; title: string; htmlUrl: string }
   files: ReviewFile[]
+  initialActiveFileId?: string
   modeAnalysis: ModeAnalysis
   revision: { id: string; conflictMode: string | null; rebaseState: unknown }
   squashCommitDefaults?: {
@@ -158,6 +170,7 @@ interface ReviewEditorProps {
 export function ReviewEditor({
   pr,
   files,
+  initialActiveFileId,
   modeAnalysis,
   revision,
   squashCommitDefaults,
@@ -168,12 +181,14 @@ export function ReviewEditor({
     () => ({
       mode: inferMode(revision),
       files,
-      activeFileId: files[0]?.id ?? "",
+      activeFileId: initialActiveFileId ?? files[0]?.id ?? "",
       modeAnalysis,
     })
   )
 
-  const [activeTab, setActiveTab] = React.useState<TabType>("write")
+  const [activeTab, setActiveTab] = React.useState<TabType>(() =>
+    files.some((file) => Boolean(file.conflictContent)) ? "3-way" : "write"
+  )
   const [lineWrap, setLineWrap] = React.useState(false)
 
   const [fileContents, setFileContents] = React.useState<
@@ -189,12 +204,21 @@ export function ReviewEditor({
     React.useState<OperationProgressState>("idle")
   const [isBranchSyncing, setIsBranchSyncing] = React.useState(false)
   const [actionError, setActionError] = React.useState<string | null>(null)
+  const [actionNotice, setActionNotice] = React.useState<{
+    tone: "info" | "success" | "warning"
+    message: string
+  } | null>(null)
   const [mounted, setMounted] = React.useState(false)
   const abortedRef = React.useRef(false)
   const autosaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   )
   const finalizeProgressResetRef = React.useRef<number | null>(null)
+  const pendingServerRefreshRef = React.useRef(false)
+  const conflictFocusPathRef = React.useRef<string | null>(null)
+  const conflictAutoScrollRef = React.useRef(false)
+  const firstConflictAnchorRef = React.useRef<HTMLDivElement | null>(null)
+  const lastConflictSignatureRef = React.useRef<string | null>(null)
 
   const textareaRef = React.useRef<any>(null)
 
@@ -203,11 +227,32 @@ export function ReviewEditor({
   }, [])
 
   React.useEffect(() => {
-    setReviewSession((prev) => ({ ...prev, files, modeAnalysis }))
-  }, [files, modeAnalysis])
+    setReviewSession((prev) => {
+      const fallbackActiveFileId = initialActiveFileId ?? files[0]?.id ?? ""
+      const nextActiveFileId = pendingServerRefreshRef.current
+        ? fallbackActiveFileId
+        : files.some((file) => file.id === prev.activeFileId)
+          ? prev.activeFileId
+          : fallbackActiveFileId
+
+      return {
+        ...prev,
+        files,
+        modeAnalysis,
+        activeFileId: nextActiveFileId,
+      }
+    })
+  }, [files, initialActiveFileId, modeAnalysis])
 
   React.useEffect(() => {
     setFileContents((prev) => {
+      if (pendingServerRefreshRef.current) {
+        pendingServerRefreshRef.current = false
+        return Object.fromEntries(
+          files.map((file) => [file.id, file.conflictContent ?? file.content])
+        )
+      }
+
       const next = { ...prev }
 
       for (const f of files) {
@@ -254,6 +299,10 @@ export function ReviewEditor({
   const hasConflicts = sessionFiles.some((file) =>
     fileHasConflicts(file, file.content)
   )
+  const firstConflictedFile = React.useMemo(
+    () => getFirstConflictedFile(sessionFiles, fileContents),
+    [fileContents, sessionFiles]
+  )
   const parsedSegments = React.useMemo(
     () => parseEditorSegments(activeContent),
     [activeContent]
@@ -262,7 +311,19 @@ export function ReviewEditor({
     activeFile !== undefined &&
     fileHasConflicts(activeFile, activeContent) &&
     parsedSegments.some((segment) => segment.type === "conflict")
+  const firstConflictSegmentId = React.useMemo(
+    () => parsedSegments.find((segment) => segment.type === "conflict")?.id ?? null,
+    [parsedSegments]
+  )
   const effectiveMode = reviewSession.mode ?? null
+  const conflictSignature = React.useMemo(
+    () =>
+      sessionFiles
+        .filter((file) => fileHasConflicts(file, file.content))
+        .map((file) => file.filePath)
+        .join("||"),
+    [sessionFiles]
+  )
 
   const rebaseState = revision.rebaseState as RebaseState | null
 
@@ -277,6 +338,74 @@ export function ReviewEditor({
       }
     }
   }, [])
+
+  React.useEffect(() => {
+    if (!conflictSignature) {
+      lastConflictSignatureRef.current = null
+      return
+    }
+
+    if (!effectiveMode || !hasConflicts) {
+      return
+    }
+
+    const requestedPath = conflictFocusPathRef.current
+    const shouldFocus =
+      Boolean(requestedPath) || lastConflictSignatureRef.current !== conflictSignature
+
+    if (!shouldFocus) {
+      return
+    }
+
+    const targetFile =
+      (requestedPath
+        ? sessionFiles.find(
+            (file) =>
+              file.filePath === requestedPath &&
+              fileHasConflicts(file, file.content)
+          )
+        : null) ?? firstConflictedFile
+
+    if (!targetFile) {
+      return
+    }
+
+    setReviewSession((prev) =>
+      prev.activeFileId === targetFile.id
+        ? prev
+        : { ...prev, activeFileId: targetFile.id }
+    )
+    setActiveTab("3-way")
+    conflictAutoScrollRef.current = true
+    conflictFocusPathRef.current = null
+    lastConflictSignatureRef.current = conflictSignature
+  }, [
+    conflictSignature,
+    effectiveMode,
+    firstConflictedFile,
+    hasConflicts,
+    sessionFiles,
+  ])
+
+  React.useEffect(() => {
+    if (
+      !conflictAutoScrollRef.current ||
+      activeTab !== "3-way" ||
+      !hasInlineConflicts
+    ) {
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      firstConflictAnchorRef.current?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      })
+      conflictAutoScrollRef.current = false
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [activeTab, activeFile?.id, hasInlineConflicts, parsedSegments])
 
   const updateFinalizeProgressState = React.useCallback(
     (nextState: Exclude<OperationProgressState, "idle">) => {
@@ -379,7 +508,27 @@ export function ReviewEditor({
       }
 
       try {
-        await resolveConflictAction(pr.number, formData)
+        const result = await resolveConflictAction(pr.number, formData)
+
+        if (result.hasConflicts) {
+          conflictFocusPathRef.current = result.focusFilePath ?? null
+
+          if (!options?.silent) {
+            setActionNotice({
+              tone: "warning",
+              message: result.focusFilePath
+                ? `CONFLICT_REMAINS_[${result.focusFilePath}]`
+                : "CONFLICT_REMAINS_",
+            })
+          }
+        } else if (!options?.silent) {
+          setActionNotice({
+            tone: "success",
+            message: "CONFLICTS_RESOLVED_AND_BRANCH_UPDATED_",
+          })
+        }
+
+        pendingServerRefreshRef.current = true
         router.refresh()
       } catch (error) {
         if (!options?.silent) {
@@ -469,10 +618,42 @@ export function ReviewEditor({
 
   const handleSelectMode = async (mode: ConflictMode) => {
     setActionError(null)
+    setActionNotice(null)
     setIsSelectingMode(true)
     try {
-      await selectModeAction(revision.id, mode)
-      setReviewSession((prev) => ({ ...prev, mode }))
+      const result = await selectModeAction(revision.id, mode)
+      const selectedMode = result.conflictMode ?? mode
+
+      if (result.hasConflicts) {
+        conflictFocusPathRef.current = result.focusFilePath ?? null
+        conflictAutoScrollRef.current = true
+        setActionNotice({
+          tone: "warning",
+          message: result.focusFilePath
+            ? `CONFLICT_DETECTED_[${selectedMode}]_[${result.focusFilePath}]`
+            : `CONFLICT_DETECTED_[${selectedMode}]`,
+        })
+      } else {
+        setActiveTab("write")
+        setActionNotice({
+          tone: "success",
+          message:
+            result.status === "NO_CHANGE"
+              ? `NO_NEW_COMMITS_TO_REPLAY_[${selectedMode}]`
+              : `NO_CONFLICTS_DETECTED_[${selectedMode}]`,
+        })
+      }
+
+      setReviewSession((prev) => ({
+        ...prev,
+        mode: selectedMode,
+        activeFileId:
+          result.focusFilePath
+            ? prev.files.find((file) => file.filePath === result.focusFilePath)
+                ?.id ?? prev.activeFileId
+            : prev.activeFileId,
+      }))
+      pendingServerRefreshRef.current = true
       router.refresh()
     } catch (error) {
       if (isReauthRequiredError(error)) {
@@ -490,6 +671,7 @@ export function ReviewEditor({
 
   const handleAbort = async () => {
     setActionError(null)
+    setActionNotice(null)
     setIsAborting(true)
     try {
       if (autosaveTimeoutRef.current) {
@@ -501,6 +683,7 @@ export function ReviewEditor({
       await abortResolutionAction(revision.id)
       abortedRef.current = true
       setReviewSession((prev) => ({ ...prev, mode: null }))
+      pendingServerRefreshRef.current = true
       router.refresh()
     } catch (error) {
       if (isReauthRequiredError(error)) {
@@ -521,6 +704,7 @@ export function ReviewEditor({
     commitBody?: string
   }) => {
     setActionError(null)
+    setActionNotice(null)
     setIsFinalizing(true)
     updateFinalizeProgressState("running")
     try {
@@ -619,6 +803,22 @@ export function ReviewEditor({
                 className="w-full border-l-4 border-red-500 bg-red-500/5 px-4 py-3 text-left font-mono text-xs text-red-700 transition hover:bg-red-500/10"
                 aria-label="Dismiss action error">
                 {actionError}
+              </button>
+            ) : null}
+
+            {actionNotice ? (
+              <button
+                type="button"
+                onClick={() => setActionNotice(null)}
+                className={`w-full border-l-4 px-4 py-3 text-left font-mono text-xs transition ${
+                  actionNotice.tone === "warning"
+                    ? "border-amber-500 bg-amber-500/10 text-amber-800 hover:bg-amber-500/15"
+                    : actionNotice.tone === "success"
+                      ? "border-green-500 bg-green-500/10 text-green-800 hover:bg-green-500/15"
+                      : "border-tech-main bg-tech-main/5 text-tech-main hover:bg-tech-main/10"
+                }`}
+                aria-label="Dismiss action notice">
+                {actionNotice.message}
               </button>
             ) : null}
 
@@ -842,7 +1042,7 @@ export function ReviewEditor({
                   <div className="flex min-h-0 flex-[3] divide-x divide-tech-main/20 border-b border-tech-main/20">
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
-                        HEAD_
+                        CURRENT_(DRAFT)_
                       </div>
                       <div className="custom-left-scrollbar min-h-[16rem] flex-1 overflow-auto">
                         {hasInlineConflicts ? (
@@ -860,10 +1060,15 @@ export function ReviewEditor({
                               return (
                                 <div
                                   key={segment.id}
+                                  ref={
+                                    segment.id === firstConflictSegmentId
+                                      ? firstConflictAnchorRef
+                                      : undefined
+                                  }
                                   className="my-1 border border-red-300 bg-red-500/5">
                                   <div className="flex items-center justify-between border-b border-red-300 bg-red-500/10 px-2 py-1">
                                     <span className="font-mono text-[0.6rem] tracking-widest text-red-700 uppercase">
-                                      OURS (draft)
+                                      CURRENT (draft)
                                     </span>
                                     <button
                                       type="button"
@@ -874,7 +1079,7 @@ export function ReviewEditor({
                                         )
                                       }
                                       className="min-h-[1.75rem] border border-red-400 bg-red-500/10 px-2 py-0.5 font-mono text-[0.6rem] tracking-widest text-red-700 uppercase hover:bg-red-500/20">
-                                      ACCEPT OURS ↓
+                                      ACCEPT CURRENT ↓
                                     </button>
                                   </div>
                                   <pre className="whitespace-pre-wrap p-2 text-red-900">
@@ -894,7 +1099,7 @@ export function ReviewEditor({
 
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="border-b border-tech-main/20 bg-tech-main/5 px-3 py-1.5 font-mono text-[0.625rem] tracking-widest text-tech-main/60 uppercase">
-                        DRAFT_
+                        INCOMING_(MAIN)_
                       </div>
                       <div className="custom-left-scrollbar min-h-[16rem] flex-1 overflow-auto">
                         {hasInlineConflicts ? (
@@ -915,7 +1120,7 @@ export function ReviewEditor({
                                   className="my-1 border border-blue-300 bg-blue-500/5">
                                   <div className="flex items-center justify-between border-b border-blue-300 bg-blue-500/10 px-2 py-1">
                                     <span className="font-mono text-[0.6rem] tracking-widest text-blue-700 uppercase">
-                                      THEIRS (main)
+                                      INCOMING (main)
                                     </span>
                                     <button
                                       type="button"
@@ -926,7 +1131,7 @@ export function ReviewEditor({
                                         )
                                       }
                                       className="min-h-[1.75rem] border border-blue-400 bg-blue-500/10 px-2 py-0.5 font-mono text-[0.6rem] tracking-widest text-blue-700 uppercase hover:bg-blue-500/20">
-                                      ACCEPT THEIRS ↓
+                                      ACCEPT INCOMING ↓
                                     </button>
                                   </div>
                                   <pre className="whitespace-pre-wrap p-2 text-blue-900">
