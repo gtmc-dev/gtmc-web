@@ -177,6 +177,16 @@ interface ReviewEditorProps {
   }
 }
 
+interface ReviewActionDraftSnapshot {
+  activeFileId: string
+  files: Array<{
+    id: string
+    filePath: string
+    content: string
+    conflictContent?: string | null
+  }>
+}
+
 export function ReviewEditor({
   pr,
   files,
@@ -486,6 +496,41 @@ export function ReviewEditor({
     return map
   }, [rebaseState?.rerereApplied])
 
+  const applyDraftSnapshot = React.useCallback(
+    (snapshot: ReviewActionDraftSnapshot) => {
+      setReviewSession((prev) => {
+        const previousFiles = new Map(prev.files.map((file) => [file.id, file]))
+
+        return {
+          ...prev,
+          files: snapshot.files.map((file) => {
+            const previousFile = previousFiles.get(file.id)
+
+            return {
+              id: file.id,
+              filePath: file.filePath,
+              content: file.content,
+              originalContent: previousFile?.originalContent ?? file.content,
+              conflictContent: file.conflictContent ?? undefined,
+              status: file.conflictContent ? "conflict" : "clean",
+            }
+          }),
+          activeFileId: snapshot.activeFileId,
+        }
+      })
+
+      setFileContents(
+        Object.fromEntries(
+          snapshot.files.map((file) => [
+            file.id,
+            file.conflictContent ?? file.content,
+          ])
+        )
+      )
+    },
+    []
+  )
+
   const handleSelectFile = (fileId: string) => {
     setReviewSession((prev) => ({ ...prev, activeFileId: fileId }))
   }
@@ -622,6 +667,10 @@ export function ReviewEditor({
       try {
         const result = await resolveConflictAction(pr.number, formData)
 
+        if (result.draftSnapshot) {
+          applyDraftSnapshot(result.draftSnapshot)
+        }
+
         if (result.hasConflicts) {
           conflictFocusPathRef.current = result.focusFilePath ?? null
 
@@ -659,7 +708,7 @@ export function ReviewEditor({
         setIsBranchSyncing(false)
       }
     },
-    [pr.number, router]
+    [applyDraftSnapshot, pr.number, router]
   )
 
   const resolveConflictSegment = React.useCallback(
@@ -735,6 +784,10 @@ export function ReviewEditor({
     try {
       const result = await selectModeAction(revision.id, mode)
       const selectedMode = result.conflictMode ?? mode
+
+      if (result.draftSnapshot) {
+        applyDraftSnapshot(result.draftSnapshot)
+      }
 
       if (result.hasConflicts) {
         conflictFocusPathRef.current = result.focusFilePath ?? null
