@@ -49,7 +49,24 @@ export function ModeSelector({
 
   return (
     <div className="flex flex-col gap-6">
-      {!hasConflicts && (
+      {hasConflicts ? (
+        <div className="relative border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <CornerBrackets color="border-amber-500/30" />
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block size-2 bg-amber-500"
+              role="img"
+              title="Conflicts detected"
+            />
+            <span className="font-mono text-xs tracking-widest text-amber-800 uppercase">
+              CONFLICTS_DETECTED_
+            </span>
+          </div>
+          <p className="mt-1 font-mono text-xs text-amber-800/80">
+            Review requires conflict resolution. Select a mode to inspect and resolve them.
+          </p>
+        </div>
+      ) : (
         <div className="relative border border-green-500/30 bg-green-500/5 px-4 py-3">
           <CornerBrackets color="border-green-500/30" />
           <div className="flex items-center gap-2">

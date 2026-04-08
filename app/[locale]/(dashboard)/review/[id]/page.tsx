@@ -232,6 +232,12 @@ export default async function ReviewDetailPage({
           : ("clean" as const),
       }))
     : []
+  const hasKnownConflicts =
+    hasConflict ||
+    linkedDraft?.status === "SYNC_CONFLICT" ||
+    (linkedDraft?.rebaseState as { status?: string } | null)?.status ===
+      "CONFLICT" ||
+    reviewFiles.some((file) => Boolean(file.conflictContent))
   console.log(
     "[review/page] reviewFiles",
     reviewFiles.map((f) => ({
@@ -338,6 +344,7 @@ export default async function ReviewDetailPage({
         <ReviewEditor
           pr={{ number: pr.number, title: pr.title, htmlUrl: pr.html_url }}
           files={reviewFiles}
+          initialHasConflicts={hasKnownConflicts}
           initialActiveFileId={linkedDraftFiles?.activeFileId}
           modeAnalysis={modeAnalysis}
           revision={{
