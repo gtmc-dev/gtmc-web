@@ -26,10 +26,6 @@ import {
 } from "@/lib/draft-files"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import {
-  LoadingIndicator,
-  PENDING_LABELS,
-} from "@/components/ui/loading-indicator"
-import {
   OperationProgress,
   type OperationProgressStage,
   type OperationProgressState,
@@ -76,11 +72,14 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   const [isSubmittingReview, setIsSubmittingReview] = React.useState(false)
   const [saveProgressState, setSaveProgressState] =
     React.useState<OperationProgressState>("idle")
+  const [submitProgressState, setSubmitProgressState] =
+    React.useState<OperationProgressState>("idle")
   const [activeTab, setActiveTab] = React.useState<TabType>("write")
 
   const textareaRef = React.useRef<any>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const saveProgressResetRef = React.useRef<number | null>(null)
+  const submitProgressResetRef = React.useRef<number | null>(null)
   const { badge, showBadge, clearBadge } = useBadge()
 
   const saveProgressStages = React.useMemo<OperationProgressStage[]>(
@@ -114,10 +113,45 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     [progressT]
   )
 
+  const submitProgressStages = React.useMemo<OperationProgressStage[]>(
+    () => [
+      {
+        id: "preflight",
+        label: progressT("submitStagePreflight"),
+        durationMs: 260,
+      },
+      {
+        id: "assets",
+        label: progressT("submitStageAssets"),
+        durationMs: 580,
+      },
+      {
+        id: "migrate",
+        label: progressT("submitStageMigrate"),
+        durationMs: 760,
+      },
+      {
+        id: "open-pr",
+        label: progressT("submitStagePr"),
+        durationMs: 920,
+      },
+      {
+        id: "refresh",
+        label: progressT("submitStageRefresh"),
+        durationMs: 300,
+      },
+    ],
+    [progressT]
+  )
+
   React.useEffect(() => {
     return () => {
       if (saveProgressResetRef.current !== null) {
         window.clearTimeout(saveProgressResetRef.current)
+      }
+
+      if (submitProgressResetRef.current !== null) {
+        window.clearTimeout(submitProgressResetRef.current)
       }
     }
   }, [])
@@ -138,6 +172,25 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
 
     saveProgressResetRef.current = window.setTimeout(() => {
       setSaveProgressState("idle")
+    }, nextState === "success" ? 1400 : 3200)
+  }
+
+  const updateSubmitProgressState = (
+    nextState: Exclude<OperationProgressState, "idle">
+  ) => {
+    if (submitProgressResetRef.current !== null) {
+      window.clearTimeout(submitProgressResetRef.current)
+      submitProgressResetRef.current = null
+    }
+
+    setSubmitProgressState(nextState)
+
+    if (nextState === "running") {
+      return
+    }
+
+    submitProgressResetRef.current = window.setTimeout(() => {
+      setSubmitProgressState("idle")
     }, nextState === "success" ? 1400 : 3200)
   }
 
@@ -433,9 +486,11 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     }
 
     setIsSubmittingReview(true)
+    updateSubmitProgressState("running")
     try {
       const result = await submitForReviewAction(revisionId)
       setDraftStatus(result.status)
+      updateSubmitProgressState("success")
       showBadge(
         result.status === "SYNC_CONFLICT"
           ? "SYNC_CONFLICT_DETECTED_"
@@ -447,6 +502,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
       router.refresh()
     } catch (error) {
       console.error(error)
+      updateSubmitProgressState("error")
       showBadge("SUBMIT_FAILED_", "error")
     } finally {
       setIsSubmittingReview(false)
@@ -782,6 +838,14 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
             errorLabel={progressT("saveDraftError")}
           />
 
+          <OperationProgress
+            state={submitProgressState}
+            title={progressT("submitTitle")}
+            stages={submitProgressStages}
+            successLabel={progressT("submitSuccess")}
+            errorLabel={progressT("submitError")}
+          />
+
           <div
             className="
               relative mt-6 flex justify-end gap-4 border-t border-tech-main/10
@@ -808,7 +872,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
               disabled={submitDisabled}
               aria-busy={isSubmittingReview}>
               {isSubmittingReview ? (
-                <LoadingIndicator label={PENDING_LABELS.SUBMITTING_REVIEW} />
+                progressT("submitBusy")
               ) : (
                 t("submitButton")
               )}

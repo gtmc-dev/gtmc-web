@@ -16,6 +16,7 @@ import { ConflictBlock } from "@/components/review/conflict-block"
 import { ReviewFileList } from "@/components/review/review-file-list"
 import { ModeSelector } from "@/components/review/mode-selector"
 import { CornerBrackets } from "@/components/ui/corner-brackets"
+import { type OperationProgressState } from "@/components/ui/operation-progress"
 import { RebaseProgress } from "@/components/review/rebase-progress"
 import {
   selectModeAction,
@@ -184,6 +185,8 @@ export function ReviewEditor({
   const [isSelectingMode, setIsSelectingMode] = React.useState(false)
   const [isAborting, setIsAborting] = React.useState(false)
   const [isFinalizing, setIsFinalizing] = React.useState(false)
+  const [finalizeProgressState, setFinalizeProgressState] =
+    React.useState<OperationProgressState>("idle")
   const [isBranchSyncing, setIsBranchSyncing] = React.useState(false)
   const [actionError, setActionError] = React.useState<string | null>(null)
   const [mounted, setMounted] = React.useState(false)
@@ -191,6 +194,7 @@ export function ReviewEditor({
   const autosaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   )
+  const finalizeProgressResetRef = React.useRef<number | null>(null)
 
   const textareaRef = React.useRef<any>(null)
 
@@ -267,8 +271,32 @@ export function ReviewEditor({
       if (autosaveTimeoutRef.current) {
         clearTimeout(autosaveTimeoutRef.current)
       }
+
+      if (finalizeProgressResetRef.current !== null) {
+        window.clearTimeout(finalizeProgressResetRef.current)
+      }
     }
   }, [])
+
+  const updateFinalizeProgressState = React.useCallback(
+    (nextState: Exclude<OperationProgressState, "idle">) => {
+      if (finalizeProgressResetRef.current !== null) {
+        window.clearTimeout(finalizeProgressResetRef.current)
+        finalizeProgressResetRef.current = null
+      }
+
+      setFinalizeProgressState(nextState)
+
+      if (nextState === "running") {
+        return
+      }
+
+      finalizeProgressResetRef.current = window.setTimeout(() => {
+        setFinalizeProgressState("idle")
+      }, nextState === "success" ? 1400 : 3200)
+    },
+    []
+  )
 
   React.useEffect(() => {
     if (
@@ -494,8 +522,10 @@ export function ReviewEditor({
   }) => {
     setActionError(null)
     setIsFinalizing(true)
+    updateFinalizeProgressState("running")
     try {
       await finalizeReviewAction(pr.number, options)
+      updateFinalizeProgressState("success")
       router.push("/review")
     } catch (error) {
       if (isReauthRequiredError(error)) {
@@ -505,6 +535,7 @@ export function ReviewEditor({
         return
       }
 
+      updateFinalizeProgressState("error")
       setActionError(error instanceof Error ? error.message : String(error))
     } finally {
       setIsFinalizing(false)
@@ -600,6 +631,7 @@ export function ReviewEditor({
               onFinalize={handleFinalize}
               isAborting={isAborting}
               isFinalizing={isFinalizing}
+              finalizeProgressState={finalizeProgressState}
               defaultCommitTitle={squashCommitDefaults?.title}
               defaultCommitBody={squashCommitDefaults?.body}
               coauthorLines={squashCommitDefaults?.coauthorLines}
