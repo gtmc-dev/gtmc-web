@@ -287,7 +287,11 @@
     "clean": "无问题",
     "selectFileToReview": "选择要审核的文件",
     "allClean": "全部无问题",
-    "conflictsCount": "冲突数：{count}"
+    "conflictsCount": "冲突数：{count}",
+    "reviewNoChanges": "没有检测到差异",
+    "unchangedLinesHidden": "已折叠 {count} 行未修改内容",
+    "addedChangesLabel": "新增行",
+    "removedChangesLabel": "删除行"
   },
   "Status": {
     "draft": "草稿",

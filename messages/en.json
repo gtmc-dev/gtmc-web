@@ -287,7 +287,11 @@
     "clean": "Clean",
     "selectFileToReview": "SELECT FILE TO REVIEW",
     "allClean": "ALL CLEAN",
-    "conflictsCount": "CONFLICTS: {count}"
+    "conflictsCount": "CONFLICTS: {count}",
+    "reviewNoChanges": "NO DIFF DETECTED",
+    "unchangedLinesHidden": "{count} UNCHANGED LINES HIDDEN",
+    "addedChangesLabel": "ADDED LINES",
+    "removedChangesLabel": "REMOVED LINES"
   },
   "Status": {
     "draft": "DRAFT",
