@@ -96,6 +96,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
 
   const textareaRef = React.useRef<any>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const autoSaveTimeoutRef = React.useRef<number | null>(null)
   const saveProgressResetRef = React.useRef<number | null>(null)
   const submitProgressResetRef = React.useRef<number | null>(null)
   const contentHistoryRef = React.useRef<
@@ -167,6 +168,10 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
 
   React.useEffect(() => {
     return () => {
+      if (autoSaveTimeoutRef.current !== null) {
+        window.clearTimeout(autoSaveTimeoutRef.current)
+      }
+
       if (saveProgressResetRef.current !== null) {
         window.clearTimeout(saveProgressResetRef.current)
       }
@@ -410,22 +415,40 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     }
   }, [draftCollection, revisionId, title])
 
-  const saveDraftWithFeedback = React.useCallback(async () => {
+  const saveDraftWithFeedback = React.useCallback(async (mode: "manual" | "auto" = "manual") => {
     if (isSaving || !title.trim()) {
       return
     }
 
+    if (autoSaveTimeoutRef.current !== null) {
+      window.clearTimeout(autoSaveTimeoutRef.current)
+      autoSaveTimeoutRef.current = null
+    }
+
     setIsSaving(true)
-    updateSaveProgressState("running")
+
+    if (mode === "manual") {
+      updateSaveProgressState("running")
+    }
 
     try {
       await persistDraft()
-      updateSaveProgressState("success")
-      showBadge("DRAFT_SAVED_", "info", 3000)
+
+      if (mode === "manual") {
+        updateSaveProgressState("success")
+        showBadge("DRAFT_SAVED_", "info", 3000)
+      } else {
+        showBadge("AUTOSAVED_", "info", 1800)
+      }
     } catch (error) {
       console.error(error)
-      updateSaveProgressState("error")
-      showBadge("SAVE_FAILED_", "error")
+
+      if (mode === "manual") {
+        updateSaveProgressState("error")
+        showBadge("SAVE_FAILED_", "error")
+      } else {
+        showBadge("AUTOSAVE_FAILED_", "error")
+      }
     } finally {
       setIsSaving(false)
     }
@@ -567,6 +590,45 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
   })
 
   React.useEffect(() => {
+    if (isReadOnly || !title.trim() || !hasUnsavedChanges) {
+      if (autoSaveTimeoutRef.current !== null) {
+        window.clearTimeout(autoSaveTimeoutRef.current)
+        autoSaveTimeoutRef.current = null
+      }
+      return
+    }
+
+    if (isSaving || isSubmittingReview || isUploading) {
+      return
+    }
+
+    if (autoSaveTimeoutRef.current !== null) {
+      window.clearTimeout(autoSaveTimeoutRef.current)
+    }
+
+    autoSaveTimeoutRef.current = window.setTimeout(() => {
+      autoSaveTimeoutRef.current = null
+      void saveDraftWithFeedback("auto")
+    }, 1500)
+
+    return () => {
+      if (autoSaveTimeoutRef.current !== null) {
+        window.clearTimeout(autoSaveTimeoutRef.current)
+        autoSaveTimeoutRef.current = null
+      }
+    }
+  }, [
+    draftCollection,
+    hasUnsavedChanges,
+    isReadOnly,
+    isSaving,
+    isSubmittingReview,
+    isUploading,
+    saveDraftWithFeedback,
+    title,
+  ])
+
+  React.useEffect(() => {
     if (isReadOnly) {
       return
     }
@@ -582,7 +644,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
         return
       }
 
-      void saveDraftWithFeedback()
+      void saveDraftWithFeedback("manual")
     }
 
     window.addEventListener("keydown", handleKeyDown)
@@ -642,7 +704,7 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
 
   const handleSaveDraft = async (e: React.FormEvent) => {
     e.preventDefault()
-    await saveDraftWithFeedback()
+    await saveDraftWithFeedback("manual")
   }
 
   const handleSubmitReview = async () => {
