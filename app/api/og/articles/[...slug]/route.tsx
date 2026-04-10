@@ -1,3 +1,4 @@
+import path from "path"
 import { ImageResponse } from "next/og"
 import { type NextRequest } from "next/server"
 import matter from "gray-matter"
@@ -93,7 +94,11 @@ export async function GET(
   const bannerSrc = (data.banner as { src?: string } | undefined)?.src
   if (bannerSrc) {
     try {
-      const buf = await getArticleBuffer(bannerSrc)
+      const articleDir = path.dirname(filePath)
+      const resolvedBannerPath = path
+        .join(articleDir, bannerSrc)
+        .replace(/\\/g, "/")
+      const buf = await getArticleBuffer(resolvedBannerPath)
       if (buf) {
         const mt = mime.lookup(bannerSrc) || "image/png"
         bannerDataUri = `data:${mt};base64,${Buffer.from(buf).toString("base64")}`
