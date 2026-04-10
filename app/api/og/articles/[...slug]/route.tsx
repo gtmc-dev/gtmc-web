@@ -79,11 +79,11 @@ export async function GET(
   let fontData: ArrayBuffer | null = null
   try {
     const res = await fetch(
-      new URL("/fonts/space-mono/SpaceMono-Bold.woff2", siteUrl)
+      new URL("/fonts/space-mono/SpaceMono-Bold.ttf", siteUrl)
     )
     if (res.ok) fontData = await res.arrayBuffer()
   } catch {
-    // render with system monospace
+    // fall back to system monospace
   }
   const fonts = fontData
     ? [{ name: "SpaceMono", data: fontData, weight: 400 as const, style: "normal" as const }]
