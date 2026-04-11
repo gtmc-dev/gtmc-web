@@ -1081,28 +1081,37 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
     <form
       onSubmit={handleSaveDraft}
       className="
-        group relative flex w-full flex-col space-y-6 border border-tech-main
-        bg-white/80 p-4 backdrop-blur-sm
+        group relative flex w-full flex-col space-y-6 border border-tech-main/60
+        bg-[#fbfbfd] p-4 shadow-[inset_0_0_100px_rgba(96,112,143,0.03)]
         sm:p-6
+        before:absolute before:inset-0 before:z-[-1] before:bg-[url('/bg-grid.svg')] 
+        before:bg-[length:24px_24px] before:opacity-[0.04]
       ">
-      <CornerBrackets />
+      <div className="absolute left-[-1px] top-[-1px] h-3 w-3 border-l-2 border-t-2 border-tech-main" />
+      <div className="absolute right-[-1px] top-[-1px] h-3 w-3 border-r-2 border-t-2 border-tech-main" />
+      <div className="absolute bottom-[-1px] left-[-1px] h-3 w-3 border-b-2 border-l-2 border-tech-main" />
+      <div className="absolute bottom-[-1px] right-[-1px] h-3 w-3 border-b-2 border-r-2 border-tech-main" />
 
-      <div className="flex flex-col space-y-4">
+      <div className="flex flex-col space-y-4 relative z-10">
         <div className="flex flex-col space-y-2">
-          <label htmlFor="draft-title" className="section-label">
-            {t("titleLabel")}
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="draft-title" className="font-mono text-[10px] text-tech-main uppercase tracking-widest flex items-center gap-2">
+              <span className="inline-block h-2 w-2 bg-tech-main/40" />
+              {t("titleLabel")}
+            </label>
+          </div>
           <InputBox
             id="draft-title"
             required
             placeholder={t("titlePlaceholder")}
             className={`
-              border-tech-main/40 py-3 font-mono text-lg backdrop-blur-sm
-              focus:border-tech-main/60
+              border-tech-main/40 py-3 font-mono text-lg bg-white/50 backdrop-blur-sm
+              focus:border-tech-main focus:bg-white focus:ring-1 focus:ring-tech-main/20
+              transition-all duration-300
               ${
                 isReadOnly
-                  ? `cursor-not-allowed bg-gray-100 opacity-70`
-                  : `bg-white/80`
+                  ? `cursor-not-allowed bg-tech-main/5 opacity-70`
+                  : `hover:bg-white/80`
               }
             `}
             value={title}
@@ -1296,56 +1305,75 @@ export function DraftEditor({ initialData }: DraftEditorProps) {
                 />
                 <div
                   className="
-                    flex flex-wrap gap-2 border-b guide-line
-                    bg-tech-main/5 px-4 py-3
+                    flex items-center gap-2 border-b border-tech-main/20
+                    bg-tech-main/[0.04] px-4 h-12 shadow-[inset_0_1px_4px_rgba(96,112,143,0.05)]
+                    overflow-x-auto no-scrollbar scroll-smooth relative
                   ">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-tech-main/30" />
+                  <span className="font-mono text-[9px] tracking-widest text-tech-main/50 uppercase mr-2 opacity-70">
+                    MACROS
+                  </span>
+                  
                   <TechButton
                     type="button"
-                    variant="secondary"
-                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-3 text-[10px] tracking-widest text-tech-main hover:bg-white hover:text-tech-main border border-transparent hover:border-tech-main/20 hover:shadow-sm transition-all"
                     disabled={isReadOnly}
                     onClick={() => insertTextAtCursor("\n## Section Title\n\n")}>
-                    SECTION
+                    <span className="flex items-center gap-1.5"><span className="text-tech-main/40 font-bold">#</span> SECTION</span>
                   </TechButton>
                   <TechButton
                     type="button"
-                    variant="secondary"
-                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-3 text-[10px] tracking-widest text-tech-main hover:bg-white hover:text-tech-main border border-transparent hover:border-tech-main/20 hover:shadow-sm transition-all"
                     disabled={isReadOnly}
                     onClick={() =>
                       insertTextAtCursor(
                         "\n> [!TIP]\n> Add contributor guidance here.\n\n"
                       )
                     }>
-                    CALLOUT
+                    <span className="flex items-center gap-1.5"><span className="text-tech-main/40 font-bold">{">"}</span> CALLOUT</span>
                   </TechButton>
                   <TechButton
                     type="button"
-                    variant="secondary"
-                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-3 text-[10px] tracking-widest text-tech-main hover:bg-white hover:text-tech-main border border-transparent hover:border-tech-main/20 hover:shadow-sm transition-all"
                     disabled={isReadOnly}
                     onClick={() =>
                       insertTextAtCursor(
                         "\n| Parameter | Value | Notes |\n| --- | --- | --- |\n| Example | Value | Detail |\n\n"
                       )
                     }>
-                    TABLE
+                    <span className="flex items-center gap-1.5"><span className="text-tech-main/40 font-bold">||</span> TABLE</span>
                   </TechButton>
+                  
+                  <div className="mx-2 h-4 w-[1px] bg-tech-main/20" />
+                  
                   <TechButton
                     type="button"
                     variant="secondary"
-                    size="sm"
-                    disabled={isReadOnly}
+                    className="h-7 px-3 text-[10px] tracking-widest text-tech-main-dark/80 bg-white/50 border-tech-main/20 hover:bg-white hover:border-tech-main/50 transition-all font-bold group"
+                    disabled={isReadOnly || !activeFileHistory?.undoStack.length}
                     onClick={handleUndoDraftEdit}>
-                    UNDO
+                    <span className="flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                        <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3z"/>
+                      </svg>
+                      UNDO
+                    </span>
                   </TechButton>
                   <TechButton
                     type="button"
                     variant="secondary"
-                    size="sm"
-                    disabled={isReadOnly}
+                    className="h-7 px-3 text-[10px] tracking-widest text-tech-main-dark/80 bg-white/50 border-tech-main/20 hover:bg-white hover:border-tech-main/50 transition-all font-bold group"
+                    disabled={isReadOnly || !activeFileHistory?.redoStack.length}
                     onClick={handleRedoDraftEdit}>
-                    REDO
+                    <span className="flex items-center gap-1">
+                      REDO
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" className="scale-x-[-1]">
+                        <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3z"/>
+                      </svg>
+                    </span>
                   </TechButton>
                 </div>
               </>
