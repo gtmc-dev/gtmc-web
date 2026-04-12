@@ -13,6 +13,8 @@ import {
 } from "../features/loading-shell-primitives"
 import type { TreeNode } from "@/types/sidebar-tree"
 import { useTranslations } from "next-intl"
+import { ArticleTocRail } from "@/components/articles/article-toc-rail"
+import { MobileTocBar } from "@/components/articles/mobile-toc-bar"
 
 interface ArticlesLayoutProps {
   children: React.ReactNode
@@ -290,6 +292,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
 
   return (
     <SidebarProvider tree={treeData}>
+      <MobileTocBar />
       <div
         className="
           relative isolate flex min-h-[calc(100vh-8rem)] flex-col
@@ -518,6 +521,8 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           `}>
           {children}
         </main>
+
+        <ArticleTocRail />
       </div>
     </SidebarProvider>
   )
