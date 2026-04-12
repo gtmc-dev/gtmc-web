@@ -57,7 +57,7 @@ export function MobileTocBar() {
   return (
     <>
       {/* Progress strip — fixed just below sticky navbar */}
-      <div className="xl:hidden fixed top-16 md:top-20 left-0 right-0 z-[49] h-0.5 bg-tech-main/10">
+      <div className="fixed inset-x-0 top-16 z-49 h-0.5 bg-tech-main/10 sm:hidden md:top-20">
         <div
           className="h-full bg-tech-main transition-[width] duration-150"
           style={{ width: `${pct}%` }}
@@ -66,11 +66,11 @@ export function MobileTocBar() {
 
       {/* Section label — fixed right-aligned in navbar row */}
       {activeItem && (
-        <div className="xl:hidden fixed top-0 right-0 z-[51] flex h-16 md:h-20 items-center pr-4">
+        <div className="fixed top-0 right-0 z-51 flex h-16 items-center pr-4 sm:hidden md:h-20">
           <button
             type="button"
             onClick={() => setIsSheetOpen(true)}
-            className="max-w-[40vw] truncate font-mono text-xs text-tech-main/60 hover:text-tech-main transition-colors duration-150 border-l border-tech-main/20 pl-3"
+            className="max-w-[40vw] truncate border-l guide-line pl-3 font-mono text-xs text-tech-main/60 transition-colors duration-150 hover:text-tech-main"
             aria-label="Open table of contents"
           >
             {activeItem.text}
@@ -80,7 +80,7 @@ export function MobileTocBar() {
 
       {/* Bottom Sheet overlay */}
       <div
-        className={`xl:hidden fixed inset-0 z-[60] ${isSheetOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+        className={`fixed inset-0 z-60 sm:hidden ${isSheetOpen ? "pointer-events-auto" : "pointer-events-none"}`}
         aria-hidden={!isSheetOpen}
       >
         {/* Backdrop */}
@@ -93,19 +93,19 @@ export function MobileTocBar() {
 
         {/* Sheet panel */}
         <div
-          className={`absolute inset-x-0 bottom-0 flex flex-col max-h-[70dvh] border-t border-tech-main/30 bg-white/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSheetOpen ? "translate-y-0" : "translate-y-full"}`}
+          className={`absolute inset-x-0 bottom-0 flex max-h-[70dvh] flex-col border-t border-tech-main/30 bg-white/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSheetOpen ? "translate-y-0" : "translate-y-full"}`}
           role="dialog"
           aria-modal="true"
           aria-label="Table of contents"
         >
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-tech-main/20 px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between border-b guide-line px-4 py-3">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs font-bold tracking-[0.12em] text-tech-main/60 uppercase">
                 本文目录
               </span>
               <span className="font-mono text-xs text-tech-main/40">·</span>
-              <span className="font-mono text-xs text-tech-main/50">{pct}%</span>
+              <span className="mono-label">{pct}%</span>
             </div>
 
             <div className="mx-4 h-0.5 flex-1 bg-tech-main/15">
@@ -134,11 +134,10 @@ export function MobileTocBar() {
                   <Link
                     href={`#${item.id}`}
                     onClick={() => setIsSheetOpen(false)}
-                    className={`block border-l-[3px] py-2.5 pl-4 pr-2 text-sm leading-snug transition-all duration-200 ${
-                      isActive
-                        ? "border-tech-main font-semibold text-tech-main"
-                        : "border-transparent text-tech-main/60 hover:border-tech-main/30 hover:text-tech-main"
-                    }`}
+                    className={`block border-l-[3px] py-2.5 pr-2 pl-4 text-sm/snug transition-all duration-200 ${isActive
+                      ? "border-tech-main font-semibold text-tech-main"
+                      : "border-transparent text-tech-main/60 hover:border-tech-main/30 hover:text-tech-main"
+                      }`}
                   >
                     {item.text}
                   </Link>
