@@ -292,7 +292,7 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
     <SidebarProvider tree={treeData}>
       <div
         className="
-          relative isolate mx-auto flex min-h-[calc(100vh-8rem)] flex-col
+          relative isolate flex min-h-[calc(100vh-8rem)] flex-col
           md:flex-row md:justify-center md:gap-8
         ">
         <div
