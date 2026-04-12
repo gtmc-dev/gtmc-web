@@ -54,29 +54,32 @@ export function MobileTocBar() {
   const activeItem = toc.find((item) => item.id === activeHeadingId)
   const pct = Math.round(progress * 100)
 
+
   return (
     <>
+
+
       {/* Progress strip — fixed just below sticky navbar */}
-      <div className="fixed inset-x-0 top-16 z-49 h-0.5 bg-tech-main/10 sm:hidden md:top-20">
+      <div className={`fixed inset-x-0 top-16 z-49 h-20 transition-opacity duration-500 sm:hidden ${window.scrollY > 64 ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+        {/* Section label — fixed right-aligned in navbar row */}
+        {activeItem && (
+          <div className="flex h-fit w-full items-center py-2 pr-4 backdrop-blur-xs sm:hidden">
+            <button
+              type="button"
+              onClick={() => setIsSheetOpen(true)}
+              className="max-w-[40vw] truncate border-l guide-line pl-3 font-mono text-xs font-bold text-tech-main transition-colors duration-150 hover:text-tech-main"
+              aria-label="Open table of contents"
+            >
+              {activeItem.text}
+            </button>
+          </div>
+        )}
         <div
-          className="h-full bg-tech-main transition-[width] duration-150"
+          className="h-0.5 bg-tech-main transition-[width] duration-150"
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      {/* Section label — fixed right-aligned in navbar row */}
-      {activeItem && (
-        <div className="fixed top-0 right-0 z-51 flex h-16 items-center pr-4 sm:hidden md:h-20">
-          <button
-            type="button"
-            onClick={() => setIsSheetOpen(true)}
-            className="max-w-[40vw] truncate border-l guide-line pl-3 font-mono text-xs text-tech-main/60 transition-colors duration-150 hover:text-tech-main"
-            aria-label="Open table of contents"
-          >
-            {activeItem.text}
-          </button>
-        </div>
-      )}
 
       {/* Bottom Sheet overlay */}
       <div

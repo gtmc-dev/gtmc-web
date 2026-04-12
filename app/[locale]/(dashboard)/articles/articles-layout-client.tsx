@@ -299,10 +299,10 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
           md:flex-row md:justify-center md:gap-8
         ">
         <div
-          className="
-            sticky top-16 z-30
-            md:hidden
-          ">
+          className={`
+            sticky z-30
+            md:hidden ${window.scrollY > 64 ? "top-24" : "top-16"}
+          `}>
           <div
             className="relative transition-all duration-500 ease-out"
             style={
