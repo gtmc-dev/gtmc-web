@@ -85,13 +85,15 @@ export function ReviewFileList({
       </div>
 
       <div
-        className={`border-b px-4 py-2 ${allClean
+        className={`border-b px-4 py-2 ${
+          allClean
             ? "border-green-500/20 bg-green-500/5"
             : "border-red-500/20 bg-red-500/5"
-          }`}>
+        }`}>
         <span
-          className={`font-mono text-[0.6875rem] tracking-widest uppercase ${allClean ? "text-green-700" : "text-red-600"
-            }`}>
+          className={`font-mono text-[0.6875rem] tracking-widest uppercase ${
+            allClean ? "text-green-700" : "text-red-600"
+          }`}>
           {allClean
             ? t("allClean")
             : t("conflictsCount", { count: conflictCount })}
@@ -114,9 +116,10 @@ export function ReviewFileList({
                 className={`
                   flex min-h-11 min-w-0 flex-1 flex-col items-start gap-1 border
                   px-3 py-2 text-left transition-colors
-                  ${isActive
-                    ? `border-tech-main bg-tech-main/10`
-                    : `guide-line bg-white/70 hover:border-tech-main/50 hover:bg-white/90`
+                  ${
+                    isActive
+                      ? `border-tech-main bg-tech-main/10`
+                      : `guide-line bg-white/70 hover:border-tech-main/50 hover:bg-white/90`
                   }
                 `}>
                 <span className="flex w-full items-center justify-between gap-2">
