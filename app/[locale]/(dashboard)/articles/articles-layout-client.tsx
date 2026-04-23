@@ -232,7 +232,6 @@ export function ArticlesLayoutClient({ children, tree }: ArticlesLayoutProps) {
 
     const loadTree = async () => {
       try {
-        setIsTreeLoading(true)
         const response = await fetch("/api/articles/tree", {
           method: "GET",
           signal: controller.signal,
