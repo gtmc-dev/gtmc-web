@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
     ".worktrees/**",
     ".sisyphus/**",
     "articles/**",
+    // CommonJS scripts using require()
+    "**/*.cjs",
   ]),
 
   {
