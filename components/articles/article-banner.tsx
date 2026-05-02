@@ -144,7 +144,7 @@ export function ArticleBanner({ src, alt }: ArticleBannerProps) {
         group/banner relative mb-8 animate-fade-in
         transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
         hover:-translate-y-1.5
-        hover:shadow-[0_16px_40px_rgba(74,90,120,0.16),0_4px_12px_rgba(74,90,120,0.10)]
+        hover:shadow-[0_16px_40px_rgb(var(--color-tech-main-dark)/0.16),0_4px_12px_rgb(var(--color-tech-main-dark)/0.10)]
       ">
       {/* Depth frame layers — expand outward on hover */}
       <div className="pointer-events-none absolute inset-0 border border-tech-main/15 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/banner:-inset-2" />
@@ -220,8 +220,8 @@ export function ArticleBanner({ src, alt }: ArticleBannerProps) {
             className="pointer-events-none absolute inset-0 opacity-[0.1] mix-blend-multiply transition-transform duration-800 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/banner:scale-105"
             style={{
               backgroundImage: `
-                linear-gradient(to right, #60708f 1px, transparent 1px),
-                linear-gradient(to bottom, #60708f 1px, transparent 1px)
+                linear-gradient(to right, var(--color-tech-main) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--color-tech-main) 1px, transparent 1px)
               `,
               backgroundSize: "40px 40px",
             }}
@@ -233,7 +233,7 @@ export function ArticleBanner({ src, alt }: ArticleBannerProps) {
               pointer-events-none absolute inset-0 z-10 opacity-60
               mix-blend-darken transition-opacity
               duration-500
-              [background:radial-gradient(ellipse_at_center,transparent_40%,rgba(74,90,120,0.45)_100%)] group-hover/banner:opacity-100
+              [background:radial-gradient(ellipse_at_center,transparent_40%,rgb(var(--color-tech-main-dark)/0.45)_100%)] group-hover/banner:opacity-100
             "
           />
 
