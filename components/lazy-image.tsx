@@ -116,8 +116,8 @@ export function LazyImage({ src, alt }: LazyImageProps) {
           onLoad={handleLoad}
           onError={handleError}
           className={`
-            border border-tech-main/30 bg-tech-main/5 p-1 shadow-sm
-            object-contain
+            border border-tech-main/30 bg-tech-main/5 object-contain p-1
+            shadow-sm
             ${
               status === "loaded"
                 ? `
