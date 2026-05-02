@@ -16,11 +16,16 @@ function getInitialExpandedFolders(): Set<string> {
 }
 
 export function useExpandedFolders() {
+  const [mounted, setMounted] = useState(false)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     getInitialExpandedFolders
   )
   const expandedFoldersRef = useRef(expandedFolders)
   const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     expandedFoldersRef.current = expandedFolders
@@ -42,6 +47,7 @@ export function useExpandedFolders() {
   )
 
   return {
+    mounted,
     expandedFolders,
     setExpandedFolders,
     expandedFoldersRef,
