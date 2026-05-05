@@ -152,8 +152,15 @@ export async function GET(request: Request) {
         return errorResponse("Remote URL is not allowed", 403)
       }
 
-      const safeRemoteUrl = new URL(allowedRemotePathAndQuery, SITE_ORIGIN)
-      const response = await fetch(safeRemoteUrl, {
+      const trustedRemoteUrl = new URL(SITE_ORIGIN.origin)
+      const validatedPathAndQuery = new URL(
+        allowedRemotePathAndQuery,
+        SITE_ORIGIN,
+      )
+      trustedRemoteUrl.pathname = validatedPathAndQuery.pathname
+      trustedRemoteUrl.search = validatedPathAndQuery.search
+
+      const response = await fetch(trustedRemoteUrl, {
         redirect: "error",
       })
       if (!response.ok) {
